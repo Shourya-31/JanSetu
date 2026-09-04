@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VillageProfileForm } from './VillageProfileForm';
 import { VillageProfileDashboard } from './VillageProfileDashboard';
+import { HouseholdAnalyticsDashboard } from './HouseholdAnalyticsDashboard';
 import { HouseholdSurveyModal } from './HouseholdSurveyModal';
 import { CheckCircle2, AlertCircle, LogOut, LayoutGrid, ArrowLeft } from 'lucide-react';
 
@@ -187,17 +188,35 @@ export const SurveyorDashboard: React.FC<{ surveyorId: string; onLogout: () => v
         )}
       </div>
 
-      {activeModalHouse !== null && (
-        <HouseholdSurveyModal
-          houseNumber={activeModalHouse}
-          villageName={villageData.villageName}
-          panchayatName={villageData.panchayat}
-          blockName={villageData.block}
-          existingData={households.find((h) => h.houseNumber === activeModalHouse)?.data}
-          onClose={() => setActiveModalHouse(null)}
-          onSave={handleSaveHousehold}
-        />
-      )}
+     // SurveyorDashboard.tsx ke andar modal/dashboard rendering:
+
+{activeModalHouse !== null && (
+  households.find((h) => h.houseNumber === activeModalHouse)?.isCompleted ? (
+    /* Completed: Open Analytics Dashboard */
+    <HouseholdAnalyticsDashboard
+      houseNumber={activeModalHouse}
+      villageName={villageData.villageName}
+      data={households.find((h) => h.houseNumber === activeModalHouse)?.data}
+      onBackToGrid={() => setActiveModalHouse(null)}
+      onEdit={() => {
+        // Edit mode me modal kholne ke liye
+        const currentData = households.find((h) => h.houseNumber === activeModalHouse)?.data;
+        setHouseholds((p) => p.map((h) => h.houseNumber === activeModalHouse ? { ...h, isCompleted: false } : h));
+      }}
+    />
+  ) : (
+    /* Pending: Open 34-Question Survey Modal */
+    <HouseholdSurveyModal
+      houseNumber={activeModalHouse}
+      villageName={villageData.villageName}
+      panchayatName={villageData.panchayat}
+      blockName={villageData.block}
+      existingData={households.find((h) => h.houseNumber === activeModalHouse)?.data}
+      onClose={() => setActiveModalHouse(null)}
+      onSave={handleSaveHousehold}
+    />
+  )
+)}
 
     </div>
   );

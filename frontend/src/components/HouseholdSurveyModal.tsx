@@ -4,13 +4,9 @@ import {
   ArrowRight, 
   ArrowLeft, 
   CheckCircle2, 
-  FileText, 
-  Printer, 
-  ShieldCheck, 
-  Users, 
+  CreditCard, 
   Home, 
-  CreditCard,
-  Download
+  AlertCircle 
 } from 'lucide-react';
 
 interface HouseholdSurveyModalProps {
@@ -23,14 +19,6 @@ interface HouseholdSurveyModalProps {
   onSave: (houseNumber: number, fullData: any) => void;
 }
 
-const SUB_CATEGORY_MAP: Record<string, string[]> = {
-  'अनुसूचित जनजाति': ['गोंड', 'माड़िया', 'मुरिया', 'भतरा', 'हल्बा', 'धुरवा', 'अन्य'],
-  'अबूझमाड़िया अनुसूचित जनजाति': ['अबूझमाड़िया', 'हिल माड़िया', 'अन्य'],
-  'अनुसूचित जाति': ['सतनामी', 'मेहरा', 'गांडा', 'घसिया', 'अन्य'],
-  'अन्य पिछड़ा वर्ग': ['तेली', 'यादव (राउत)', 'कलार', 'कुम्हार', 'देवांगन', 'अन्य'],
-  'सामान्य': ['ब्राह्मण', 'क्षत्रिय / राजपूत', 'वैश्य / बनिया', 'अन्य'],
-};
-
 export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
   houseNumber,
   villageName,
@@ -40,623 +28,579 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
   onClose,
   onSave,
 }) => {
-  // Agar pehle se bhara hua hai toh direct receipt dekhne ka option de sakte hain
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(Boolean(existingData?.trackingId));
-  const [currentStep, setCurrentStep] = useState<number>(existingData?.trackingId ? 5 : 1);
-  const [trackingId, setTrackingId] = useState<string>(
-    existingData?.trackingId || ''
-  );
+  const [activeTab, setActiveTab] = useState<number>(1);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
-  const [formData, setFormData] = useState({
-    headName: existingData?.headName || '',
-    mobile: existingData?.mobile || '',
-    category: existingData?.category || 'अनुसूचित जनजाति',
-    subTribe: existingData?.subTribe || 'गोंड',
-    isBPL: existingData?.isBPL || 'हां',
+  // 1. Basic & Demographics
+  const [headName, setHeadName] = useState(existingData?.headName || '');
+  const [mobile, setMobile] = useState(existingData?.mobile || '');
+  const [caste, setCaste] = useState(existingData?.caste || 'अनुसूचित जनजाति');
+  const [isBPL, setIsBPL] = useState(existingData?.isBPL || 'हां');
+  const [totalMembers, setTotalMembers] = useState(existingData?.totalMembers || '5');
+  const [eldersCount, setEldersCount] = useState(existingData?.eldersCount || '1');
+  const [childrenCount, setChildrenCount] = useState(existingData?.childrenCount || '2');
+  const [unemployedCount, setUnemployedCount] = useState(existingData?.unemployedCount || '1');
+  const [incomeSource, setIncomeSource] = useState(existingData?.incomeSource || 'कृषि');
 
-    totalMembers: existingData?.totalMembers || '5',
-    eldersCount: existingData?.eldersCount || '1',
-    childrenCount: existingData?.childrenCount || '2',
-    unemployedCount: existingData?.unemployedCount || '1',
-    incomeSource: existingData?.incomeSource || 'कृषि',
-    isMiningWorker: existingData?.isMiningWorker || 'नहीं',
+  // 2. Individual Schemes & IDs (Missing Counts)
+  const [missingAadhaar, setMissingAadhaar] = useState(existingData?.missingAadhaar || '0');
+  const [missingCasteCert, setMissingCasteCert] = useState(existingData?.missingCasteCert || '0');
+  const [missingAyushman, setMissingAyushman] = useState(existingData?.missingAyushman || '0');
+  const [missingVoterId, setMissingVoterId] = useState(existingData?.missingVoterId || '0');
+  const [hasRationCard, setHasRationCard] = useState(existingData?.hasRationCard || 'हां');
+  const [hasMNREGA, setHasMNREGA] = useState(existingData?.hasMNREGA || 'हां');
+  const [hasShramikCard, setHasShramikCard] = useState(existingData?.hasShramikCard || 'हां');
+  const [hasJanDhan, setHasJanDhan] = useState(existingData?.hasJanDhan || 'हां');
+  const [hasKCC, setHasKCC] = useState(existingData?.hasKCC || 'नहीं');
+  const [hasDeathCert, setHasDeathCert] = useState(existingData?.hasDeathCert || 'लागू नहीं');
+  const [hasFreeRation, setHasFreeRation] = useState(existingData?.hasFreeRation || 'हां');
+  const [hasPMKisan, setHasPMKisan] = useState(existingData?.hasPMKisan || 'हां');
 
-    houseType: existingData?.houseType || 'कच्चा घर',
-    hasToilet: existingData?.hasToilet || 'हां',
-    hasTapWater: existingData?.hasTapWater || 'नहीं',
-    waterSource: existingData?.waterSource || 'हैंडपंप',
-    hasElectricity: existingData?.hasElectricity || 'हां',
-    usesSolar: existingData?.usesSolar || 'नहीं',
-    hasChronicIllness: existingData?.hasChronicIllness || 'नहीं',
-    freeMedicineAvailable: existingData?.freeMedicineAvailable || 'हां',
+  // 3. Women & Child Welfare + Education
+  const [jsyReceived, setJsyReceived] = useState(existingData?.jsyReceived || 'हां');
+  const [pmmvyReceived, setPmmvyReceived] = useState(existingData?.pmmvyReceived || 'हां');
+  const [mahtariVandana, setMahtariVandana] = useState(existingData?.mahtariVandana || 'हां');
+  const [widowPension, setWidowPension] = useState(existingData?.widowPension || 'पात्रता नहीं है');
+  const [divyangPension, setDivyangPension] = useState(existingData?.divyangPension || 'पात्रता नहीं है');
+  const [hasBirthCert, setHasBirthCert] = useState(existingData?.hasBirthCert || 'हां');
+  const [childrenVaccinated, setChildrenVaccinated] = useState(existingData?.childrenVaccinated || 'हां');
+  const [hotMealAWC, setHotMealAWC] = useState(existingData?.hotMealAWC || 'हां');
+  const [childrenGoSchool, setChildrenGoSchool] = useState(existingData?.childrenGoSchool || 'हां');
+  const [schoolDropReason, setSchoolDropReason] = useState(existingData?.schoolDropReason || 'लागू नहीं (स्कूल जाते हैं)');
 
-    missingAadhaarCount: existingData?.missingAadhaarCount || '0',
-    missingVoterCount: existingData?.missingVoterCount || '0',
-    hasRationCard: existingData?.hasRationCard || 'हां',
-    hasMNREGA: existingData?.hasMNREGA || 'हां',
-    hasJanDhan: existingData?.hasJanDhan || 'हां',
-    hasKCC: existingData?.hasKCC || 'नहीं',
-    mahtariVandana: existingData?.mahtariVandana || 'हां',
-    pmKisan: existingData?.pmKisan || 'हां',
-    childrenVaccinated: existingData?.childrenVaccinated || 'हां',
-  });
+  // 4. Housing, Mining & Living Standards
+  const [isMiningWorker, setIsMiningWorker] = useState(existingData?.isMiningWorker || 'नहीं');
+  const [houseType, setHouseType] = useState(existingData?.houseType || 'कच्चा घर');
+  const [hasGovtHousing, setHasGovtHousing] = useState(existingData?.hasGovtHousing || 'नहीं');
+  const [hasToilet, setHasToilet] = useState(existingData?.hasToilet || 'हां');
+  const [hasTapWater, setHasTapWater] = useState(existingData?.hasTapWater || 'नहीं');
+  const [waterSource, setWaterSource] = useState(existingData?.waterSource || 'हैंडपंप');
+  const [hasElectricity, setHasElectricity] = useState(existingData?.hasElectricity || 'हां');
+  const [usesSolar, setUsesSolar] = useState(existingData?.usesSolar || 'नहीं');
+  const [chronicIllness, setChronicIllness] = useState(existingData?.chronicIllness || 'नहीं');
+  const [freeMedicine, setFreeMedicine] = useState(existingData?.freeMedicine || 'हां');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const validateAndSubmit = () => {
+    const missing: string[] = [];
+    if (!headName.trim()) missing.push('मुखिया का नाम');
+    if (!mobile.trim() || mobile.length < 10) missing.push('10 अंकों का मोबाइल नंबर');
+    if (!totalMembers || Number(totalMembers) <= 0) missing.push('कुल सदस्य संख्या');
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCat = e.target.value;
-    const defaultSub = SUB_CATEGORY_MAP[selectedCat]?.[0] || 'अन्य';
-    setFormData({
-      ...formData,
-      category: selectedCat,
-      subTribe: defaultSub,
-    });
-  };
-
-  const handleNext = () => {
-    if (currentStep === 1 && !formData.headName.trim()) {
-      alert('कृपया परिवार के मुखिया का नाम दर्ज करें');
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      alert(`कृपया निम्नलिखित अनिवार्य विवरण पूर्ण करें:\n\n• ${missing.join('\n• ')}`);
+      setActiveTab(1);
       return;
     }
-    setCurrentStep((prev) => Math.min(prev + 1, 5));
-  };
 
-  const handlePrev = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
+    const payload = {
+      headName,
+      mobile,
+      caste,
+      isBPL,
+      totalMembers: Number(totalMembers),
+      eldersCount: Number(eldersCount),
+      childrenCount: Number(childrenCount),
+      unemployedCount: Number(unemployedCount),
+      incomeSource,
+      missingAadhaar: Number(missingAadhaar),
+      missingCasteCert: Number(missingCasteCert),
+      missingAyushman: Number(missingAyushman),
+      missingVoterId: Number(missingVoterId),
+      hasRationCard,
+      hasMNREGA,
+      hasShramikCard,
+      hasJanDhan,
+      hasKCC,
+      hasDeathCert,
+      hasFreeRation,
+      hasPMKisan,
+      jsyReceived,
+      pmmvyReceived,
+      mahtariVandana,
+      widowPension,
+      divyangPension,
+      hasBirthCert,
+      childrenVaccinated,
+      hotMealAWC,
+      childrenGoSchool,
+      schoolDropReason,
+      isMiningWorker,
+      houseType,
+      hasGovtHousing,
+      hasToilet,
+      hasTapWater,
+      waterSource,
+      hasElectricity,
+      usesSolar,
+      chronicIllness,
+      freeMedicine,
+      trackingId: existingData?.trackingId || `DMFT-HHD-${Math.floor(100000 + Math.random() * 900000)}`,
+      submittedAt: new Date().toISOString(),
+    };
 
-  // STEP 1: Sirf local submit & Receipt show (Modal close nahi hoga)
-  const handleGenerateReceipt = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newTrackingId = `DMFT-NYR-${Date.now().toString().slice(-6)}`;
-    setTrackingId(newTrackingId);
-    setIsSubmitted(true);
+    onSave(houseNumber, payload);
   };
-
-  // STEP 2: Surveyor jab receipt dekh le aur "ग्रिड पर वापस जाएं" dabaye
-  const handleFinishAndSave = () => {
-    onSave(houseNumber, { ...formData, trackingId });
-  };
-
-  const stepTitles = [
-    { num: 1, title: 'पहचान सत्यापन', icon: <ShieldCheck className="w-4 h-4" /> },
-    { num: 2, title: 'जनसांख्यिकी', icon: <Users className="w-4 h-4" /> },
-    { num: 3, title: 'आवास व स्वास्थ्य', icon: <Home className="w-4 h-4" /> },
-    { num: 4, title: 'योजनाएँ व कार्ड', icon: <CreditCard className="w-4 h-4" /> },
-    { num: 5, title: 'समीक्षा व पावती', icon: <FileText className="w-4 h-4" /> },
-  ];
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-3 sm:p-4 font-hindi">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden border">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-300">
         
         {/* Header */}
-        <div className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
+        <div className="bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <span className="text-xs font-bold px-2.5 py-1 bg-emerald-600 rounded text-white shadow-2xs">
+            <span className="px-2.5 py-1 text-xs font-bold bg-emerald-600 rounded font-mono">
               मकान #{houseNumber}
             </span>
             <div>
-              <h3 className="text-sm font-bold">परिवार सर्वेक्षण प्रपत्र</h3>
-              <p className="text-[11px] text-slate-300">
-                {villageName} • ग्राम पंचायत: {panchayatName} • विकासखंड: {blockName}
-              </p>
+              <h3 className="text-sm font-bold">परिवार सर्वेक्षण प्रपत्र (सम्पूर्ण 34 प्रश्न)</h3>
+              <p className="text-[11px] text-slate-300">ग्राम: {villageName} • पंचायत: {panchayatName} • ब्लॉक: {blockName}</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1.5 hover:bg-slate-800 rounded-md text-slate-400 hover:text-white cursor-pointer"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Wizard Bar (Only visible when not showing final receipt) */}
-        {!isSubmitted && (
-          <div className="bg-slate-100 border-b px-6 py-2.5">
-            <div className="flex items-center justify-between">
-              {stepTitles.map((step) => {
-                const isActive = currentStep === step.num;
-                const isPassed = currentStep > step.num;
-                return (
-                  <div key={step.num} className="flex items-center space-x-2">
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                        isActive
-                          ? 'bg-blue-700 text-white shadow-xs'
-                          : isPassed
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-white border text-slate-400'
-                      }`}
-                    >
-                      {isPassed ? '✓' : step.num}
-                    </div>
-                    <span
-                      className={`text-xs hidden md:inline font-medium ${
-                        isActive ? 'text-blue-900 font-bold' : isPassed ? 'text-emerald-900' : 'text-slate-400'
-                      }`}
-                    >
-                      {step.title}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Form Body */}
-        <div className="p-6 overflow-y-auto flex-1 text-xs text-slate-700">
-          
-          {/* FINAL RECEIPT SCREEN */}
-          {isSubmitted ? (
-            <div className="space-y-6">
-              <div className="border border-slate-300 rounded-xl p-6 bg-white shadow-xs print:border-none" id="printable-receipt">
-                {/* Receipt Official Header */}
-                <div className="border-b pb-4 text-center space-y-1">
-                  <div className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">
-                    ✓ सर्वेक्षण पावती (Acknowledge Receipt)
-                  </div>
-                  <h2 className="text-base font-bold text-slate-900 mt-2">
-                    जिला खनिज संस्थान न्यास (DMFT) सामाजिक-आर्थिक सर्वेक्षण
-                  </h2>
-                  <p className="text-[11px] text-slate-500">
-                    ग्राम: <strong className="text-slate-700">{villageName}</strong> | पंचायत: <strong className="text-slate-700">{panchayatName}</strong> | विकासखंड: <strong className="text-slate-700">{blockName}</strong>
-                  </p>
-                </div>
-
-                {/* Tracking & ID Row */}
-                <div className="grid grid-cols-2 bg-slate-50 border my-4 p-3 rounded-lg text-xs">
-                  <div>
-                    <span className="text-slate-500 block">पंजीयन / ट्रैकिंग आईडी:</span>
-                    <span className="font-mono font-bold text-blue-700 text-sm">{trackingId}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-slate-500 block">मकान नंबर:</span>
-                    <span className="font-bold text-slate-900 text-sm">#{houseNumber}</span>
-                  </div>
-                </div>
-
-                {/* Key Summary Data */}
-                <div className="space-y-3 text-xs">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 border-b pb-3">
-                    <div>
-                      <span className="text-slate-400 block">मुखिया का नाम:</span>
-                      <strong className="text-slate-900 text-sm">{formData.headName}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">मोबाइल नंबर:</span>
-                      <strong className="text-slate-900">{formData.mobile || 'दर्ज नहीं'}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">सामाजिक वर्ग / उपजाति:</span>
-                      <strong className="text-slate-900">{formData.category} ({formData.subTribe})</strong>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-b pb-3">
-                    <div>
-                      <span className="text-slate-400 block">कुल सदस्य:</span>
-                      <strong className="text-slate-900">{formData.totalMembers} व्यक्ति</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">BPL स्थिति:</span>
-                      <strong className="text-slate-900">{formData.isBPL}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">मकान का प्रकार:</span>
-                      <strong className="text-slate-900">{formData.houseType}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">शौचालय:</span>
-                      <strong className="text-slate-900">{formData.hasToilet}</strong>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
-                    <div>
-                      <span className="text-slate-400 block">राशन कार्ड:</span>
-                      <strong className="text-slate-900">{formData.hasRationCard}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">महतारी वंदना:</span>
-                      <strong className="text-slate-900">{formData.mahtariVandana}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">PM किसान निधि:</span>
-                      <strong className="text-slate-900">{formData.pmKisan}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t flex items-center justify-between text-[11px] text-slate-400">
-                  <span>सत्यापन तिथि: {new Date().toLocaleDateString('hi-IN')}</span>
-                  <span>हस्ताक्षर / मुहर: अधिकृत प्रगणक</span>
-                </div>
-              </div>
-
-              {/* Action Buttons on Receipt Screen */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="inline-flex items-center px-4 py-2 border rounded-md text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4 mr-1.5 text-slate-600" />
-                  पावती रसीद प्रिंट करें
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleFinishAndSave}
-                  className="inline-flex items-center px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-bold cursor-pointer shadow-xs"
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                  पूर्ण करें एवं ग्रिड पर वापस लौटें
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* STEP 1: IDENTITY */}
-              {currentStep === 1 && (
-                <div className="space-y-4">
-                  <div className="border-b pb-2">
-                    <h4 className="text-sm font-bold text-slate-900">चरण 1: परिवार मुखिया पहचान सत्यापन</h4>
-                    <p className="text-[11px] text-slate-500">मुखिया एवं सामाजिक वर्ग की प्राथमिक जानकारी दर्ज करें।</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block font-medium mb-1 text-slate-800">परिवार के मुखिया का नाम *</label>
-                      <input
-                        type="text"
-                        required
-                        name="headName"
-                        value={formData.headName}
-                        onChange={handleChange}
-                        placeholder="उदा. सोमारू मंडावी"
-                        className="w-full px-3 py-2 border rounded-md font-semibold text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-medium mb-1 text-slate-800">मोबाइल नंबर</label>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        name="mobile"
-                        value={formData.mobile}
-                        onChange={handleChange}
-                        placeholder="10 अंकों का फोन नंबर"
-                        className="w-full px-3 py-2 border rounded-md text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                    <div>
-                      <label className="block font-medium mb-1 text-slate-800">सामाजिक वर्ग / जाति *</label>
-                      <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleCategoryChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="अनुसूचित जनजाति">अनुसूचित जनजाति</option>
-                        <option value="अबूझमाड़िया अनुसूचित जनजाति">अबूझमाड़िया अनुसूचित जनजाति</option>
-                        <option value="अनुसूचित जाति">अनुसूचित जाति</option>
-                        <option value="अन्य पिछड़ा वर्ग">अन्य पिछड़ा वर्ग</option>
-                        <option value="सामान्य">सामान्य</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-medium mb-1 text-slate-800">उपजाति / वर्ग विवरण *</label>
-                      <select
-                        name="subTribe"
-                        value={formData.subTribe}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        {(SUB_CATEGORY_MAP[formData.category] || ['अन्य']).map((sub) => (
-                          <option key={sub} value={sub}>
-                            {sub}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-medium mb-1 text-slate-800">गरीबी रेखा के नीचे (BPL)?</label>
-                      <select
-                        name="isBPL"
-                        value={formData.isBPL}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="हां">हां</option>
-                        <option value="नहीं">नहीं</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 2: DEMOGRAPHICS */}
-              {currentStep === 2 && (
-                <div className="space-y-4">
-                  <div className="border-b pb-2">
-                    <h4 className="text-sm font-bold text-slate-900">चरण 2: जनसांख्यिकी एवं आयु गणना</h4>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block font-medium mb-1">परिवार में कुल सदस्य *</label>
-                      <input
-                        type="number"
-                        min={1}
-                        name="totalMembers"
-                        value={formData.totalMembers}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md text-xs font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-medium mb-1">बुजुर्ग (60+)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        name="eldersCount"
-                        value={formData.eldersCount}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-medium mb-1">बच्चे (0-14)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        name="childrenCount"
-                        value={formData.childrenCount}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-medium mb-1">बेरोजगार युवा (18-35)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        name="unemployedCount"
-                        value={formData.unemployedCount}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md text-xs"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    <div>
-                      <label className="block font-medium mb-1">आय का मुख्य स्रोत</label>
-                      <select
-                        name="incomeSource"
-                        value={formData.incomeSource}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="कृषि">कृषि</option>
-                        <option value="पशुपालन">पशुपालन</option>
-                        <option value="दैनिक मजदूर गांव में">दैनिक मजदूर गांव में</option>
-                        <option value="दैनिक मजदूर शहर में">दैनिक मजदूर शहर में</option>
-                        <option value="दुकानदार / लघु व्यवसाय">दुकानदार / लघु व्यवसाय</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-medium mb-1">खनन में कार्यरत?</label>
-                      <select
-                        name="isMiningWorker"
-                        value={formData.isMiningWorker}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="नहीं">नहीं</option>
-                        <option value="हां">हां</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: LIVING STANDARDS */}
-              {currentStep === 3 && (
-                <div className="space-y-4">
-                  <div className="border-b pb-2">
-                    <h4 className="text-sm font-bold text-slate-900">चरण 3: आवास, जीवन स्तर एवं स्वास्थ्य</h4>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block font-medium mb-1">घर का प्रकार</label>
-                      <select
-                        name="houseType"
-                        value={formData.houseType}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="कच्चा घर">कच्चा घर</option>
-                        <option value="पक्का घर">पक्का घर</option>
-                        <option value="आधा कच्चा आधा पक्का घर">आधा कच्चा आधा पक्का घर</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-medium mb-1">शौचालय उपलब्ध?</label>
-                      <select
-                        name="hasToilet"
-                        value={formData.hasToilet}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="हां">हां</option>
-                        <option value="नहीं">नहीं</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-medium mb-1">नल जल कनेक्शन?</label>
-                      <select
-                        name="hasTapWater"
-                        value={formData.hasTapWater}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-md bg-white text-xs"
-                      >
-                        <option value="नहीं">नहीं</option>
-                        <option value="हां">हां</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: SCHEMES */}
-              {currentStep === 4 && (
-                <div className="space-y-4">
-                  <div className="border-b pb-2">
-                    <h4 className="text-sm font-bold text-slate-900">चरण 4: शासकीय योजनाएँ एवं दस्तावेज</h4>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block mb-1">राशन कार्ड?</label>
-                      <select
-                        name="hasRationCard"
-                        value={formData.hasRationCard}
-                        onChange={handleChange}
-                        className="w-full px-2.5 py-1.5 border rounded bg-white text-xs"
-                      >
-                        <option value="हां">हां</option>
-                        <option value="नहीं">नहीं</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block mb-1">मनरेगा जॉब कार्ड?</label>
-                      <select
-                        name="hasMNREGA"
-                        value={formData.hasMNREGA}
-                        onChange={handleChange}
-                        className="w-full px-2.5 py-1.5 border rounded bg-white text-xs"
-                      >
-                        <option value="हां">हां</option>
-                        <option value="नहीं">नहीं</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block mb-1">महतारी वंदना लाभ?</label>
-                      <select
-                        name="mahtariVandana"
-                        value={formData.mahtariVandana}
-                        onChange={handleChange}
-                        className="w-full px-2.5 py-1.5 border rounded bg-white text-xs"
-                      >
-                        <option value="हां">हां</option>
-                        <option value="नहीं">नहीं</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block mb-1">PM किसान सम्मान निधि?</label>
-                      <select
-                        name="pmKisan"
-                        value={formData.pmKisan}
-                        onChange={handleChange}
-                        className="w-full px-2.5 py-1.5 border rounded bg-white text-xs"
-                      >
-                        <option value="हां">हां</option>
-                        <option value="नहीं">नहीं</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block mb-1">बिना आधार कार्ड वाले सदस्य संख्या</label>
-                      <input
-                        type="number"
-                        min={0}
-                        name="missingAadhaarCount"
-                        value={formData.missingAadhaarCount}
-                        onChange={handleChange}
-                        className="w-full px-2.5 py-1.5 border rounded bg-white text-xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 5: REVIEW BEFORE RECEIPT */}
-              {currentStep === 5 && (
-                <div className="space-y-4">
-                  <div className="border-b pb-2">
-                    <h4 className="text-sm font-bold text-slate-900">चरण 5: समीक्षा एवं पावती जनरेशन</h4>
-                    <p className="text-[11px] text-slate-500">विवरण जांचें और रसीद तैयार करें।</p>
-                  </div>
-
-                  <div className="bg-slate-50 p-4 rounded-lg border space-y-2 text-xs">
-                    <div className="flex justify-between border-b pb-1">
-                      <span className="text-slate-500">मुखिया का नाम:</span>
-                      <strong className="text-slate-900">{formData.headName}</strong>
-                    </div>
-                    <div className="flex justify-between border-b pb-1">
-                      <span className="text-slate-500">सामाजिक वर्ग:</span>
-                      <strong className="text-slate-900">{formData.category} ({formData.subTribe})</strong>
-                    </div>
-                    <div className="flex justify-between border-b pb-1">
-                      <span className="text-slate-500">कुल सदस्य:</span>
-                      <strong className="text-slate-900">{formData.totalMembers} व्यक्ति</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">मकान प्रकार:</span>
-                      <strong className="text-slate-900">{formData.houseType}</strong>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+        {/* 4 Tabs */}
+        <div className="flex border-b bg-slate-50 px-6 pt-2 space-x-2 text-xs font-bold overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab(1)}
+            className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 1 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
+          >
+            1. मुखिया एवं जनसांख्यिकी *
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab(2)}
+            className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 2 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
+          >
+            2. व्यक्ति-मूलक योजनाएँ व कार्ड *
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab(3)}
+            className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 3 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
+          >
+            3. महिला, बाल कल्याण व शिक्षा *
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab(4)}
+            className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 4 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
+          >
+            4. आवास, जल, स्वच्छता व स्वास्थ्य *
+          </button>
         </div>
 
-        {/* Wizard Footer Controls */}
-        {!isSubmitted && (
-          <div className="bg-slate-50 border-t px-6 py-3 flex items-center justify-between">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto flex-1 text-xs text-slate-700 space-y-4">
+          
+          {/* TAB 1: Head & Demographics */}
+          {activeTab === 1 && (
+            <div className="space-y-4">
+              <div className="border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-900">परिवार के मुखिया का सामान्य विवरण एवं आयु गणना</h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-medium mb-1">परिवार के मुखिया का नाम *</label>
+                  <input
+                    type="text"
+                    required
+                    value={headName}
+                    onChange={(e) => setHeadName(e.target.value)}
+                    placeholder="उदा. सोमारू मंडावी"
+                    className="w-full p-2 border rounded font-semibold text-slate-900 focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium mb-1">मोबाइल नंबर *</label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="10 अंकों का फोन नंबर"
+                    className="w-full p-2 border rounded font-semibold focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium mb-1">जाति *</label>
+                  <select value={caste} onChange={(e) => setCaste(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="सामान्य">सामान्य</option>
+                    <option value="अन्य पिछड़ा वर्ग">अन्य पिछड़ा वर्ग</option>
+                    <option value="अनुसूचित जाति">अनुसूचित जाति</option>
+                    <option value="अनुसूचित जनजाति">अनुसूचित जनजाति</option>
+                    <option value="अबूझमाड़िया अनुसूचित जनजाति">अबूझमाड़िया अनुसूचित जनजाति</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div>
+                  <label className="block font-medium mb-1">गरीबी रेखा (BPL)? *</label>
+                  <select value={isBPL} onChange={(e) => setIsBPL(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-900 mb-1">कुल सदस्य संख्या *</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={totalMembers}
+                    onChange={(e) => setTotalMembers(e.target.value)}
+                    className="w-full p-2 border rounded font-bold text-blue-700 bg-blue-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium mb-1">बुजुर्गों की संख्या *</label>
+                  <input type="number" min={0} value={eldersCount} onChange={(e) => setEldersCount(e.target.value)} className="w-full p-2 border rounded" />
+                </div>
+
+                <div>
+                  <label className="block font-medium mb-1">बच्चों की संख्या *</label>
+                  <input type="number" min={0} value={childrenCount} onChange={(e) => setChildrenCount(e.target.value)} className="w-full p-2 border rounded" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block font-medium mb-1">बेरोजगार युवा (18 से 35 वर्ष) *</label>
+                  <input type="number" min={0} value={unemployedCount} onChange={(e) => setUnemployedCount(e.target.value)} className="w-full p-2 border rounded" />
+                </div>
+
+                <div>
+                  <label className="block font-medium mb-1">आय का मुख्य स्रोत *</label>
+                  <select value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="कृषि">कृषि</option>
+                    <option value="पशुपालन">पशुपालन</option>
+                    <option value="दैनिक मजदूर गांव में">दैनिक मजदूर गांव में</option>
+                    <option value="दैनिक मजदूर शहर में">दैनिक मजदूर शहर में</option>
+                    <option value="दुकानदार">दुकानदार</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Schemes & Documents */}
+          {activeTab === 2 && (
+            <div className="space-y-4">
+              <div className="border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-900">व्यक्ति-मूलक योजनाएँ एवं आवश्यक कार्ड्स</h4>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-lg border">
+                <div>
+                  <label className="block mb-1">बिना आधार कार्ड सदस्य *</label>
+                  <input type="number" min={0} value={missingAadhaar} onChange={(e) => setMissingAadhaar(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block mb-1">बिना जाति प्रमाण-पत्र सदस्य *</label>
+                  <input type="number" min={0} value={missingCasteCert} onChange={(e) => setMissingCasteCert(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block mb-1">बिना आयुष्मान कार्ड सदस्य *</label>
+                  <input type="number" min={0} value={missingAyushman} onChange={(e) => setMissingAyushman(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                </div>
+                <div>
+                  <label className="block mb-1">बिना वोटर आईडी (18+) सदस्य *</label>
+                  <input type="number" min={0} value={missingVoterId} onChange={(e) => setMissingVoterId(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block mb-1">राशन कार्ड है? *</label>
+                  <select value={hasRationCard} onChange={(e) => setHasRationCard(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">मनरेगा जॉब कार्ड? *</label>
+                  <select value={hasMNREGA} onChange={(e) => setHasMNREGA(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">श्रमिक कार्ड (18–40 वर्ष)? *</label>
+                  <select value={hasShramikCard} onChange={(e) => setHasShramikCard(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">जन-धन बैंक खाता? *</label>
+                  <select value={hasJanDhan} onChange={(e) => setHasJanDhan(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">किसान क्रेडिट कार्ड (KCC)? *</label>
+                  <select value={hasKCC} onChange={(e) => setHasKCC(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">PM गरीब कल्याण मुफ्त राशन? *</label>
+                  <select value={hasFreeRation} onChange={(e) => setHasFreeRation(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">PM किसान सम्मान निधि (₹6000)? *</label>
+                  <select value={hasPMKisan} onChange={(e) => setHasPMKisan(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">मृत्यु प्रमाण-पत्र (यदि लागू हो)? *</label>
+                  <select value={hasDeathCert} onChange={(e) => setHasDeathCert(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="लागू नहीं">लागू नहीं (मृत्यु नहीं हुई)</option>
+                    <option value="हां">हां (प्राप्त हुआ)</option>
+                    <option value="नहीं">नहीं (प्राप्त नहीं हुआ)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Women, Child & Education */}
+          {activeTab === 3 && (
+            <div className="space-y-4">
+              <div className="border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-900">महिला, बाल कल्याण एवं शिक्षा विवरण</h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block mb-1 font-medium">जननी सुरक्षा योजना (JSY) लाभ? *</label>
+                  <select value={jsyReceived} onChange={(e) => setJsyReceived(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">मातृ वंदना योजना (PMMVY)? *</label>
+                  <select value={pmmvyReceived} onChange={(e) => setPmmvyReceived(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">महतारी वंदना योजना नकद लाभ? *</label>
+                  <select value={mahtariVandana} onChange={(e) => setMahtariVandana(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">विधवा पेंशन योजना लाभ (40-79 वर्ष)? *</label>
+                  <select value={widowPension} onChange={(e) => setWidowPension(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">दिव्यांग पेंशन योजना लाभ? *</label>
+                  <select value={divyangPension} onChange={(e) => setDivyangPension(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">बच्चों का जन्म प्रमाण-पत्र? *</label>
+                  <select value={hasBirthCert} onChange={(e) => setHasBirthCert(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">बच्चों (0-5 वर्ष) का टीकाकरण? *</label>
+                  <select value={childrenVaccinated} onChange={(e) => setChildrenVaccinated(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">आंगनबाड़ी में गर्म पका भोजन (3-5 वर्ष)? *</label>
+                  <select value={hotMealAWC} onChange={(e) => setHotMealAWC(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">क्या बच्चे स्कूल जाते हैं? *</label>
+                  <select 
+                    value={childrenGoSchool} 
+                    onChange={(e) => {
+                      setChildrenGoSchool(e.target.value);
+                      if (e.target.value === 'हां') setSchoolDropReason('लागू नहीं (स्कूल जाते हैं)');
+                      else setSchoolDropReason('दूरी');
+                    }} 
+                    className="w-full p-2 border rounded bg-white"
+                  >
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+              </div>
+
+              {childrenGoSchool === 'नहीं' && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded">
+                  <label className="block mb-1 font-bold text-rose-900">स्कूल नहीं जाने का मुख्य कारण? *</label>
+                  <select value={schoolDropReason} onChange={(e) => setSchoolDropReason(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="दूरी">दूरी</option>
+                    <option value="अध्यापक की कमी">अध्यापक की कमी</option>
+                    <option value="गरीबी">गरीबी</option>
+                    <option value="घर के धंधे में हाथ बटाना">घर के धंधे में हाथ बटाना</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: Housing, Water & Health */}
+          {activeTab === 4 && (
+            <div className="space-y-4">
+              <div className="border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-900">आवास, पेयजल, स्वच्छता एवं स्वास्थ्य</h4>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block mb-1">घर का प्रकार *</label>
+                  <select value={houseType} onChange={(e) => setHouseType(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="कच्चा घर">कच्चा घर</option>
+                    <option value="पक्का घर">पक्का घर</option>
+                    <option value="आधा कच्चा आधा पक्का घर">आधा कच्चा आधा पक्का घर</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">सरकारी आवास योजना लाभ? *</label>
+                  <select value={hasGovtHousing} onChange={(e) => setHasGovtHousing(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
+                    <option value="पात्रता नहीं है">पात्रता नहीं है</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">घर में शौचालय है? *</label>
+                  <select value={hasToilet} onChange={(e) => setHasToilet(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">नल जल कनेक्शन है? *</label>
+                  <select value={hasTapWater} onChange={(e) => setHasTapWater(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">पानी कहाँ से लाते हैं? *</label>
+                  <select value={waterSource} onChange={(e) => setWaterSource(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हैंडपंप">हैंडपंप</option>
+                    <option value="कुआँ">कुआँ</option>
+                    <option value="नदी">नदी</option>
+                    <option value="झरना">झरना</option>
+                    <option value="तालाब">तालाब</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">बिजली कनेक्शन है? *</label>
+                  <select value={hasElectricity} onChange={(e) => setHasElectricity(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">सौर ऊर्जा का उपयोग? *</label>
+                  <select value={usesSolar} onChange={(e) => setUsesSolar(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">खनन में कार्यरत हैं? *</label>
+                  <select value={isMiningWorker} onChange={(e) => setIsMiningWorker(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">खांसी/दमा/टीबी रोग? *</label>
+                  <select value={chronicIllness} onChange={(e) => setChronicIllness(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1">निःशुल्क दवाई मिलती है? *</label>
+                  <select value={freeMedicine} onChange={(e) => setFreeMedicine(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="हां">हां</option>
+                    <option value="नहीं">नहीं</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="flex items-center justify-between border-t bg-slate-50 px-6 py-3">
+          {activeTab > 1 ? (
             <button
               type="button"
-              disabled={currentStep === 1}
-              onClick={handlePrev}
-              className={`inline-flex items-center px-4 py-2 text-xs font-semibold rounded-md border cursor-pointer ${
-                currentStep === 1
-                  ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
-                  : 'bg-white hover:bg-slate-100 text-slate-700'
-              }`}
+              onClick={() => setActiveTab((p) => p - 1)}
+              className="px-4 py-2 border rounded text-slate-700 bg-white hover:bg-slate-100 font-semibold cursor-pointer"
             >
-              <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-              पिछला चरण
+              ← पिछला
             </button>
+          ) : <div />}
 
-            {currentStep < 5 ? (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="inline-flex items-center px-5 py-2 text-xs font-semibold rounded-md bg-blue-700 hover:bg-blue-800 text-white cursor-pointer shadow-xs"
-              >
-                अगला चरण
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleGenerateReceipt}
-                className="inline-flex items-center px-6 py-2 text-xs font-bold rounded-md bg-emerald-700 hover:bg-emerald-800 text-white cursor-pointer shadow-xs"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                प्रपत्र जमा करें एवं रसीद देखें
-              </button>
-            )}
-          </div>
-        )}
+          {activeTab < 4 ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab((p) => p + 1)}
+              className="px-5 py-2 bg-slate-900 text-white rounded font-bold hover:bg-slate-800 cursor-pointer"
+            >
+              अगला चरण →
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={validateAndSubmit}
+              className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold cursor-pointer shadow-xs flex items-center"
+            >
+              परिवार विवरण सुरक्षित करें एवं डैशबोर्ड देखें
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </button>
+          )}
+        </div>
 
       </div>
     </div>
