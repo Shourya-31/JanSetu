@@ -1,1 +1,31 @@
 @import "tailwindcss";
+/* Print mode rules: Hide dashboard background, show only active modal */
+@media print {
+  /* 1. Page ke baki saare elements ko print se hide karein */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* 2. Sirf print container aur uske bacchon ko visible karein */
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible !important;
+  }
+
+  /* 3. Modal ko page ke top-left par 100% width me fix karein */
+  #printable-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* 4. A4 page setup */
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+}

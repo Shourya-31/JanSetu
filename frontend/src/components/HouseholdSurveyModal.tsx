@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   ArrowRight, 
@@ -29,7 +29,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
   onSave,
 }) => {
   const [activeTab, setActiveTab] = useState<number>(1);
-  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(true);
 
   // 1. Basic & Demographics
   const [headName, setHeadName] = useState(existingData?.headName || '');
@@ -52,6 +52,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
   const [hasShramikCard, setHasShramikCard] = useState(existingData?.hasShramikCard || 'हां');
   const [hasJanDhan, setHasJanDhan] = useState(existingData?.hasJanDhan || 'हां');
   const [hasKCC, setHasKCC] = useState(existingData?.hasKCC || 'नहीं');
+  const [deathOccurred, setDeathOccurred] = useState(existingData?.deathOccurred || 'नहीं');
   const [hasDeathCert, setHasDeathCert] = useState(existingData?.hasDeathCert || 'लागू नहीं');
   const [hasFreeRation, setHasFreeRation] = useState(existingData?.hasFreeRation || 'हां');
   const [hasPMKisan, setHasPMKisan] = useState(existingData?.hasPMKisan || 'हां');
@@ -80,18 +81,81 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
   const [chronicIllness, setChronicIllness] = useState(existingData?.chronicIllness || 'नहीं');
   const [freeMedicine, setFreeMedicine] = useState(existingData?.freeMedicine || 'हां');
 
-  const validateAndSubmit = () => {
-    const missing: string[] = [];
-    if (!headName.trim()) missing.push('मुखिया का नाम');
-    if (!mobile.trim() || mobile.length < 10) missing.push('10 अंकों का मोबाइल नंबर');
-    if (!totalMembers || Number(totalMembers) <= 0) missing.push('कुल सदस्य संख्या');
+  // Edge Case 6: Accidental Exit / Refresh Protection
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
-    if (missing.length > 0) {
-      setMissingFields(missing);
-      alert(`कृपया निम्नलिखित अनिवार्य विवरण पूर्ण करें:\n\n• ${missing.join('\n• ')}`);
+  // Edge Case 1: Mathematical Validation for Tab 1
+  const validateTab1 = (): boolean => {
+    const total = Number(totalMembers) || 0;
+    const elders = Number(eldersCount) || 0;
+    const kids = Number(childrenCount) || 0;
+    const unemployed = Number(unemployedCount) || 0;
+
+    if (!headName.trim()) {
+      alert('⚠️ कृपया परिवार के मुखिया का नाम अनिवार्य रूप से दर्ज करें।');
+      return false;
+    }
+
+    if (!mobile.trim() || mobile.length < 10) {
+      alert('⚠️ कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें।');
+      return false;
+    }
+
+    if (total <= 0) {
+      alert('⚠️ कुल सदस्य संख्या कम से कम 1 होनी चाहिए।');
+      return false;
+    }
+
+    if (elders + kids > total) {
+      alert(`⚠️ गणितीय विसंगति!\nबुजुर्ग (${elders}) और बच्चे (${kids}) का योग (${elders + kids}) कुल सदस्यों (${total}) से अधिक नहीं हो सकता।`);
+      return false;
+    }
+
+    if (unemployed > total) {
+      alert(`⚠️ विसंगति!\nबेरोजगार युवाओं की संख्या (${unemployed}) कुल सदस्यों (${total}) से अधिक नहीं हो सकती।`);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Edge Case 2: Document Cap Validation
+  const handleDocCountChange = (val: string, setter: (v: string) => void) => {
+    const num = Number(val);
+    const max = Number(totalMembers) || 0;
+    if (num > max) {
+      alert(`⚠️ छूटे हुए दस्तावेज़ों की संख्या कुल सदस्य संख्या (${max}) से अधिक नहीं हो सकती।`);
+      setter(String(max));
+    } else {
+      setter(val);
+    }
+  };
+
+  const handleNext = () => {
+    if (activeTab === 1 && !validateTab1()) return;
+    setActiveTab((prev) => Math.min(prev + 1, 4));
+  };
+
+  const handlePrev = () => {
+    setActiveTab((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleSaveForm = () => {
+    if (!validateTab1()) {
       setActiveTab(1);
       return;
     }
+
+    setHasUnsavedChanges(false);
 
     const payload = {
       headName,
@@ -112,7 +176,8 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
       hasShramikCard,
       hasJanDhan,
       hasKCC,
-      hasDeathCert,
+      deathOccurred,
+      hasDeathCert: deathOccurred === 'हां' ? hasDeathCert : 'लागू नहीं',
       hasFreeRation,
       hasPMKisan,
       jsyReceived,
@@ -124,13 +189,13 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
       childrenVaccinated,
       hotMealAWC,
       childrenGoSchool,
-      schoolDropReason,
+      schoolDropReason: childrenGoSchool === 'हां' ? 'लागू नहीं (स्कूल जाते हैं)' : schoolDropReason,
       isMiningWorker,
       houseType,
       hasGovtHousing,
       hasToilet,
       hasTapWater,
-      waterSource,
+      waterSource: hasTapWater === 'हां' ? 'घरेलू नल कनेक्शन' : waterSource,
       hasElectricity,
       usesSolar,
       chronicIllness,
@@ -141,6 +206,8 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
 
     onSave(houseNumber, payload);
   };
+
+  const totalMax = Number(totalMembers) || 1;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-3 sm:p-4 font-hindi">
@@ -157,7 +224,15 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
               <p className="text-[11px] text-slate-300">ग्राम: {villageName} • पंचायत: {panchayatName} • ब्लॉक: {blockName}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white cursor-pointer">
+          <button 
+            onClick={() => {
+              if (confirm('क्या आप सर्वेक्षण बंद करना चाहते हैं? बिना सुरक्षित किया गया डेटा निरस्त हो जाएगा।')) {
+                setHasUnsavedChanges(false);
+                onClose();
+              }
+            }} 
+            className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white cursor-pointer"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -166,28 +241,28 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
         <div className="flex border-b bg-slate-50 px-6 pt-2 space-x-2 text-xs font-bold overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveTab(1)}
+            onClick={() => { if (validateTab1()) setActiveTab(1); }}
             className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 1 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
           >
             1. मुखिया एवं जनसांख्यिकी *
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab(2)}
+            onClick={() => { if (validateTab1()) setActiveTab(2); }}
             className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 2 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
           >
             2. व्यक्ति-मूलक योजनाएँ व कार्ड *
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab(3)}
+            onClick={() => { if (validateTab1()) setActiveTab(3); }}
             className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 3 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
           >
             3. महिला, बाल कल्याण व शिक्षा *
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab(4)}
+            onClick={() => { if (validateTab1()) setActiveTab(4); }}
             className={`pb-2 px-3 border-b-2 cursor-pointer ${activeTab === 4 ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-500'}`}
           >
             4. आवास, जल, स्वच्छता व स्वास्थ्य *
@@ -197,7 +272,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto flex-1 text-xs text-slate-700 space-y-4">
           
-          {/* TAB 1: Head & Demographics */}
+          {/* TAB 1 */}
           {activeTab === 1 && (
             <div className="space-y-4">
               <div className="border-b pb-2">
@@ -262,20 +337,41 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-1">बुजुर्गों की संख्या *</label>
-                  <input type="number" min={0} value={eldersCount} onChange={(e) => setEldersCount(e.target.value)} className="w-full p-2 border rounded" />
+                  <label className="block font-medium mb-1">बुजुर्ग (60+ वर्ष) *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={eldersCount}
+                    onChange={(e) => setEldersCount(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-medium mb-1">बच्चों की संख्या *</label>
-                  <input type="number" min={0} value={childrenCount} onChange={(e) => setChildrenCount(e.target.value)} className="w-full p-2 border rounded" />
+                  <label className="block font-medium mb-1">बच्चे (0-14 वर्ष) *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={childrenCount}
+                    onChange={(e) => setChildrenCount(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div>
                   <label className="block font-medium mb-1">बेरोजगार युवा (18 से 35 वर्ष) *</label>
-                  <input type="number" min={0} value={unemployedCount} onChange={(e) => setUnemployedCount(e.target.value)} className="w-full p-2 border rounded" />
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={unemployedCount}
+                    onChange={(e) => setUnemployedCount(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
                 </div>
 
                 <div>
@@ -292,29 +388,58 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: Schemes & Documents */}
+          {/* TAB 2: Capped Missing Documents */}
           {activeTab === 2 && (
             <div className="space-y-4">
-              <div className="border-b pb-2">
+              <div className="border-b pb-2 flex justify-between items-center">
                 <h4 className="text-sm font-bold text-slate-900">व्यक्ति-मूलक योजनाएँ एवं आवश्यक कार्ड्स</h4>
+                <span className="text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded">अधिकतम सीमा: {totalMax} सदस्य</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-lg border">
                 <div>
                   <label className="block mb-1">बिना आधार कार्ड सदस्य *</label>
-                  <input type="number" min={0} value={missingAadhaar} onChange={(e) => setMissingAadhaar(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={missingAadhaar}
+                    onChange={(e) => handleDocCountChange(e.target.value, setMissingAadhaar)}
+                    className="w-full p-1.5 border rounded bg-white"
+                  />
                 </div>
                 <div>
-                  <label className="block mb-1">बिना जाति प्रमाण-पत्र सदस्य *</label>
-                  <input type="number" min={0} value={missingCasteCert} onChange={(e) => setMissingCasteCert(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                  <label className="block mb-1">बिना जाति प्रमाण-पत्र *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={missingCasteCert}
+                    onChange={(e) => handleDocCountChange(e.target.value, setMissingCasteCert)}
+                    className="w-full p-1.5 border rounded bg-white"
+                  />
                 </div>
                 <div>
-                  <label className="block mb-1">बिना आयुष्मान कार्ड सदस्य *</label>
-                  <input type="number" min={0} value={missingAyushman} onChange={(e) => setMissingAyushman(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                  <label className="block mb-1">बिना आयुष्मान कार्ड *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={missingAyushman}
+                    onChange={(e) => handleDocCountChange(e.target.value, setMissingAyushman)}
+                    className="w-full p-1.5 border rounded bg-white"
+                  />
                 </div>
                 <div>
-                  <label className="block mb-1">बिना वोटर आईडी (18+) सदस्य *</label>
-                  <input type="number" min={0} value={missingVoterId} onChange={(e) => setMissingVoterId(e.target.value)} className="w-full p-1.5 border rounded bg-white" />
+                  <label className="block mb-1">बिना वोटर आईडी (18+) *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={totalMax}
+                    value={missingVoterId}
+                    onChange={(e) => handleDocCountChange(e.target.value, setMissingVoterId)}
+                    className="w-full p-1.5 border rounded bg-white"
+                  />
                 </div>
               </div>
 
@@ -357,7 +482,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1">PM गरीब कल्याण मुफ्त राशन? *</label>
+                  <label className="block mb-1">PM गरीब कल्याण राशन? *</label>
                   <select value={hasFreeRation} onChange={(e) => setHasFreeRation(e.target.value)} className="w-full p-2 border rounded bg-white">
                     <option value="हां">हां</option>
                     <option value="नहीं">नहीं</option>
@@ -365,26 +490,44 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1">PM किसान सम्मान निधि (₹6000)? *</label>
+                  <label className="block mb-1">PM किसान सम्मान (₹6000)? *</label>
                   <select value={hasPMKisan} onChange={(e) => setHasPMKisan(e.target.value)} className="w-full p-2 border rounded bg-white">
                     <option value="हां">हां</option>
                     <option value="नहीं">नहीं</option>
                     <option value="पात्रता नहीं है">पात्रता नहीं है</option>
                   </select>
                 </div>
+
+                {/* Conditional Death Certificate Logic */}
                 <div>
-                  <label className="block mb-1">मृत्यु प्रमाण-पत्र (यदि लागू हो)? *</label>
-                  <select value={hasDeathCert} onChange={(e) => setHasDeathCert(e.target.value)} className="w-full p-2 border rounded bg-white">
-                    <option value="लागू नहीं">लागू नहीं (मृत्यु नहीं हुई)</option>
-                    <option value="हां">हां (प्राप्त हुआ)</option>
-                    <option value="नहीं">नहीं (प्राप्त नहीं हुआ)</option>
+                  <label className="block mb-1">विगत वर्ष में मृत्यु हुई? *</label>
+                  <select
+                    value={deathOccurred}
+                    onChange={(e) => {
+                      setDeathOccurred(e.target.value);
+                      if (e.target.value === 'नहीं') setHasDeathCert('लागू नहीं');
+                    }}
+                    className="w-full p-2 border rounded bg-white"
+                  >
+                    <option value="नहीं">नहीं</option>
+                    <option value="हां">हां</option>
                   </select>
                 </div>
+
+                {deathOccurred === 'हां' && (
+                  <div>
+                    <label className="block mb-1 font-bold text-rose-800">मृत्यु प्रमाण-पत्र मिला? *</label>
+                    <select value={hasDeathCert} onChange={(e) => setHasDeathCert(e.target.value)} className="w-full p-2 border rounded bg-white border-rose-300">
+                      <option value="हां">हां (प्राप्त हुआ)</option>
+                      <option value="नहीं">नहीं (प्राप्त नहीं हुआ)</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* TAB 3: Women, Child & Education */}
+          {/* TAB 3: Conditional Education & Welfare */}
           {activeTab === 3 && (
             <div className="space-y-4">
               <div className="border-b pb-2">
@@ -393,7 +536,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block mb-1 font-medium">जननी सुरक्षा योजना (JSY) लाभ? *</label>
+                  <label className="block mb-1 font-medium">जननी सुरक्षा योजना (JSY)? *</label>
                   <select value={jsyReceived} onChange={(e) => setJsyReceived(e.target.value)} className="w-full p-2 border rounded bg-white">
                     <option value="हां">हां</option>
                     <option value="नहीं">नहीं</option>
@@ -414,7 +557,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">विधवा पेंशन योजना लाभ (40-79 वर्ष)? *</label>
+                  <label className="block mb-1 font-medium">विधवा पेंशन योजना लाभ? *</label>
                   <select value={widowPension} onChange={(e) => setWidowPension(e.target.value)} className="w-full p-2 border rounded bg-white">
                     <option value="पात्रता नहीं है">पात्रता नहीं है</option>
                     <option value="हां">हां</option>
@@ -444,7 +587,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">आंगनबाड़ी में गर्म पका भोजन (3-5 वर्ष)? *</label>
+                  <label className="block mb-1 font-medium">आंगनबाड़ी गर्म भोजन? *</label>
                   <select value={hotMealAWC} onChange={(e) => setHotMealAWC(e.target.value)} className="w-full p-2 border rounded bg-white">
                     <option value="हां">हां</option>
                     <option value="नहीं">नहीं</option>
@@ -467,6 +610,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                 </div>
               </div>
 
+              {/* Edge Case 3: Conditional Visibility */}
               {childrenGoSchool === 'नहीं' && (
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded">
                   <label className="block mb-1 font-bold text-rose-900">स्कूल नहीं जाने का मुख्य कारण? *</label>
@@ -481,7 +625,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
             </div>
           )}
 
-          {/* TAB 4: Housing, Water & Health */}
+          {/* TAB 4: Conditional Water Source */}
           {activeTab === 4 && (
             <div className="space-y-4">
               <div className="border-b pb-2">
@@ -514,21 +658,43 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
                 </div>
                 <div>
                   <label className="block mb-1">नल जल कनेक्शन है? *</label>
-                  <select value={hasTapWater} onChange={(e) => setHasTapWater(e.target.value)} className="w-full p-2 border rounded bg-white">
+                  <select
+                    value={hasTapWater}
+                    onChange={(e) => {
+                      setHasTapWater(e.target.value);
+                      if (e.target.value === 'हां') setWaterSource('घरेलू नल कनेक्शन');
+                      else setWaterSource('हैंडपंप');
+                    }}
+                    className="w-full p-2 border rounded bg-white"
+                  >
                     <option value="नहीं">नहीं</option>
                     <option value="हां">हां</option>
                   </select>
                 </div>
+
+                {/* Edge Case 3: Auto-Set/Disabled if Tap Water is Available */}
                 <div>
                   <label className="block mb-1">पानी कहाँ से लाते हैं? *</label>
-                  <select value={waterSource} onChange={(e) => setWaterSource(e.target.value)} className="w-full p-2 border rounded bg-white">
-                    <option value="हैंडपंप">हैंडपंप</option>
-                    <option value="कुआँ">कुआँ</option>
-                    <option value="नदी">नदी</option>
-                    <option value="झरना">झरना</option>
-                    <option value="तालाब">तालाब</option>
+                  <select
+                    disabled={hasTapWater === 'हां'}
+                    value={hasTapWater === 'हां' ? 'घरेलू नल कनेक्शन' : waterSource}
+                    onChange={(e) => setWaterSource(e.target.value)}
+                    className={`w-full p-2 border rounded bg-white ${hasTapWater === 'हां' ? 'bg-slate-100 cursor-not-allowed opacity-75' : ''}`}
+                  >
+                    {hasTapWater === 'हां' ? (
+                      <option value="घरेलू नल कनेक्शन">घरेलू नल कनेक्शन</option>
+                    ) : (
+                      <>
+                        <option value="हैंडपंप">हैंडपंप</option>
+                        <option value="कुआँ">कुआँ</option>
+                        <option value="नदी">नदी</option>
+                        <option value="झरना">झरना</option>
+                        <option value="तालाब">तालाब</option>
+                      </>
+                    )}
                   </select>
                 </div>
+
                 <div>
                   <label className="block mb-1">बिजली कनेक्शन है? *</label>
                   <select value={hasElectricity} onChange={(e) => setHasElectricity(e.target.value)} className="w-full p-2 border rounded bg-white">
@@ -575,7 +741,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
           {activeTab > 1 ? (
             <button
               type="button"
-              onClick={() => setActiveTab((p) => p - 1)}
+              onClick={handlePrev}
               className="px-4 py-2 border rounded text-slate-700 bg-white hover:bg-slate-100 font-semibold cursor-pointer"
             >
               ← पिछला
@@ -585,7 +751,7 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
           {activeTab < 4 ? (
             <button
               type="button"
-              onClick={() => setActiveTab((p) => p + 1)}
+              onClick={handleNext}
               className="px-5 py-2 bg-slate-900 text-white rounded font-bold hover:bg-slate-800 cursor-pointer"
             >
               अगला चरण →
@@ -593,10 +759,10 @@ export const HouseholdSurveyModal: React.FC<HouseholdSurveyModalProps> = ({
           ) : (
             <button
               type="button"
-              onClick={validateAndSubmit}
+              onClick={handleSaveForm}
               className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold cursor-pointer shadow-xs flex items-center"
             >
-              परिवार विवरण सुरक्षित करें एवं डैशबोर्ड देखें
+              परिवार विवरण सुरक्षित करें
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </button>
           )}
