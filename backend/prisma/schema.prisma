@@ -1,0 +1,124 @@
+// Prisma Schema for JanSetu DMFT Census Platform
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  surveyor
+  admin
+}
+
+model User {
+  id           String            @id @default(uuid())
+  userCode     String            @unique @map("user_code")
+  fullName     String            @map("full_name")
+  role         Role              @default(surveyor)
+  passwordHash String            @map("password_hash")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  
+  villageProfiles  VillageProfile[]  @relation("UserVillages")
+  householdSurveys HouseholdSurvey[] @relation("UserHouseholds")
+  auditLogs        SurveyAuditLog[]  @relation("UserAuditLogs")
+
+  @@map("users")
+}
+
+model NarayanpurHierarchy {
+  id            Int    @id @default(autoincrement())
+  blockName     String @map("block_name")
+  panchayatName String @map("panchayat_name")
+  villageName   String @map("village_name")
+
+  @@unique([blockName, panchayatName, villageName], name: "uniqueLocationHierarchy")
+  @@map("narayanpur_hierarchy")
+}
+
+model VillageProfile {
+  id              String            @id @default(uuid())
+  block           String
+  panchayat       String
+  villageName     String            @unique @map("village_name")
+  totalPopulation Int               @default(0) @map("total_population")
+  totalHouseholds Int               @default(0) @map("total_households")
+  scCount         Int               @default(0) @map("sc_count")
+  stCount         Int               @default(0) @map("st_count")
+  puccaHouses     Int               @default(0) @map("pucca_houses")
+  semiPuccaHouses Int               @default(0) @map("semi_pucca_houses")
+  kacchaHouses    Int               @default(0) @map("kaccha_houses")
+  mineDistanceKm  String            @map("mine_distance_km")
+  hasPuccaRoad    String            @map("has_pucca_road")
+  monsoonCutOff   String            @map("monsoon_cut_off")
+  schoolType      String            @map("school_type")
+  hospitalType    String            @map("hospital_type")
+  electrification String
+  qualityMetrics  Json              @default("{}") @map("quality_metrics")
+  gapMatrix       Json              @default("{}") @map("gap_matrix")
+  isVerified      Boolean           @default(false) @map("is_verified")
+  verifiedAt      DateTime?         @map("verified_at")
+  createdBy       String?           @map("created_by")
+  creator         User?             @relation("UserVillages", fields: [createdBy], references: [id])
+  version         Int               @default(1) // Optimistic Locking Column
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  households      HouseholdSurvey[]
+
+  @@map("village_profiles")
+}
+
+model HouseholdSurvey {
+  id               String         @id @default(uuid())
+  trackingId       String         @unique @map("tracking_id")
+  villageName      String         @map("village_name")
+  village          VillageProfile @relation(fields: [villageName], references: [villageName], onDelete: Restrict)
+  houseNumber      Int            @map("house_number")
+  headName         String         @map("head_name")
+  mobile           String
+  caste            String
+  isBPL            String         @map("is_bpl")
+  totalMembers     Int            @default(1) @map("total_members")
+  eldersCount      Int            @default(0) @map("elders_count")
+  childrenCount    Int            @default(0) @map("children_count")
+  unemployedCount  Int            @default(0) @map("unemployed_count")
+  incomeSource     String         @map("income_source")
+  missingAadhaar   Int            @default(0) @map("missing_aadhaar")
+  missingCasteCert Int            @default(0) @map("missing_caste_cert")
+  missingAyushman  Int            @default(0) @map("missing_ayushman")
+  missingVoterId   Int            @default(0) @map("missing_voter_id")
+  isMiningWorker   String         @map("is_mining_worker")
+  houseType        String         @map("house_type")
+  hasToilet        String         @map("has_toilet")
+  hasTapWater      String         @map("has_tap_water")
+  surveyAnswers    Json           @default("{}") @map("survey_answers")
+  createdBy        String?        @map("created_by")
+  creator          User?          @relation("UserHouseholds", fields: [createdBy], references: [id])
+  version          Int            @default(1) // Optimistic Locking Column
+  submittedAt      DateTime       @default(now()) @map("submitted_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@unique([villageName, houseNumber], name: "uniqueHousePerVillage")
+  @@index([villageName], name: "idx_households_village")
+  @@index([villageName, isBPL, caste, isMiningWorker], name: "idx_households_multi_filter")
+  @@index([missingAadhaar, missingAyushman], name: "idx_households_missing_docs")
+  @@index([mobile], name: "idx_households_mobile")
+  @@map("household_surveys")
+}
+
+model SurveyAuditLog {
+  id         String   @id @default(uuid())
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  action     String
+  changedBy  String?  @map("changed_by")
+  user       User?    @relation("UserAuditLogs", fields: [changedBy], references: [id])
+  changes    Json
+  timestamp  DateTime @default(now())
+
+  @@map("survey_audit_logs")
+}
