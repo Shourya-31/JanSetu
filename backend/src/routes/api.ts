@@ -1,8 +1,9 @@
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { login } from '../controllers/authController';
 import { getAllVillageProfiles, getVillageProfile, saveVillageProfile, patchVillageProfile, deleteVillageProfile } from '../controllers/villageController';
-import { getHouseholdSurveys, saveHouseholdSurvey, patchHouseholdSurvey, deleteHouseholdSurvey } from '../controllers/householdController';
+import { getHouseholdSurveys, saveHouseholdSurvey, patchHouseholdSurvey, deleteHouseholdSurvey, verifyHouseholdRecord, updateRegistryStatusRecord, createCorrectionTicketRecord } from '../controllers/householdController';
 import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminController';
+import { exportHouseholdsCsv } from '../controllers/exportController';
 import { getHierarchy } from '../controllers/hierarchyController';
 
 export async function apiRoutes(fastify: FastifyInstance, options: FastifyPluginOptions) {
@@ -28,10 +29,14 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   fastify.post('/api/households', saveHouseholdSurvey);
   fastify.patch('/api/households/:id', patchHouseholdSurvey);
   fastify.delete('/api/households/:id', deleteHouseholdSurvey);
+  fastify.patch('/api/households/:id/verify', verifyHouseholdRecord);
+  fastify.patch('/api/households/:id/registry', updateRegistryStatusRecord);
+  fastify.post('/api/households/:id/ticket', createCorrectionTicketRecord);
 
   // 4. Admin Dynamic Query & Analytics Routes
   fastify.post('/api/admin/query', queryAdminHouseholds);
   fastify.get('/api/admin/analytics', getAnalyticsSummary);
+  fastify.get('/api/admin/export', exportHouseholdsCsv);
 }
 
 export default apiRoutes;

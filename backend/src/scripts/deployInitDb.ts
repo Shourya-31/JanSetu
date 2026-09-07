@@ -1,4 +1,5 @@
-import { Client } from '../../node_modules/@types/pg';
+import { Client } from 'pg';
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -9,6 +10,14 @@ async function runProductionDbSetup() {
   console.log('==================================================================');
   console.log('⚡ STARTING PRODUCTION DATABASE INITIALIZATION & TUNING (TS)');
   console.log('==================================================================\n');
+
+  try {
+    console.log('📦 Syncing database tables with Prisma schema...');
+    execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
+    console.log('✅ Database tables synced successfully.\n');
+  } catch (syncErr: any) {
+    console.warn('⚠️ Prisma db push warning:', syncErr.message);
+  }
 
   const client = new Client({ connectionString: dbUrl });
   try {
@@ -23,19 +32,30 @@ async function runProductionDbSetup() {
     await client.query("SELECT pg_reload_conf();");
     console.log('✅ Hardware & WAL tuning applied successfully.');
 
+    console.log('⚡ Ensuring pgcrypto Extension & High-Performance GIN/B-Tree Indexes...');
+    await client.query("CREATE EXTENSION IF NOT EXISTS pgcrypto;");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_survey_answers_gin ON household_surveys USING GIN (survey_answers jsonb_path_ops);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_multi_filter ON household_surveys (village_name, is_bpl, caste, is_mining_worker);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_missing_docs ON household_surveys (missing_aadhaar, missing_ayushman, missing_caste_cert, missing_voter_id);");
+    console.log('✅ GIN & Composite B-Tree indexes created.');
+
     console.log('📊 Creating Materialized View (mv_district_cluster_analytics)...');
     await client.query(`
       DROP MATERIALIZED VIEW IF EXISTS mv_district_cluster_analytics CASCADE;
       CREATE MATERIALIZED VIEW mv_district_cluster_analytics AS
       SELECT 
         village_name AS "villageName",
-        COUNT(*) AS "totalHouseholds",
-        SUM(CASE WHEN is_bpl = 'Yes' THEN 1 ELSE 0 END) AS "bplCount",
-        SUM(CASE WHEN caste = 'Scheduled Tribe (ST)' THEN 1 ELSE 0 END) AS "stCount",
-        SUM(CASE WHEN caste = 'Scheduled Caste (SC)' THEN 1 ELSE 0 END) AS "scCount",
-        SUM(CASE WHEN missing_aadhaar > 0 OR missing_ayushman > 0 THEN 1 ELSE 0 END) AS "missingDocsCount",
-        SUM(CASE WHEN is_mining_worker = 'Yes' THEN 1 ELSE 0 END) AS "miningAffectedCount",
-        SUM(CASE WHEN has_tap_water = 'No' THEN 1 ELSE 0 END) AS "noTapWaterCount"
+        COUNT(*)::int AS "totalHouseholds",
+        SUM(total_members)::int AS "totalPopulation",
+        SUM(CASE WHEN is_bpl = 'Yes' THEN 1 ELSE 0 END)::int AS "bplCount",
+        SUM(CASE WHEN caste = 'Scheduled Tribe (ST)' THEN 1 ELSE 0 END)::int AS "stCount",
+        SUM(CASE WHEN caste = 'Scheduled Caste (SC)' THEN 1 ELSE 0 END)::int AS "scCount",
+        SUM(missing_aadhaar)::int AS "missingAadhaarTotal",
+        SUM(missing_ayushman)::int AS "missingAyushmanTotal",
+        SUM(unemployed_count)::int AS "unemployedYouthTotal",
+        SUM(CASE WHEN missing_aadhaar > 0 OR missing_ayushman > 0 THEN 1 ELSE 0 END)::int AS "missingDocsCount",
+        SUM(CASE WHEN is_mining_worker = 'Yes' THEN 1 ELSE 0 END)::int AS "miningAffectedCount",
+        SUM(CASE WHEN has_tap_water = 'No' THEN 1 ELSE 0 END)::int AS "noTapWaterCount"
       FROM household_surveys
       GROUP BY village_name;
 

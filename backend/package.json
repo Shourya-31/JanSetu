@@ -11,12 +11,7 @@
     "start:cluster": "pm2 start ecosystem.config.js --env production",
     "dev": "tsx watch src/server.ts",
     "db:init": "tsx src/scripts/deployInitDb.ts",
-    "db:backup": "tsx src/scripts/backupDb.ts",
-    "test:load": "tsx src/scripts/loadTestFullWebsite.ts",
-    "test:admin-workflow": "tsx src/scripts/simulateAdminFullWorkflow.ts",
-    "test:scale": "tsx src/scripts/benchmark50GBScale.ts",
-    "test:statewide": "tsx src/scripts/simulateStatewideFullLoad.ts",
-    "test:50gb": "tsx src/scripts/generate50GBDataset.ts"
+    "db:backup": "tsx src/scripts/backupDb.ts"
   },
   "keywords": [
     "fastify",
