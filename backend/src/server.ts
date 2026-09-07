@@ -14,7 +14,9 @@ dotenv.config();
 const server = Fastify({
   logger: process.env.NODE_ENV === 'production' ? { level: 'error' } : true,
   connectionTimeout: Number(process.env.CONNECTION_TIMEOUT || 10000),
-  keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT || 5000)
+  keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT || 5000),
+  bodyLimit: 10 * 1024 * 1024, // 10 MB payload limit
+  pluginTimeout: 30000
 });
 
 async function start() {

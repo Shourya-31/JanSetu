@@ -11,6 +11,9 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   fastify.addHook('onSend', async (req, reply) => {
     reply.header('Keep-Alive', 'timeout=5, max=1000');
     reply.header('X-Content-Type-Options', 'nosniff');
+    if (req.method === 'GET') {
+      reply.header('Cache-Control', 'private, no-cache, no-transform');
+    }
   });
 
   // 1. Auth & Location Hierarchy Routes

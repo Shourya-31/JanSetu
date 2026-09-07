@@ -91,18 +91,28 @@ export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyRe
   if (filter.hasUnemployed) {
     where.unemployedCount = { gt: 0 };
   }
-  if (filter.searchQuery) {
-    const q = filter.searchQuery.toLowerCase();
-    where.AND = [
-      {
-        OR: [
-          { headName: { contains: q, mode: 'insensitive' } },
-          { mobile: { contains: q } },
-          { trackingId: { contains: q, mode: 'insensitive' } },
-          { villageName: { contains: q, mode: 'insensitive' } }
-        ]
+  if (filter.searchQuery && filter.searchQuery.trim().length > 0) {
+    const q = filter.searchQuery.trim();
+    const isNumeric = /^\d+$/.test(q);
+    if (isNumeric) {
+      const numVal = Number(q);
+      const orConditions: any[] = [{ mobile: { contains: q } }, { trackingId: { contains: q, mode: 'insensitive' } }];
+      if (!isNaN(numVal) && numVal < 2147483647) {
+        orConditions.push({ houseNumber: numVal });
       }
-    ];
+      where.AND = [{ OR: orConditions }];
+    } else {
+      where.AND = [
+        {
+          OR: [
+            { headName: { contains: q, mode: 'insensitive' } },
+            { trackingId: { contains: q, mode: 'insensitive' } },
+            { villageName: { contains: q, mode: 'insensitive' } },
+            { mobile: { contains: q } }
+          ]
+        }
+      ];
+    }
   }
 
   try {
