@@ -47,15 +47,15 @@ async function runProductionDbSetup() {
         village_name AS "villageName",
         COUNT(*)::int AS "totalHouseholds",
         SUM(total_members)::int AS "totalPopulation",
-        SUM(CASE WHEN is_bpl = 'Yes' THEN 1 ELSE 0 END)::int AS "bplCount",
+        SUM(CASE WHEN is_bpl = 'Yes' OR is_bpl = 'हां' THEN 1 ELSE 0 END)::int AS "bplCount",
         SUM(CASE WHEN caste = 'Scheduled Tribe (ST)' THEN 1 ELSE 0 END)::int AS "stCount",
         SUM(CASE WHEN caste = 'Scheduled Caste (SC)' THEN 1 ELSE 0 END)::int AS "scCount",
         SUM(missing_aadhaar)::int AS "missingAadhaarTotal",
         SUM(missing_ayushman)::int AS "missingAyushmanTotal",
         SUM(unemployed_count)::int AS "unemployedYouthTotal",
         SUM(CASE WHEN missing_aadhaar > 0 OR missing_ayushman > 0 THEN 1 ELSE 0 END)::int AS "missingDocsCount",
-        SUM(CASE WHEN is_mining_worker = 'Yes' THEN 1 ELSE 0 END)::int AS "miningAffectedCount",
-        SUM(CASE WHEN has_tap_water = 'No' THEN 1 ELSE 0 END)::int AS "noTapWaterCount"
+        SUM(CASE WHEN is_mining_worker = 'Yes' OR is_mining_worker = 'हां' THEN 1 ELSE 0 END)::int AS "miningAffectedCount",
+        SUM(CASE WHEN has_tap_water = 'No' OR has_tap_water = 'नहीं' THEN 1 ELSE 0 END)::int AS "noTapWaterCount"
       FROM household_surveys
       GROUP BY village_name;
 

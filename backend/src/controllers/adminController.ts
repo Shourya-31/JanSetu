@@ -30,19 +30,49 @@ export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyRe
     where.villageName = filter.village;
   }
   if (filter.isBPL) {
-    where.isBPL = filter.isBPL;
+    if (filter.isBPL === 'Yes' || filter.isBPL === 'हां') {
+      where.isBPL = { in: ['Yes', 'हां'] };
+    } else if (filter.isBPL === 'No' || filter.isBPL === 'नहीं') {
+      where.isBPL = { in: ['No', 'नहीं'] };
+    } else {
+      where.isBPL = filter.isBPL;
+    }
   }
   if (filter.caste) {
     where.caste = filter.caste;
   }
   if (filter.isMiningWorker) {
-    where.isMiningWorker = filter.isMiningWorker;
+    if (filter.isMiningWorker === 'Yes' || filter.isMiningWorker === 'हां') {
+      where.isMiningWorker = { in: ['Yes', 'हां'] };
+    } else if (filter.isMiningWorker === 'No' || filter.isMiningWorker === 'नहीं') {
+      where.isMiningWorker = { in: ['No', 'नहीं'] };
+    } else {
+      where.isMiningWorker = filter.isMiningWorker;
+    }
   }
   if (filter.auditStatus && filter.auditStatus !== 'सभी' && filter.auditStatus !== 'All') {
-    where.auditStatus = filter.auditStatus;
+    if (filter.auditStatus === 'Verified' || filter.auditStatus === 'सत्यापित') {
+      where.auditStatus = { in: ['Verified', 'सत्यापित'] };
+    } else if (filter.auditStatus === 'Pending' || filter.auditStatus === 'लंबित') {
+      where.auditStatus = { in: ['Pending', 'लंबित'] };
+    } else if (filter.auditStatus === 'Flagged' || filter.auditStatus === 'फ्लैग') {
+      where.auditStatus = { in: ['Flagged', 'फ्लैग'] };
+    } else {
+      where.auditStatus = filter.auditStatus;
+    }
   }
   if (filter.registryStatus && filter.registryStatus !== 'सभी' && filter.registryStatus !== 'All') {
-    where.registryStatus = filter.registryStatus;
+    if (filter.registryStatus === 'Verified' || filter.registryStatus === 'सत्यापित') {
+      where.registryStatus = { in: ['Verified', 'सत्यापित'] };
+    } else if (filter.registryStatus === 'Pending' || filter.registryStatus === 'लंबित') {
+      where.registryStatus = { in: ['Pending', 'लंबित'] };
+    } else if (filter.registryStatus === 'Needs Correction' || filter.registryStatus === 'सुधार आवश्यक') {
+      where.registryStatus = { in: ['Needs Correction', 'सुधार आवश्यक'] };
+    } else if (filter.registryStatus === 'Re-verification Needed' || filter.registryStatus === 'पुनः सत्यापन आवश्यक') {
+      where.registryStatus = { in: ['Re-verification Needed', 'पुनः सत्यापन आवश्यक'] };
+    } else {
+      where.registryStatus = filter.registryStatus;
+    }
   }
   if (filter.hasTicket) {
     where.correctionTicketId = { not: null };

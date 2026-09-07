@@ -13,9 +13,25 @@ export async function exportHouseholdsCsv(req: FastifyRequest, reply: FastifyRep
 
   const where: any = {};
   if (query.village) where.villageName = query.village;
-  if (query.isBPL) where.isBPL = query.isBPL;
+  if (query.isBPL) {
+    if (query.isBPL === 'Yes' || query.isBPL === 'हां') {
+      where.isBPL = { in: ['Yes', 'हां'] };
+    } else if (query.isBPL === 'No' || query.isBPL === 'नहीं') {
+      where.isBPL = { in: ['No', 'नहीं'] };
+    } else {
+      where.isBPL = query.isBPL;
+    }
+  }
   if (query.caste) where.caste = query.caste;
-  if (query.isMiningWorker) where.isMiningWorker = query.isMiningWorker;
+  if (query.isMiningWorker) {
+    if (query.isMiningWorker === 'Yes' || query.isMiningWorker === 'हां') {
+      where.isMiningWorker = { in: ['Yes', 'हां'] };
+    } else if (query.isMiningWorker === 'No' || query.isMiningWorker === 'नहीं') {
+      where.isMiningWorker = { in: ['No', 'नहीं'] };
+    } else {
+      where.isMiningWorker = query.isMiningWorker;
+    }
+  }
   if (query.hasMissingDocs === 'true') {
     where.OR = [
       { missingAadhaar: { gt: 0 } },
@@ -62,9 +78,9 @@ export async function exportHouseholdsCsv(req: FastifyRequest, reply: FastifyRep
     reply.header('Content-Type', 'text/csv; charset=utf-8');
     reply.header('Content-Disposition', `attachment; filename="jansetu_export_${Date.now()}.csv"`);
 
-    let csvContent = '\uFEFF' + header;
+    const rows: string[] = ['\uFEFF' + header.trim()];
     for (const h of households) {
-      const row = [
+      rows.push([
         `"${h.trackingId}"`,
         `"${h.villageName}"`,
         h.houseNumber,
@@ -86,11 +102,10 @@ export async function exportHouseholdsCsv(req: FastifyRequest, reply: FastifyRep
         `"${h.hasToilet}"`,
         `"${h.hasTapWater}"`,
         `"${h.submittedAt.toISOString()}"`
-      ].join(',');
-      csvContent += row + '\n';
+      ].join(','));
     }
 
-    return reply.send(csvContent);
+    return reply.send(rows.join('\n'));
   } catch (err: any) {
     return reply.status(500).send({ error: 'Export failed: ' + err.message });
   }
