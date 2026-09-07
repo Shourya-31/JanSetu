@@ -32,12 +32,17 @@ async function runProductionDbSetup() {
     await client.query("SELECT pg_reload_conf();");
     console.log('✅ Hardware & WAL tuning applied successfully.');
 
-    console.log('⚡ Ensuring pgcrypto Extension & High-Performance GIN/B-Tree Indexes...');
+    console.log('⚡ Ensuring pgcrypto & pg_trgm Extensions & High-Performance GIN Trigram/B-Tree Indexes...');
     await client.query("CREATE EXTENSION IF NOT EXISTS pgcrypto;");
+    await client.query("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
     await client.query("CREATE INDEX IF NOT EXISTS idx_households_survey_answers_gin ON household_surveys USING GIN (survey_answers jsonb_path_ops);");
     await client.query("CREATE INDEX IF NOT EXISTS idx_households_multi_filter ON household_surveys (village_name, is_bpl, caste, is_mining_worker);");
     await client.query("CREATE INDEX IF NOT EXISTS idx_households_missing_docs ON household_surveys (missing_aadhaar, missing_ayushman, missing_caste_cert, missing_voter_id);");
-    console.log('✅ GIN & Composite B-Tree indexes created.');
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_head_name_trgm ON household_surveys USING GIN (head_name gin_trgm_ops);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_mobile_trgm ON household_surveys USING GIN (mobile gin_trgm_ops);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_tracking_id_trgm ON household_surveys USING GIN (tracking_id gin_trgm_ops);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_village_name_trgm ON household_surveys USING GIN (village_name gin_trgm_ops);");
+    console.log('✅ GIN Trigram & Composite B-Tree indexes created.');
 
     console.log('📊 Creating Materialized View (mv_district_cluster_analytics)...');
     await client.query(`
