@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { SurveyorDashboard } from './components/SurveyorDashboard';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import type { UserRole } from './types/auth';
 
 export const App: React.FC = () => {
@@ -27,13 +28,16 @@ export const App: React.FC = () => {
     return <SurveyorDashboard surveyorId={currentUser.id} onLogout={handleLogout} />;
   }
 
+  // 3. Admin / Block Auditor Flow
+  if (currentUser.role === 'admin') {
+    return <AdminDashboard adminId={currentUser.id} onLogout={handleLogout} />;
+  }
+
   // Baaki roles ke liye simple placeholder (jab tak unka number nahi aata)
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-hindi flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg border shadow-xs text-center space-y-4 max-w-md">
-        <h2 className="text-lg font-bold text-slate-800">
-          {currentUser.role === 'villager' ? 'ग्रामीण पोर्टल' : 'व्यवस्थापक पोर्टल'}
-        </h2>
+        <h2 className="text-lg font-bold text-slate-800">ग्रामीण पोर्टल</h2>
         <p className="text-xs text-slate-500">
           (यह मॉड्यूल सर्वेक्षक कार्य पूर्ण होने के बाद सक्रिय किया जाएगा)
         </p>
