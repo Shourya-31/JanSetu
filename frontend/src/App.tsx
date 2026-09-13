@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { LoginPage } from './components/LoginPage';
-import { SurveyorDashboard } from './components/SurveyorDashboard';
+import { LoginPage } from './components/surveyor/LoginPage';
+import { SurveyorDashboard } from './components/surveyor/SurveyorDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import type { UserRole } from './types/auth';
 
