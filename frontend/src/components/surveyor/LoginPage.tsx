@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { ROLES } from '../types/auth';
-import type { UserRole } from '../types/auth';
-import { User, ClipboardList, BarChart3, ArrowRight, Lock, Phone, UserPlus, Info } from 'lucide-react';
+import { ROLES } from '../../types/auth';
+import type { UserRole } from '../../types/auth';
+import { ClipboardList, BarChart3, ArrowRight, Lock, Info } from 'lucide-react';
 
 interface LoginPageProps {
-  onLoginSuccess: (role: UserRole, identifier: string, isNewRegistration?: boolean) => void;
+  onLoginSuccess: (role: UserRole, identifier: string) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('villager');
-  const [isNewRegistration, setIsNewRegistration] = useState<boolean>(false);
+  // Villager option hatane ke baad default role 'surveyor' par set hai
+  const [selectedRole, setSelectedRole] = useState<UserRole>('surveyor');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
 
+  // Villager ke alawa baki roles filter kar rahe hain (Surveyor aur Admin)
+  const availableRoles = ROLES.filter((role) => role.id !== 'villager');
+
   const handleRoleChange = (role: UserRole) => {
     setSelectedRole(role);
-    setIsNewRegistration(false);
     setIdentifier('');
     setPassword('');
   };
@@ -26,17 +28,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       alert('कृपया आवश्यक विवरण दर्ज करें');
       return;
     }
-    onLoginSuccess(selectedRole, identifier, isNewRegistration);
+    onLoginSuccess(selectedRole, identifier);
   };
 
   const getRoleIcon = (roleId: UserRole) => {
     switch (roleId) {
-      case 'villager':
-        return <User className="w-5 h-5 text-blue-600" />;
       case 'surveyor':
         return <ClipboardList className="w-5 h-5 text-emerald-600" />;
       case 'admin':
         return <BarChart3 className="w-5 h-5 text-amber-600" />;
+      default:
+        return null;
     }
   };
 
@@ -64,36 +66,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
       </header>
 
-      {/* Main Login / Registration Form */}
+      {/* Main Login Form */}
       <main className="max-w-4xl mx-auto px-4 py-8 w-full">
         <div className="bg-white border border-slate-200 rounded-xl shadow-xs p-6 sm:p-8">
           <div className="text-center max-w-md mx-auto mb-6">
             <h2 className="text-2xl font-bold text-slate-900">
-              {selectedRole === 'villager' && isNewRegistration
-                ? 'नया परिवार सर्वेक्षण पंजीकरण'
-                : 'पोर्टल में प्रवेश करें'}
+              पोर्टल में प्रवेश करें
             </h2>
             <p className="text-sm text-slate-600 mt-1">
-              {selectedRole === 'villager' && isNewRegistration
-                ? 'अपना मोबाइल नंबर दर्ज कर परिवार का नया विवरण जोड़ें'
-                : 'अपनी निर्धारित भूमिका चुनें और संबंधित विवरण दर्ज करें'}
+              अपनी निर्धारित भूमिका चुनें और संबंधित विवरण दर्ज करें
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 1. Role Selection Grid */}
+            {/* 1. Role Selection Grid (Surveyor & Admin Only) */}
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-2">
                 भूमिका का चयन करें (Select Role)
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {ROLES.map((role) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableRoles.map((role) => {
                   const isSelected = selectedRole === role.id;
                   return (
                     <button
                       type="button"
                       key={role.id}
-                      onClick={() => handleRoleChange(role.id)}
+                      onClick={() => handleRoleChange(role.id as UserRole)}
                       className={`text-left p-4 rounded-lg border-2 transition-all flex flex-col justify-between cursor-pointer ${
                         isSelected
                           ? 'border-blue-700 bg-blue-50/40 shadow-xs'
@@ -103,7 +101,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className="p-2 bg-white rounded border border-slate-200 shadow-2xs">
-                            {getRoleIcon(role.id)}
+                            {getRoleIcon(role.id as UserRole)}
                           </div>
                           <span
                             className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
@@ -127,61 +125,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            {/* 2. Villager Toggle (Login vs New Registration) */}
-            {selectedRole === 'villager' && (
-              <div className="flex items-center justify-center space-x-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200 max-w-sm mx-auto">
-                <button
-                  type="button"
-                  onClick={() => setIsNewRegistration(false)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
-                    !isNewRegistration
-                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  लॉग इन (पंजीकृत परिवार)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsNewRegistration(true)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center space-x-1 cursor-pointer ${
-                    isNewRegistration
-                      ? 'bg-blue-700 text-white shadow-2xs font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <UserPlus className="w-3.5 h-3.5 mr-1" />
-                  नया परिवार पंजीकरण
-                </button>
-              </div>
-            )}
-
-            {/* 3. Role-specific Inputs */}
+            {/* 2. Role-specific Inputs */}
             <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-4">
-              {selectedRole === 'villager' && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {isNewRegistration
-                      ? 'मुखिया का मोबाइल नंबर (पंजीकरण हेतु)'
-                      : 'पंजीकृत मोबाइल नंबर'}
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="tel"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="10 अंकों का मोबाइल नंबर दर्ज करें"
-                      maxLength={10}
-                      className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    * OTP सत्यापन के बाद सीधे परिवार सर्वेक्षण प्रपत्र खुलेगा
-                  </p>
-                </div>
-              )}
-
               {selectedRole === 'surveyor' && (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2 text-xs text-slate-600 bg-white p-2.5 rounded border border-slate-200">
@@ -262,9 +207,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 type="submit"
                 className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-medium text-sm rounded-md shadow-xs transition-colors cursor-pointer"
               >
-                {selectedRole === 'villager' && isNewRegistration
-                  ? 'पंजीकरण करें एवं प्रपत्र भरें'
-                  : 'सत्यापित करें एवं आगे बढ़ें'}
+                सत्यापित करें एवं आगे बढ़ें
                 <ArrowRight className="w-4 h-4 ml-2" />
               </button>
             </div>
