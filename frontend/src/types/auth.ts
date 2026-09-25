@@ -9,12 +9,6 @@ export interface RoleConfig {
 
 export const ROLES: RoleConfig[] = [
   {
-    id: 'villager',
-    title: 'ग्रामीण / परिवार का मुखिया',
-    description: 'परिवार सर्वेक्षण प्रपत्र और पारिवारिक योजनाओं का विवरण दर्ज करें',
-    badge: 'परिवार पंजीकरण'
-  },
-  {
     id: 'surveyor',
     title: 'सर्वेक्षक / ग्राम पंचायत नोडल',
     description: 'ग्राम परिचय, बुनियादी ढांचा और अंतराल मैट्रिक्स का सत्यापन करें',

@@ -1,15 +1,64 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
+import { invalidateAnalyticsCache } from './adminController';
+
+let cachedVillages: any = null;
+let villageExpiry = 0;
+
+export function invalidateVillageCache() {
+  cachedVillages = null;
+  villageExpiry = 0;
+}
+
+function formatVillageRecord(v: any) {
+  const qm = (v.qualityMetrics as Record<string, any>) || {};
+  const surveyedHouseholds = (v as any).surveyedHouseholds !== undefined 
+    ? (v as any).surveyedHouseholds 
+    : (v.totalHouseholds || 0);
+  const completionPercent = v.totalHouseholds > 0 
+    ? Math.min(100, Math.round((surveyedHouseholds / v.totalHouseholds) * 100))
+    : 100;
+
+  return {
+    ...v,
+    hasAnganwadi: qm.hasAnganwadi || (v as any).hasAnganwadi || 'Yes',
+    odfStatus: qm.odfStatus || (v as any).odfStatus || 'ODF Certified',
+    surveyedHouseholds,
+    completionPercent,
+    updatedAt: v.updatedAt ? v.updatedAt.toISOString() : new Date().toISOString()
+  };
+}
 
 export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyReply) {
+  const now = Date.now();
+  if (cachedVillages && now < villageExpiry) {
+    return reply.send(cachedVillages);
+  }
+
   try {
-    const villages = await prisma.villageProfile.findMany({
-      orderBy: { villageName: 'asc' }
+    const [villages, householdCounts] = await Promise.all([
+      prisma.villageProfile.findMany({
+        orderBy: { villageName: 'asc' }
+      }),
+      prisma.householdSurvey.groupBy({
+        by: ['villageName'],
+        _count: { id: true }
+      })
+    ]);
+
+    const countMap: Record<string, number> = {};
+    householdCounts.forEach((c) => {
+      countMap[c.villageName] = c._count.id;
     });
+
     const result: Record<string, any> = {};
     villages.forEach((v) => {
-      result[v.villageName] = v;
+      const surveyedCount = countMap[v.villageName] !== undefined ? countMap[v.villageName] : v.totalHouseholds;
+      result[v.villageName] = formatVillageRecord({ ...v, surveyedHouseholds: surveyedCount });
     });
+
+    cachedVillages = result;
+    villageExpiry = now + 60000;
     return reply.send(result);
   } catch (err: any) {
     return reply.status(500).send({ error: err.message });
@@ -30,7 +79,7 @@ export async function getVillageProfile(req: FastifyRequest, reply: FastifyReply
     if (!village) {
       return reply.status(404).send({ error: 'Village profile not found' });
     }
-    return reply.send(village);
+    return reply.send(formatVillageRecord(village));
   } catch (err: any) {
     return reply.status(500).send({ error: err.message });
   }
@@ -55,6 +104,8 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
     schoolType,
     hospitalType,
     electrification,
+    hasAnganwadi,
+    odfStatus,
     quality,
     gapMatrix
   } = body;
@@ -62,6 +113,12 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
   if (!villageName || !block || !panchayat) {
     return reply.status(400).send({ error: 'villageName, block, and panchayat are required' });
   }
+
+  const mergedQualityMetrics = {
+    ...(quality || {}),
+    hasAnganwadi: hasAnganwadi || (quality && quality.hasAnganwadi) || 'Yes',
+    odfStatus: odfStatus || (quality && quality.odfStatus) || 'ODF Certified'
+  };
 
   try {
     const upserted = await prisma.villageProfile.upsert({
@@ -82,7 +139,7 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         schoolType: schoolType || 'Primary School',
         hospitalType: hospitalType || 'Sub-Health Centre (SHC)',
         electrification: electrification || 'Fully Electrified',
-        qualityMetrics: quality || {},
+        qualityMetrics: mergedQualityMetrics,
         gapMatrix: gapMatrix || {},
         version: { increment: 1 }
       },
@@ -103,12 +160,14 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         schoolType: schoolType || 'Primary School',
         hospitalType: hospitalType || 'Sub-Health Centre (SHC)',
         electrification: electrification || 'Fully Electrified',
-        qualityMetrics: quality || {},
+        qualityMetrics: mergedQualityMetrics,
         gapMatrix: gapMatrix || {}
       }
     });
 
-    return reply.status(200).send({ success: true, data: upserted });
+    invalidateVillageCache();
+    invalidateAnalyticsCache();
+    return reply.status(200).send({ success: true, data: formatVillageRecord(upserted) });
   } catch (err: any) {
     return reply.status(500).send({ error: err.message });
   }
@@ -140,8 +199,10 @@ export async function patchVillageProfile(req: FastifyRequest, reply: FastifyRep
       return reply.status(409).send({ error: 'Conflict: Village profile was updated by another user. Reload and try again.' });
     }
 
+    invalidateVillageCache();
+    invalidateAnalyticsCache();
     const result = await prisma.villageProfile.findUnique({ where: { id } });
-    return reply.send({ success: true, data: result });
+    return reply.send({ success: true, data: result ? formatVillageRecord(result) : null });
   } catch (err: any) {
     return reply.status(500).send({ error: err.message });
   }
@@ -154,8 +215,11 @@ export async function deleteVillageProfile(req: FastifyRequest, reply: FastifyRe
     const deleted = await prisma.villageProfile.delete({
       where: { id }
     });
-    return reply.send({ success: true, data: deleted });
+    invalidateVillageCache();
+    invalidateAnalyticsCache();
+    return reply.send({ success: true, data: formatVillageRecord(deleted) });
   } catch (err: any) {
     return reply.status(500).send({ error: err.message });
   }
 }
+

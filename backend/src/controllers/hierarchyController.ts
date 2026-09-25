@@ -15,13 +15,23 @@ const DEFAULT_HIERARCHY = [
   }
 ];
 
+let cachedHierarchy: any = null;
+let hierarchyExpiry = 0;
+
 export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
+  const now = Date.now();
+  if (cachedHierarchy && now < hierarchyExpiry) {
+    return reply.send(cachedHierarchy);
+  }
+
   try {
     const records = await prisma.narayanpurHierarchy.findMany({
       orderBy: [{ blockName: 'asc' }, { panchayatName: 'asc' }, { villageName: 'asc' }]
     });
 
     if (records.length === 0) {
+      cachedHierarchy = DEFAULT_HIERARCHY;
+      hierarchyExpiry = now + 300000;
       return reply.send(DEFAULT_HIERARCHY);
     }
 
@@ -47,6 +57,8 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
       }))
     }));
 
+    cachedHierarchy = hierarchy;
+    hierarchyExpiry = now + 300000;
     return reply.send(hierarchy);
   } catch (err) {
     return reply.send(DEFAULT_HIERARCHY);

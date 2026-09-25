@@ -14,7 +14,9 @@ dotenv.config();
 const server = Fastify({
   logger: process.env.NODE_ENV === 'production' ? { level: 'error' } : true,
   connectionTimeout: Number(process.env.CONNECTION_TIMEOUT || 10000),
-  keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT || 5000)
+  keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT || 5000),
+  bodyLimit: 10 * 1024 * 1024, // 10 MB payload limit
+  pluginTimeout: 30000
 });
 
 async function start() {
@@ -122,6 +124,17 @@ async function start() {
 
     await server.listen({ port: Number(PORT), host: HOST });
     console.log(`🚀 JanSetu Fastify Backend Engine (TypeScript) running on http://${HOST}:${PORT}`);
+
+    // 11. Automated Background Materialized View Refresh (Every 5 minutes)
+    const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        await prisma.$executeRawUnsafe('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_district_cluster_analytics;');
+        server.log.info('🔄 Background refresh of mv_district_cluster_analytics completed.');
+      } catch (err: any) {
+        server.log.warn('⚠️ Materialized view background refresh notice: ' + err.message);
+      }
+    }, REFRESH_INTERVAL_MS);
 
   } catch (err) {
     server.log.error(err);
