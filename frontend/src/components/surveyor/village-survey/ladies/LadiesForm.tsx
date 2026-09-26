@@ -198,7 +198,7 @@ export default function LadiesForm({
         </div>
       </div>
 
-      {/* Q6 */}
+      {/*
       <div>
         <p className="mb-3 text-sm font-semibold text-gray-800">
           Q6. ग्राम में बैंकिंग सुविधा
@@ -239,7 +239,7 @@ export default function LadiesForm({
             </label>
           ))}
         </div>
-      </div>
+      </div>*/}
 
       {/* Q7 */}
       <div>

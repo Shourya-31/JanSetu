@@ -10,6 +10,8 @@ export interface GeneralInformationFormData {
   mobileNetwork: string;
   electricity: string;
   road: string;
+  roadconnectivity: string;
+  roadReasons: string[];
   tapWater: string;
   ponds: string;
   puccaHouses: string;
@@ -194,6 +196,10 @@ export const GeneralInformation: React.FC<GeneralInformationProps> = ({
                     <input className={inputClass} value={formData.totalAgriculturalLand || ''} onChange={(e) => setValue('totalAgriculturalLand', e.target.value)} placeholder="एकड़ / हेक्टेयर" />
                   </Field>
 
+                  <Field label="मुख्य सड़क से ग्राम तक पहुँचने के लिए 12 माह (बारहों महीने) कितने मार्ग उपलब्ध हैं? संख्या">
+                    <input type="number" min="0" className={inputClass} value={formData.roadconnectivity || ''} onChange={(e) => setValue('roadconnectivity', e.target.value)} />
+                  </Field>
+
                   <Field label="गाँव की ODF स्थिति">
                     <select className={inputClass} value={formData.odf || ''} onChange={(e) => setValue('odf', e.target.value)}>
                       <option value="">चुनें</option><option>ODF</option><option>ODF+</option><option>ODF++</option><option>Not ODF</option>
@@ -297,7 +303,40 @@ export const GeneralInformation: React.FC<GeneralInformationProps> = ({
                   <Field label="कुल सिंचित भूमि">
                     <input className={inputClass} value={formData.irrigatedLand || ''} onChange={(e) => setValue('irrigatedLand', e.target.value)} placeholder="एकड़ / हेक्टेयर" />
                   </Field>
-                </div>
+
+                  <Field label="यदि नहीं, तो मुख्य कारण क्या है?">
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                      {[
+                            'सड़क की खराब स्थिति',
+                            'बारिश के दौरान सड़क पर पानी भरना',
+                            'पुलिया/पुल का अभाव',
+                            'कच्ची सड़क',
+                            'मार्ग अवरुद्ध होना',
+                        ].map((option) => (
+                          <label
+                            key={option}
+                            className="flex items-center gap-2 text-sm text-slate-800 cursor-pointer"
+                          >
+                            <input
+                             type="checkbox"
+                             checked={formData.roadReasons?.includes(option) || false}
+                             onChange={() => {
+                              const current = formData.roadReasons || [];
+
+                              const updated = current.includes(option)
+                               ? current.filter((item) => item !== option)
+                               : [...current, option];
+
+                              setValue('roadReasons', updated);
+                              }}
+                             className="w-4 h-4 cursor-pointer"
+                            />
+                            <span>{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </Field>
+                    </div>
 
                 <div className="flex justify-end">
                   <button type="button" onClick={onSave} className="px-4 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-2 cursor-pointer hover:bg-slate-800">

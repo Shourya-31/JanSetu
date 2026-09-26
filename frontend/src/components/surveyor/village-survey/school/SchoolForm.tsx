@@ -67,6 +67,7 @@ export default function SchoolForm({
     seatingArrangement: "",
     toilets: "",
     drinkingWater: "",
+    watersupply: "",
     electricity: "",
     ramp: "",
     sports: "",
@@ -454,8 +455,25 @@ export default function SchoolForm({
         </div>
       </Field>
 
+      <Field label="18. क्या विद्यालय में चालू जलापूर्ति की सुविधा उपलब्ध है?">
+        <div className="grid grid-cols-2 gap-2">
+          {["हाँ", "नहीं"].map((option) => (
+            <Choice
+              key={option}
+              name={`school-${schoolNumber}-watersupply`}
+              value={option}
+              selected={formData.watersupply}
+              onChange={(value) =>
+                setValue("watersupply", value)
+              }
+            />
+          ))}
+        </div>
+      </Field>
+  
+
       {/* Q18 */}
-      <Field label="18. विद्यालय में प्रमुख कमी">
+      <Field label="19. विद्यालय में प्रमुख कमी">
         <textarea
           rows={4}
           className={inputClass}

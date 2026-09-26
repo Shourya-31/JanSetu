@@ -15,6 +15,8 @@ interface HouseholdDocumentsSchemesProps {
     janDhanAccount?: string;
     kcc?: string;
     forestRightsPatta?: string;
+    marriagecertificate?: string;
+    bankName?: string;
   };
   onBack: () => void;
   onNext: (data: any) => void;
@@ -76,6 +78,14 @@ const HouseholdDocumentsSchemes: React.FC<
     existingData?.forestRightsPatta ?? ""
   );
 
+  const [marriagecertificate, setmarriagecertificate] = useState(
+    existingData?.marriagecertificate ?? ""
+  );
+
+  const [bankName, setbankName] = useState(
+    existingData?.bankName ?? ""
+  );
+
   const handleNext = () => {
     onNext({
       rationCard,
@@ -89,6 +99,8 @@ const HouseholdDocumentsSchemes: React.FC<
       janDhanAccount,
       kcc,
       forestRightsPatta,
+      marriagecertificate,
+      bankName,
     });
   };
 
@@ -296,7 +308,7 @@ const HouseholdDocumentsSchemes: React.FC<
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
-            7. मनरेगा जॉब कार्ड
+            7. वीबी–जी राम जी जॉब कार्ड
           </label>
 
           <div className="flex flex-wrap gap-3">
@@ -318,16 +330,6 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               नहीं
             </RadioOption>
-
-            <RadioOption
-              name="mnregaJobCard"
-              value="पात्रता नहीं"
-              checked={mnregaJobCard === "पात्रता नहीं"}
-              onChange={setMnregaJobCard}
-            >
-              पात्रता नहीं
-            </RadioOption>
-
           </div>
         </div>
 
@@ -378,6 +380,20 @@ const HouseholdDocumentsSchemes: React.FC<
             </RadioOption>
 
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">
+            यदि जन-धन खाता है, तो वह किस बैंक में है?
+          </label>
+
+          <input
+            type="text"
+            value={bankName}
+            onChange={(e) => setbankName(e.target.value)}
+            placeholder="परिवार मुखिया का नाम"
+            className={inputClass}
+          />
         </div>
 
         {/* 13. KCC */}
@@ -453,6 +469,35 @@ const HouseholdDocumentsSchemes: React.FC<
               onChange={setForestRightsPatta}
             >
               पात्रता नहीं
+            </RadioOption>
+
+          </div>
+        </div>
+
+        {/*15.*/}
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-3">
+            12. विवाह प्रमाण-पत्र है?
+          </label>
+
+          <div className="flex flex-wrap gap-3">
+
+            <RadioOption
+              name="marriagecertificate"
+              value="हाँ"
+              checked={marriagecertificate === "हाँ"}
+              onChange={setmarriagecertificate}
+            >
+              हाँ
+            </RadioOption>
+
+            <RadioOption
+              name="marriagecertificate"
+              value="नहीं"
+              checked={marriagecertificate === "नहीं"}
+              onChange={setmarriagecertificate}
+            >
+              नहीं
             </RadioOption>
 
           </div>

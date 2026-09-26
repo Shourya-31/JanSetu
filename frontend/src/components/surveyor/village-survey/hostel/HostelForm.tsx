@@ -3,6 +3,7 @@ import React from "react";
 export interface HostelData {
   facilityType: string;
   condition: string;
+  washrooms: string;
 }
 
 interface HostelFormProps {
@@ -14,6 +15,7 @@ interface HostelFormProps {
 const defaultData: HostelData = {
   facilityType: "",
   condition: "",
+  washrooms: "",
 };
 
 const questions = [
@@ -30,6 +32,15 @@ const questions = [
     key: "condition",
     label: "Q2. ग्राम में उपलब्ध आश्रम/छात्रावास की स्थिति क्या है?",
     options: ["अच्छी", "जर्जर", "नवीन निर्माण योग्य"],
+  },
+  {
+    key: "washrooms",
+    label: "Q3: छात्रावास में शौचालय की स्थिति:",
+    options: [
+      "है एवं उपयोग योग्य", 
+      "है लेकिन उपयोग योग्य नहीं", 
+      "नहीं है"
+    ],
   },
 ] as const;
 

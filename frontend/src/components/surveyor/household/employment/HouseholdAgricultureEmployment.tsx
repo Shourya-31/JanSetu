@@ -10,6 +10,7 @@ interface HouseholdAgricultureEmploymentProps {
     annualIncome?: string;
     mainIncomeSource?: string;
     livestockSource?: string;
+    animalEmployment?: string;
     otherLivestockSource?: string;
   };
   onBack: () => void;
@@ -56,6 +57,10 @@ const HouseholdAgricultureEmployment: React.FC<
     existingData?.otherLivestockSource ?? ""
   );
 
+  const [animalEmployment, setanimalEmployment] = useState(
+    existingData?.animalEmployment ?? ""
+  );
+
   const livestockOptions = [
     "गाय/भैंस",
     "बकरी",
@@ -73,6 +78,7 @@ const HouseholdAgricultureEmployment: React.FC<
       mainIncomeSource,
       livestockSource,
       otherLivestockSource,
+      animalEmployment,
     });
   };
 
@@ -380,6 +386,37 @@ const HouseholdAgricultureEmployment: React.FC<
             </div>
           )}
 
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-3">
+            6. क्या आपको किसी शासकीय योजना के अंतर्गत पशुपालन के लिए पशु शेड प्राप्त हुआ है?
+          </label>
+
+          <div className="flex flex-wrap gap-3">
+
+            <RadioOption
+              name="animalEmployment"
+              value="हाँ"
+              checked={animalEmployment === "हाँ"}
+              onChange={setanimalEmployment}
+            />
+
+            <RadioOption
+              name="animalEmployment"
+              value="नहीं"
+              checked={animalEmployment === "नहीं"}
+              onChange={setanimalEmployment}
+            />
+
+            <RadioOption
+              name="animalEmployment"
+              value="पात्रता नहीं है"
+              checked={animalEmployment === "पात्रता नहीं"}
+              onChange={setanimalEmployment}
+            />
+
+          </div>
         </div>
 
       </div>

@@ -138,7 +138,7 @@ const HouseholdOtherInformation: React.FC<
               />
             </div>
 
-            {/* PRIORITY 3 */}
+            {/* PRIORITY 3 
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
@@ -152,7 +152,7 @@ const HouseholdOtherInformation: React.FC<
                 placeholder="तीसरी जरूरी आवश्यकता"
                 className={inputClass}
               />
-            </div>
+            </div>*/}
 
           </div>
 

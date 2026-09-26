@@ -8,6 +8,7 @@ export interface AnganbadiData {
   nutritionServices: string;
   toiletCondition: string;
   drinkingWater: string;
+  watersupply: string;
   electricity: string;
   nutritionGarden: string;
 }
@@ -26,6 +27,7 @@ const defaultData: AnganbadiData = {
   nutritionServices: "",
   toiletCondition: "",
   drinkingWater: "",
+  watersupply: "",
   electricity: "",
   nutritionGarden: "",
 };
@@ -78,6 +80,11 @@ const questions = [
   {
     key: "nutritionGarden",
     label: "8. पोषण वाटिका",
+    options: ["हाँ", "नहीं"],
+  },
+  {
+    key: "watersupply",
+    label: "9. क्या आंगनबाड़ी केंद्र में चालू जलापूर्ति की सुविधा उपलब्ध है?",
     options: ["हाँ", "नहीं"],
   },
 ] as const;
