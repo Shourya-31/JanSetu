@@ -67,15 +67,17 @@ export async function getHouseholdSurveys(req: FastifyRequest, reply: FastifyRep
 }
 
 export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyReply) {
-  const body = (req.body || {}) as { villageName?: string; houseNumber?: number; data?: any };
-  const { villageName, houseNumber, data } = body;
+  const body = (req.body || {}) as any;
+  const villageName = body.villageName || (body.data && body.data.villageName);
+  const houseNumber = body.houseNumber !== undefined ? Number(body.houseNumber) : (body.data && body.data.houseNumber !== undefined ? Number(body.data.houseNumber) : undefined);
+  const payloadData = body.data || body;
 
-  if (!villageName || houseNumber === undefined || !data) {
-    return reply.status(400).send({ error: 'villageName, houseNumber, and data are required' });
+  if (!villageName || houseNumber === undefined || !payloadData) {
+    return reply.status(400).send({ error: 'villageName, houseNumber, and data payload are required' });
   }
 
   try {
-    const trackingId = data.trackingId || `DMFT-HHD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const trackingId = payloadData.trackingId || `DMFT-HHD-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const result = await withDbRetry(async () => {
       return await prisma.$transaction(async (tx) => {
@@ -85,8 +87,8 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
           update: {},
           create: {
             villageName,
-            block: data.blockName || data.block || 'Narayanpur',
-            panchayat: data.panchayatName || data.panchayat || villageName,
+            block: payloadData.blockName || payloadData.block || 'Narayanpur',
+            panchayat: payloadData.panchayatName || payloadData.panchayat || villageName,
             mineDistanceKm: '0 to 5 KM',
             hasPuccaRoad: 'Yes',
             monsoonCutOff: 'No',
@@ -110,48 +112,48 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             }
           },
           update: {
-            headName: data.headName || 'Household Head',
-            mobile: data.mobile || '',
-            caste: data.caste || 'Scheduled Tribe (ST)',
-            isBPL: data.isBPL || 'Yes',
-            totalMembers: data.totalMembers || 1,
-            eldersCount: data.eldersCount || 0,
-            childrenCount: data.childrenCount || 0,
-            unemployedCount: data.unemployedCount || 0,
-            incomeSource: data.incomeSource || 'Agriculture',
-            missingAadhaar: data.missingAadhaar || 0,
-            missingCasteCert: data.missingCasteCert || 0,
-            missingAyushman: data.missingAyushman || 0,
-            missingVoterId: data.missingVoterId || 0,
-            isMiningWorker: data.isMiningWorker || 'No',
-            houseType: data.houseType || 'Kaccha House',
-            hasToilet: data.hasToilet || 'Yes',
-            hasTapWater: data.hasTapWater || 'No',
-            surveyAnswers: data,
+            headName: payloadData.headName || 'Household Head',
+            mobile: payloadData.mobile || '',
+            caste: payloadData.caste || 'Scheduled Tribe (ST)',
+            isBPL: payloadData.isBPL || 'Yes',
+            totalMembers: Number(payloadData.totalMembers || 1),
+            eldersCount: Number(payloadData.eldersCount || 0),
+            childrenCount: Number(payloadData.childrenCount || 0),
+            unemployedCount: Number(payloadData.unemployedCount || 0),
+            incomeSource: payloadData.incomeSource || 'Agriculture',
+            missingAadhaar: Number(payloadData.missingAadhaar || 0),
+            missingCasteCert: Number(payloadData.missingCasteCert || 0),
+            missingAyushman: Number(payloadData.missingAyushman || 0),
+            missingVoterId: Number(payloadData.missingVoterId || 0),
+            isMiningWorker: payloadData.isMiningWorker || 'No',
+            houseType: payloadData.houseType || 'Kaccha House',
+            hasToilet: payloadData.hasToilet || 'Yes',
+            hasTapWater: payloadData.hasTapWater || 'No',
+            surveyAnswers: payloadData,
             version: { increment: 1 }
           },
           create: {
             trackingId,
             villageName,
             houseNumber,
-            headName: data.headName || 'Household Head',
-            mobile: data.mobile || '',
-            caste: data.caste || 'Scheduled Tribe (ST)',
-            isBPL: data.isBPL || 'Yes',
-            totalMembers: data.totalMembers || 1,
-            eldersCount: data.eldersCount || 0,
-            childrenCount: data.childrenCount || 0,
-            unemployedCount: data.unemployedCount || 0,
-            incomeSource: data.incomeSource || 'Agriculture',
-            missingAadhaar: data.missingAadhaar || 0,
-            missingCasteCert: data.missingCasteCert || 0,
-            missingAyushman: data.missingAyushman || 0,
-            missingVoterId: data.missingVoterId || 0,
-            isMiningWorker: data.isMiningWorker || 'No',
-            houseType: data.houseType || 'Kaccha House',
-            hasToilet: data.hasToilet || 'Yes',
-            hasTapWater: data.hasTapWater || 'No',
-            surveyAnswers: data
+            headName: payloadData.headName || 'Household Head',
+            mobile: payloadData.mobile || '',
+            caste: payloadData.caste || 'Scheduled Tribe (ST)',
+            isBPL: payloadData.isBPL || 'Yes',
+            totalMembers: Number(payloadData.totalMembers || 1),
+            eldersCount: Number(payloadData.eldersCount || 0),
+            childrenCount: Number(payloadData.childrenCount || 0),
+            unemployedCount: Number(payloadData.unemployedCount || 0),
+            incomeSource: payloadData.incomeSource || 'Agriculture',
+            missingAadhaar: Number(payloadData.missingAadhaar || 0),
+            missingCasteCert: Number(payloadData.missingCasteCert || 0),
+            missingAyushman: Number(payloadData.missingAyushman || 0),
+            missingVoterId: Number(payloadData.missingVoterId || 0),
+            isMiningWorker: payloadData.isMiningWorker || 'No',
+            houseType: payloadData.houseType || 'Kaccha House',
+            hasToilet: payloadData.hasToilet || 'Yes',
+            hasTapWater: payloadData.hasTapWater || 'No',
+            surveyAnswers: payloadData
           }
         });
 
