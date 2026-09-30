@@ -1,179 +1,215 @@
-# JanSetu DMFT Census Platform - Backend Architecture & Technical Documentation
+# JanSetu DMFT Census Platform - Fullstack Technical Documentation
 
 ## Executive Summary
-The **JanSetu Backend Engine** is an enterprise-grade RESTful web API written in **Node.js, TypeScript, and Fastify**, backed by a **PostgreSQL 16** relational database via **Prisma ORM**. It is architected for high throughput, sub-100ms response latencies, and scalability handling up to **300 GB of census data (~30 Million to 50 Million household records)**.
+**JanSetu** is an enterprise-grade fullstack web application and mobile-responsive census platform built for District Mineral Foundation Trust (DMFT) operations in Narayanpur. It provides comprehensive digital data collection, village baseline surveys, household census tracking, 5-year perspective planning, automated scheme gap matrix analytics, and admin audit workflows.
+
+- **Frontend**: Vite + React 19 + TypeScript + Tailwind CSS
+- **Backend**: Fastify + Node.js + TypeScript + Prisma ORM + PostgreSQL 16
+- **Scale Capability**: Optimized for up to **300 GB dataset size (~30M–50M records)** with sub-50ms search latency via GIN Trigram indexes and pre-computed Materialized Views.
 
 ---
 
 ## 1. Directory Structure & File Map
 
 ```
-JanSetu/backend/
-├── ecosystem.config.js          # PM2 Cluster Mode configuration (6 instances)
-├── package.json                 # Node.js dependencies & npm scripts
-├── tsconfig.json                # TypeScript compiler configuration
-├── prisma/
-│   └── schema.prisma            # PostgreSQL Database Schema & Index declarations
-└── src/
-    ├── server.ts                # Fastify engine setup, security, & background timers
-    ├── config/
-    │   └── prisma.ts            # Prisma Client singleton instance
-    ├── controllers/
-    │   ├── adminController.ts   # Dynamic admin filters, smart search, & analytics
-    │   ├── authController.ts    # JWT authentication & user provisioning
-    │   ├── exportController.ts  # Memory-efficient CSV streaming exporter
-    │   ├── hierarchyController.ts # Location hierarchy query & caching
-    │   ├── householdController.ts # Household survey CRUD, concurrency locks, & cache sync
-    │   └── villageController.ts # Grouped village profile aggregations & caching
-    ├── routes/
-    │   └── api.ts               # REST API route mappings & HTTP response hooks
-    ├── scripts/
-    │   ├── backupDb.ts          # Database backup utility script
-    │   └── deployInitDb.ts      # Database initialization, pg_trgm tuning, & MView setup
-    └── utils/
-        └── dbRetry.ts           # Exponential backoff retry handler for DB deadlocks
+JanSetu/
+├── README.md                      # Primary project overview & documentation
+├── frontend/                      # Web UI Application (React 19 + Vite)
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── src/
+│   │   ├── App.tsx                # Main UI application shell & view router
+│   │   ├── main.tsx               # Client entry point
+│   │   ├── index.css              # Tailwind CSS styles
+│   │   ├── components/
+│   │   │   ├── admin/             # Admin portal components
+│   │   │   │   ├── AdminDashboard.tsx           # Primary admin overview & metrics
+│   │   │   │   ├── AdminRecordsPage.tsx         # Household record table & audit modal
+│   │   │   │   ├── AdminAnalyticsReportsPage.tsx # Scheme gap matrix & reports
+│   │   │   │   └── AdminUI.tsx                  # Layout shell for admin portal
+│   │   │   └── surveyor/          # Field surveyor survey modules
+│   │   │       ├── LoginPage.tsx                # Surveyor login screen
+│   │   │       ├── SurveyorDashboard.tsx        # Village selector & survey progress
+│   │   │       ├── HouseholdAnalyticsDashboard.tsx # Household statistics & status
+│   │   │       ├── VillageProfileDashboard.tsx  # Village infrastructure summary
+│   │   │       ├── household/                   # DMFT 24-Section Household Survey
+│   │   │       │   ├── HouseholdSurvey.tsx      # Household list & count selector
+│   │   │       │   ├── HouseholdForm.tsx        # 11 sub-module container form
+│   │   │       │   ├── general/                 # General info & head details
+│   │   │       │   ├── demography/              # Member counts & age breakdown
+│   │   │       │   ├── documents/               # Aadhaar, Caste, Ayushman, Voter IDs
+│   │   │       │   ├── women/                   # JSY, PMMVY, Mahtari, Widow pension
+│   │   │       │   ├── disability/              # Divyang assistance & equipment
+│   │   │       │   ├── education/               # Vaccination, Anganwadi, Dropouts
+│   │   │       │   ├── employment/              # Unemployed 18-45, PM-KISAN, Mining
+│   │   │       │   ├── housing/                 # House type, toilet, tap water, solar
+│   │   │       │   ├── health/                  # Chronic illness, free medicines
+│   │   │       │   ├── shg/                     # Women SHG membership
+│   │   │       │   └── other/                   # Top 2 urgent family needs
+│   │   │       └── village-survey/              # Gram Parichay 11-Section Baseline Survey
+│   │   │           ├── VillageSurveyForm.tsx    # Village baseline survey container
+│   │   │           ├── general/                 # Land, population, SC/ST, PMAY
+│   │   │           ├── anganbadi/               # Anganwadi centers & facilities
+│   │   │           ├── school/                  # Schools, UDISE, dropouts, APAAR IDs
+│   │   │           ├── hostel/                  # Ashram / Hostel facilities
+│   │   │           ├── health/                  # Sub-centers & medical staff
+│   │   │           ├── water/                   # Tap water, quality & water sources
+│   │   │           ├── employment/              # Migration, ITI distance, skill trades
+│   │   │           ├── ladies/                  # SHGs, bank distance & accounts
+│   │   │           ├── cleanliness/             # Waste management & drainage
+│   │   │           ├── pension/                 # Divyang, Widow & Elderly pensions
+│   │   │           └── development/             # 5-Year perspective plan & needs
+│   │   ├── data/
+│   │   │   ├── adminMockData.ts                 # Fallback mock household & village records
+│   │   │   └── narayanpurHierarchy.ts           # Block ➔ Panchayat ➔ Village mapping
+│   │   ├── services/
+│   │   │   └── adminApi.ts                      # Admin data query & filter helpers
+│   │   ├── types/
+│   │   │   ├── admin.ts                         # Admin & household record TypeScript interfaces
+│   │   │   ├── auth.ts                          # Auth user & role types
+│   │   │   └── survey.ts                        # Village survey data interfaces
+│   │   └── utils/
+│   │       └── csv.ts                           # CSV generation helper
+└── backend/                       # REST API Server Engine (Fastify + PostgreSQL)
+    ├── package.json
+    ├── tsconfig.json
+    ├── ecosystem.config.js
+    ├── prisma/
+    │   └── schema.prisma                  # PostgreSQL schema, models & index configs
+    └── src/
+        ├── server.ts                      # Fastify setup, compression & bg timers
+        ├── config/
+        │   └── prisma.ts                  # Prisma Client instance
+        ├── controllers/
+        │   ├── adminController.ts         # Dynamic search, filtering & analytics
+        │   ├── authController.ts          # JWT authentication
+        │   ├── exportController.ts        # Memory-efficient CSV streaming exporter
+        │   ├── hierarchyController.ts     # Location dropdown hierarchy
+        │   ├── householdController.ts     # Household survey CRUD & optimistic locks
+        │   └── villageController.ts       # Village profile & baseline survey CRUD
+        ├── routes/
+        │   └── api.ts                     # HTTP route declarations
+        ├── scripts/
+        │   ├── deployInitDb.ts            # PostgreSQL tuning, GIN indexes & MView init
+        │   └── backupDb.ts                # Backup utility
+        └── utils/
+            └── dbRetry.ts                 # Transaction backoff retry helper
 ```
 
 ---
 
-## 2. Comprehensive File Responsibilities
+## 2. Physical PDF Baseline Survey Alignment
 
-### `prisma/schema.prisma`
-Defines PostgreSQL tables, relations, enums, and database indexes:
-- **`User`**: Authentication credentials and surveyor/admin roles (`enum Role`).
-- **`NarayanpurHierarchy`**: Administrative hierarchy mapping (Block ➔ Panchayat ➔ Village).
-- **`VillageProfile`**: Village-level infrastructure metrics, SC/ST counts, electrification, and gap matrices. Optimistic locking via `version`.
-- **`HouseholdSurvey`**: Primary census data table storing demography, BPL status, missing documentation counts, and full survey JSON.
-- **Indexes**:
-  - `idx_households_village`: B-Tree index on `village_name`.
-  - `idx_households_multi_filter`: Composite B-Tree index on `(village_name, is_bpl, caste, is_mining_worker)`.
-  - `idx_households_missing_docs`: Composite index on `(missing_aadhaar, missing_ayushman)`.
-  - `idx_households_submitted_at`: B-Tree index on `submitted_at DESC` for paginated sorting.
-  - `idx_households_ticket_id`: B-Tree index on `correction_ticket_id`.
-  - `idx_households_unemployed`: B-Tree index on `unemployed_count`.
-  - `idx_households_head_name`: B-Tree index on `head_name`.
+### A. DMFT Household Baseline Survey Form (*Parivar Star Aadharbhoot Sarvekshan Prapatra*)
+Covered across the **Household Survey Form** (`frontend/src/components/surveyor/household/`):
+- **Demographics & Social**: Head name, mobile, caste (General, OBC, SC, ST, Abujhmadia PVTG), BPL status, total members, elders (60+), children (0-14), unemployed youth (18-45).
+- **Entitlements & Documents**: Ration card, missing Aadhaar, e-KYC status, missing Caste Cert, missing Ayushman (PM-JAY), missing Voter ID, VB-G RAM G job card, Shramik card (18-40), Jan-Dhan bank account, KCC, Individual Vanadhikar patta, Marriage cert.
+- **Maternal & Social Security**: JSY, PMMVY, Mahtari Vandana, Widow pension (40-79), Divyang pension.
+- **Divyang Assistance**: Equipment required (crutches, wheelchair, hearing aid, tricycle, vision aid, artificial limb), death in past year + death cert, PM Garib Kalyan free ration.
+- **Children & Education**: Birth cert, vaccination (0-5 yrs), Anganwadi hot meals, school attendance & drop reasons.
+- **Livelihood & Income**: PM-KISAN, mining worker status, annual income band, primary income source, animal husbandry type, animal shed provided under scheme.
+- **Housing & Sanitation**: House type (Kaccha, Pucca, Semi-Pucca), PMAY housing, toilet availability & usage, tap water connection & drinking water source (Well, River, Handpump, Pond, Spring), electricity, solar energy.
+- **Health & Needs**: Cough/Asthma/TB illness, free hospital medicines, SHG membership, top 2 urgent family needs.
 
-### `src/server.ts`
-App entry point and server lifecycle coordinator:
-- Registers Fastify plugins: **@fastify/helmet** (security headers), **@fastify/compress** (Brotli/Gzip), **@fastify/rate-limit** (10,000 req/min), **@fastify/cors**, **@fastify/jwt**, and **@fastify/postgres**.
-- Configures server limits: `bodyLimit: 10MB`, `connectionTimeout: 10s`, `keepAliveTimeout: 5s`, `pluginTimeout: 30s`.
-- Establishes a 5-minute automated background timer to refresh the `mv_district_cluster_analytics` materialized view concurrently without blocking API threads.
-
-### `src/routes/api.ts`
-Registers all REST HTTP endpoints and defines an `onSend` hook for:
-- Setting HTTP `Keep-Alive: timeout=5, max=1000` header for persistent TCP connection reuse.
-- Setting `Cache-Control: private, no-cache, no-transform` on GET endpoints to reduce server bandwidth usage.
-
-### `src/controllers/adminController.ts`
-Handles admin dashboard dynamic queries and district analytics summary:
-- **`queryAdminHouseholds`**: Implements multi-lingual filter resolution (`'Yes'` / `'हां'`, `'Verified'` / `'सत्यापित'`) and smart numeric vs text search branching.
-- **`getAnalyticsSummary`**: Fetches pre-computed metrics from `mv_district_cluster_analytics` with a parallel Prisma fallback. Uses in-memory caching with 60-second TTL.
-- **`invalidateAnalyticsCache`**: Resets in-memory analytics cache on data updates.
-
-### `src/controllers/villageController.ts`
-Handles village profile queries and mutations:
-- **`getAllVillageProfiles`**: Executes a single parallel grouped query (`prisma.householdSurvey.groupBy({ by: ['villageName'], _count: { id: true } })`) alongside village fetching to compute exact completed survey counts per village without N+1 sub-queries.
-- Automatically triggers `invalidateVillageCache()` and `invalidateAnalyticsCache()` on village updates or deletions.
-
-### `src/controllers/householdController.ts`
-Handles household census data collection, updates, verification, and ticketing:
-- **`saveHouseholdSurvey`**: Wraps PostgreSQL `FOR UPDATE` transactions inside `withDbRetry` to prevent race conditions on house numbers.
-- **`patchHouseholdSurvey`**: Supports optimistic concurrency locking (`version`).
-- Automatically triggers `invalidateAnalyticsCache()` and `invalidateVillageCache()` on survey save, patch, delete, verify, or ticket creation.
-
-### `src/controllers/exportController.ts`
-Generates CSV exports for admin data analysis:
-- Implements array buffer row joining (`rows.join('\n')`) to eliminate string concatenation memory leaks when generating 50,000+ row files.
-- Adds UTF-8 BOM (`\uFEFF`) for seamless compatibility with Microsoft Excel.
-
-### `src/controllers/authController.ts`
-Manages user authentication and automatic surveyor/admin creation during local development/testing.
-
-### `src/controllers/hierarchyController.ts`
-Serves block, panchayat, and village administrative dropdown hierarchy with 5-minute in-memory caching.
-
-### `src/utils/dbRetry.ts`
-Implements an exponential backoff retry wrapper for transient database errors:
-- Intercepts PostgreSQL Deadlocks (`40P01`), Serialization Failures (`40001`), Prisma Transaction Conflicts (`P2034`), and connection timeouts up to 3 retries.
-
-### `src/scripts/deployInitDb.ts`
-Database tuning & initialization script:
-- Applies PostgreSQL WAL and worker settings (`max_worker_processes = 4`).
-- Enables `pgcrypto` and `pg_trgm` (trigram) extensions.
-- Builds GIN Trigram indexes (`idx_households_head_name_trgm`, `idx_households_mobile_trgm`, `idx_households_tracking_id_trgm`, `idx_households_village_name_trgm`).
-- Builds and refreshes the `mv_district_cluster_analytics` materialized view.
-
-### `ecosystem.config.js`
-PM2 Cluster configuration running 6 node worker processes with `max_memory_restart: '500M'`.
+### B. Village Baseline Survey & 5-Year Perspective Plan Form (*Gram Parichay Prapatra*)
+Covered across the **Village Baseline Survey** (`frontend/src/components/surveyor/village-survey/`):
+- **General Info**: Population, total households, SC/ST pop, total schools, hospitals, Anganwadis, hostels, fair price shop, mobile network, all-weather road, monsoon cut-off, tap water deficit, PMAY housing progress, banking, agri land, ODF status.
+- **Anganwadi Array**: 9 status questions per center (building type, condition, toilets, drinking water, electricity, nutrition garden).
+- **Schools Array**: 19 questions per school (UDISE code, type, building condition, separate boys/girls toilets, dropout kids & reasons, APAAR ID missing count).
+- **Hostels & Ashrams**: Facility type, building condition, toilet status.
+- **Health Facilities**: Health center type, operation, medical staff, medicine supply, key deficiencies.
+- **Drinking Water & Quality**: Tap water status, summer drinking water issues (turbidity, odor, iron, fluoride), distance to fetch water, pipeline/tank improvements needed.
+- **Skill Development & Migration**: Unemployed youth count, migration destination/reason/duration, nearest ITI distance, skill training trades, top 2 needed training programs.
+- **Women SHGs & Financial Inclusion**: Active SHGs, activities, bank loans, nearest bank distance.
+- **Sanitation & Waste Management**: Household toilets, solid waste collection, drainage system.
+- **Pensions**: Coverage for Divyang, Widow, and Elderly pensions.
+- **5-Year Perspective Plan**: Handpumps needed, borewells needed, solar pumps needed, solar street lights count, road km needed, top 3 urgent village tasks.
 
 ---
 
-## 3. Detailed Technical Optimizations & Math Calculations
+## 3. Database Architecture & High-Performance Indexing
 
-### A. GIN Trigram Search vs Full Table Scan (300 GB DBMS)
+### Database Engine & Extensions
+- **DBMS**: PostgreSQL 16
+- **ORM**: Prisma Client
+- **Extensions**: `pgcrypto` (UUIDs) & `pg_trgm` (GIN Trigram text search)
 
-On a 300 GB PostgreSQL database containing **30,000,000 rows**:
-- **Without Index (Sequential Scan)**:
-  $$\text{Query Time} = \frac{300 \text{ GB}}{250 \text{ MB/s (Disk Read Speed)}} \approx 1200 \text{ seconds (20 minutes)}$$
-- **With GIN Trigram Index (`pg_trgm`)**:
-  $$\text{Index Size} \approx 2.4 \text{ GB} \quad (\text{Cached in RAM})$$
-  $$\text{Query Time} = \text{B-Tree/GIN Index Lookup} + 500 \text{ Row Fetches} \approx \mathbf{25\text{ ms} - 50\text{ ms}}$$
-  **Speedup Factor**: $> 24,000\times$ faster!
-
----
-
-### B. Materialized View Analytics vs Live Aggregation
-
-- **Live Aggregation Cost at 30M Rows**:
-  $$\text{Rows Processed} = 30,000,000 \text{ rows}$$
-  $$\text{CPU Operations} = \text{SUM}(totalMembers) + \text{SUM}(missingAadhaar) + \text{COUNT}(bpl)$$
-  $$\text{Execution Time} \approx 4.5 \text{ seconds per dashboard click}$$
-- **Materialized View Cost (`mv_district_cluster_analytics`)**:
-  $$\text{Rows Processed} = 42 \text{ rows (1 per village)}$$
-  $$\text{Execution Time} \approx \mathbf{1.8\text{ ms}}$$
-  **Performance Gain**: $2,500\times$ reduction in CPU workload.
+### Performance Index Declarations
+1. **GIN Trigram Search Indexes**:
+   - `idx_households_head_name_trgm` on `head_name`
+   - `idx_households_mobile_trgm` on `mobile`
+   - `idx_households_tracking_id_trgm` on `tracking_id`
+   - `idx_households_village_name_trgm` on `village_name`
+2. **GIN JSONB Path Index**:
+   - `idx_households_survey_answers_gin` on `survey_answers (jsonb_path_ops)`
+3. **Composite B-Tree Indexes**:
+   - `idx_households_multi_filter` on `(village_name, is_bpl, caste, is_mining_worker)`
+   - `idx_households_missing_docs` on `(missing_aadhaar, missing_ayushman, missing_caste_cert, missing_voter_id)`
+4. **Materialized View**:
+   - `mv_district_cluster_analytics`: Pre-aggregates district-wide total households, population, BPL counts, missing Aadhaar/Ayushman, and unemployed youth count.
 
 ---
 
-### C. Brotli/Gzip Compression & Bandwidth Reduction
+## 4. API Endpoints Reference
 
-- **Uncompressed 500 Household JSON Response**: $\approx 350 \text{ KB}$
-- **Brotli Compressed Response**: $\approx 45 \text{ KB}$
-- **Bandwidth Reduction Ratio**:
-  $$\text{Compression Savings} = \left(1 - \frac{45}{350}\right) \times 100\% = \mathbf{87.1\% \text{ bandwidth saved}}$$
-- **Download Time on 4G LTE (15 Mbps = 1.875 MB/s)**:
-  $$\text{Uncompressed Download} = \frac{350 \text{ KB}}{1875 \text{ KB/s}} = 186 \text{ ms}$$
-  $$\text{Compressed Download} = \frac{45 \text{ KB}}{1875 \text{ KB/s}} = \mathbf{24 \text{ ms}}$$
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Authenticate user & issue JWT | No |
+| `GET` | `/api/hierarchy` | Location hierarchy (Block ➔ Panchayat ➔ Village) | No |
+| `GET` | `/api/villages/all` | List all village profiles with completed survey counts | No |
+| `GET` | `/api/villages/profile` | Retrieve single village profile & baseline survey | No |
+| `POST` | `/api/villages/profile` | Create / update village profile & village survey | Yes |
+| `PATCH` | `/api/villages/:id` | Partial update village profile with version lock | Yes |
+| `DELETE` | `/api/villages/:id` | Delete village profile | Yes |
+| `GET` | `/api/households` | Fetch household surveys for a village | No |
+| `POST` | `/api/households` | Submit / upsert household survey data | Yes |
+| `PATCH` | `/api/households/:id` | Update household survey record with version lock | Yes |
+| `DELETE` | `/api/households/:id` | Delete household survey record | Yes |
+| `PATCH` | `/api/households/:id/verify` | Update verification audit status | Yes |
+| `PATCH` | `/api/households/:id/registry` | Update registry status | Yes |
+| `POST` | `/api/households/:id/ticket` | Raise correction ticket | Yes |
+| `POST` | `/api/admin/query` | Dynamic multi-filter & search query (max 500) | Yes |
+| `GET` | `/api/admin/analytics` | Fetch pre-computed district analytics summary | Yes |
+| `GET` | `/api/admin/export` | Stream full household records CSV | Yes |
 
 ---
 
-### D. Single-Query Grouped Aggregations (`getAllVillageProfiles`)
+## 5. Local Setup & Running Instructions
 
-- **Old Approach (N+1 Queries for 42 Villages)**:
-  $$1 \text{ query for villages} + 42 \text{ count queries} = 43 \text{ round trips} \approx 215 \text{ ms}$$
-- **New Approach (Single `groupBy` Join)**:
-  $$1 \text{ query for villages} + 1 \text{ grouped count query} = \mathbf{2 \text{ parallel queries} \approx 28 \text{ ms}}$$
+### Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL (v14 or higher)
+
+### A. Running the Backend Server
+```bash
+# 1. Navigate to backend directory
+cd JanSetu/backend
+
+# 2. Install dependencies
+npm install
+
+# 3. Generate Prisma client & compile TypeScript
+npm run build
+
+# 4. Initialize database indexes & materialized view (Optional)
+npm run db:init
+
+# 5. Start development server
+npm run dev
+```
+*Backend server runs at `http://localhost:5000` (or PORT specified in `.env`).*
 
 ---
 
-## 4. API Endpoints Quick Reference
+### B. Running the Frontend UI App
+```bash
+# 1. Navigate to frontend directory
+cd JanSetu/frontend
 
-| Method | Route | Description | Auth Required | Cache |
-| :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | User login & JWT issuance | No | None |
-| `GET` | `/api/hierarchy` | Location hierarchy list | No | 5 min |
-| `GET` | `/api/villages/all` | List all village profiles with survey counts | No | 60 sec |
-| `GET` | `/api/villages/profile` | Get single village profile | No | Private |
-| `POST` | `/api/villages/profile` | Create/update village profile | Yes | Clears cache |
-| `PATCH` | `/api/villages/:id` | Partial update village profile | Yes | Clears cache |
-| `DELETE` | `/api/villages/:id` | Delete village profile | Yes | Clears cache |
-| `GET` | `/api/households` | Get surveys for a village | No | Private |
-| `POST` | `/api/households` | Submit household survey | Yes | Clears cache |
-| `PATCH` | `/api/households/:id` | Update household survey | Yes | Clears cache |
-| `DELETE` | `/api/households/:id` | Delete household survey | Yes | Clears cache |
-| `PATCH` | `/api/households/:id/verify` | Verify household survey record | Yes | Clears cache |
-| `PATCH` | `/api/households/:id/registry` | Update registry audit status | Yes | Clears cache |
-| `POST` | `/api/households/:id/ticket` | Create correction ticket | Yes | Clears cache |
-| `POST` | `/api/admin/query` | Filter & search households (max 500) | Yes | Private |
-| `GET` | `/api/admin/analytics` | District analytics summary KPIs | Yes | 60 sec |
-| `GET` | `/api/admin/export` | Download household records CSV | Yes | Stream |
+# 2. Install dependencies
+npm install
+
+# 3. Start development server
+npm run dev
+```
+*Frontend app runs at `http://localhost:5173`.*
