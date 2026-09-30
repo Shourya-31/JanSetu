@@ -1,0 +1,110 @@
+# ============================================
+# JanSetu Fullstack Root GitIgnore
+# ============================================
+
+# 1. DEPENDENCIES
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 2. COMPILED BUILD OUTPUTS
+dist/
+dist-ssr/
+build/
+lib/
+backend/dist/
+frontend/dist/
+frontend/dist-ssr/
+*.tsbuildinfo
+node_modules/.tmp/
+
+# 3. ENVIRONMENT & SECRETS (CRITICAL)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials.json
+service-account.json
+
+# 4. DATABASE & DATA DUMPS
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+*.accdb
+*.dump
+*.backup
+backups/
+database/
+db/
+*.csv
+*.xlsx
+*.xls
+!schema.csv
+
+# 5. LOGS & PROCESS MANAGERS
+logs/
+*.log
+access.log
+error.log
+combined.log
+pm2-*.log
+pm2.log
+.pm2/
+
+# 6. UPLOADS & USER CONTENT
+uploads/
+public/uploads/
+storage/
+media/
+ citizen-data/
+aadhaar-data/
+pan-data/
+voter-data/
+raw-data/
+pii-data/
+
+# 7. TESTING & COVERAGE
+coverage/
+.nyc_output/
+test-results/
+
+# 8. IDE & OS SYSTEM FILES
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# 9. TEMPORARY FILES & CACHES
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.pid.lock
+
+# 10. ARCHIVES
+*.tgz
+*.tar.gz
+*.zip
+*.rar
+*.7z
