@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
@@ -5,11 +8,8 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import fastifyPostgres from '@fastify/postgres';
 import fastifyJwt from '@fastify/jwt';
-import dotenv from 'dotenv';
 import prisma from './config/prisma';
 import apiRoutes from './routes/api';
-
-dotenv.config();
 
 const server = Fastify({
   logger: process.env.NODE_ENV === 'production' ? { level: 'error' } : true,
