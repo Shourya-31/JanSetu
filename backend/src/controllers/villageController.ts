@@ -12,6 +12,7 @@ export function invalidateVillageCache() {
 
 function formatVillageRecord(v: any) {
   const qm = (v.qualityMetrics as Record<string, any>) || {};
+  const vs = (v.villageSurvey as Record<string, any>) || {};
   const surveyedHouseholds = (v as any).surveyedHouseholds !== undefined 
     ? (v as any).surveyedHouseholds 
     : (v.totalHouseholds || 0);
@@ -23,6 +24,7 @@ function formatVillageRecord(v: any) {
     ...v,
     hasAnganwadi: qm.hasAnganwadi || (v as any).hasAnganwadi || 'Yes',
     odfStatus: qm.odfStatus || (v as any).odfStatus || 'ODF Certified',
+    villageSurvey: vs,
     surveyedHouseholds,
     completionPercent,
     updatedAt: v.updatedAt ? v.updatedAt.toISOString() : new Date().toISOString()
@@ -107,7 +109,8 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
     hasAnganwadi,
     odfStatus,
     quality,
-    gapMatrix
+    gapMatrix,
+    villageSurvey
   } = body;
 
   if (!villageName || !block || !panchayat) {
@@ -141,6 +144,7 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         electrification: electrification || 'Fully Electrified',
         qualityMetrics: mergedQualityMetrics,
         gapMatrix: gapMatrix || {},
+        villageSurvey: villageSurvey || {},
         version: { increment: 1 }
       },
       create: {
@@ -161,7 +165,8 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         hospitalType: hospitalType || 'Sub-Health Centre (SHC)',
         electrification: electrification || 'Fully Electrified',
         qualityMetrics: mergedQualityMetrics,
-        gapMatrix: gapMatrix || {}
+        gapMatrix: gapMatrix || {},
+        villageSurvey: villageSurvey || {}
       }
     });
 
@@ -191,6 +196,7 @@ export async function patchVillageProfile(req: FastifyRequest, reply: FastifyRep
         totalHouseholds: updates.totalHouseholds !== undefined ? updates.totalHouseholds : undefined,
         qualityMetrics: updates.quality !== undefined ? updates.quality : undefined,
         gapMatrix: updates.gapMatrix !== undefined ? updates.gapMatrix : undefined,
+        villageSurvey: updates.villageSurvey !== undefined ? updates.villageSurvey : undefined,
         version: { increment: 1 }
       }
     });

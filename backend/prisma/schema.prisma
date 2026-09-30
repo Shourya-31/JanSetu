@@ -59,6 +59,7 @@ model VillageProfile {
   electrification String
   qualityMetrics  Json              @default("{}") @map("quality_metrics")
   gapMatrix       Json              @default("{}") @map("gap_matrix")
+  villageSurvey   Json              @default("{}") @map("village_survey")
   isVerified      Boolean           @default(false) @map("is_verified")
   verifiedAt      DateTime?         @map("verified_at")
   createdBy       String?           @map("created_by")
