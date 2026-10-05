@@ -179,6 +179,7 @@ Covered across the **Village Baseline Survey** (`frontend/src/components/surveyo
 ### Prerequisites
 - Node.js (v18 or higher)
 - PostgreSQL (v14 or higher)
+- A configured `backend/.env` with `DATABASE_URL`, a 32+ character `JWT_SECRET`, `CORS_ORIGIN`, and `INITIAL_USERS_JSON`.
 
 ### A. Running the Backend Server
 ```bash
@@ -188,16 +189,25 @@ cd JanSetu/backend
 # 2. Install dependencies
 npm install
 
-# 3. Generate Prisma client & compile TypeScript
-npm run build
+# 3. Configure backend/.env from .env.example
 
-# 4. Initialize database indexes & materialized view (Optional)
+# 4. Push the Prisma schema and initialize database indexes/materialized view
+# Run only against a development database; this recreates the analytics view.
 npm run db:init
 
-# 5. Start development server
+# 5. Generate Prisma Client and seed the 290 affected villages
+npm run db:generate
+npm run db:seed-hierarchy
+
+# 6. Install append-only audit protection and provision configured users
+npm run db:install-audit-protection
+npm run db:seed-users
+
+# 7. Compile and start the development server
+npm run build
 npm run dev
 ```
-*Backend server runs at `http://localhost:5000` (or PORT specified in `.env`).*
+*Backend server runs at `http://localhost:3000` by default (or the `PORT` specified in `.env`).*
 
 ---
 

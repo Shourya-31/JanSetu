@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { AuditStatus, HouseholdRecord, LocationFilters, RegistryStatus, VerificationResult, VillageRecord } from '../../types/admin';
+import type { AuditLogEntry, AuditStatus, HouseholdRecord, LocationFilters, RegistryStatus, VerificationResult, VillageRecord } from '../../types/admin';
+import { fetchAuditLogs } from '../../services/liveAdminApi';
 import { EmptyState, SectionCard, StatusBadge } from './AdminUI';
 import { AlertTriangle, CheckCircle2, ClipboardCheck, Eye, FileWarning, Search, Send, SlidersHorizontal } from 'lucide-react';
 
@@ -49,7 +50,7 @@ type SectionFilter = {
   ticketStatus: 'सभी' | 'टिकट मौजूद' | 'टिकट नहीं';
   ticketReason: 'सभी' | 'दस्तावेज़' | 'योजना' | 'जनसांख्यिकी' | 'सुविधा' | 'अन्य';
   verified: 'सभी' | 'सत्यापित' | 'असत्यापित';
-  action: 'सभी' | 'सर्वेक्षण प्राप्त' | 'फील्ड सत्यापन' | 'सुधार टिकट' | 'रजिस्ट्री स्थिति अपडेट';
+  action: 'सभी' | 'सर्वेक्षण प्राप्त' | 'सर्वेक्षण संशोधन' | 'रिकॉर्ड हटाया' | 'फील्ड सत्यापन' | 'सुधार टिकट' | 'रजिस्ट्री स्थिति अपडेट';
   actor: string;
   fromDate: string;
   toDate: string;
@@ -68,14 +69,18 @@ export const AdminRecordsPage: React.FC<Props> = ({
 }) => {
   const [selectedId, setSelectedId] = useState('');
   const [sectionFilter, setSectionFilter] = useState<SectionFilter>(EMPTY_FILTER);
-
-  const selected = households.find((h) => h.id === selectedId) ?? null;
-  const flagged = households.filter((h) => h.auditStatus === 'फ्लैग');
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
   useEffect(() => {
-    if (!households.length) { setSelectedId(''); return; }
-    if (!households.some((h) => h.id === selectedId)) setSelectedId(households[0].id);
-  }, [households, selectedId]);
+    let active = true;
+    fetchAuditLogs().then((rows) => { if (active) setAuditLogs(rows); }).catch(() => {
+      if (active) setAuditLogs([]);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const selected = households.find((h) => h.id === selectedId) ?? households[0] ?? null;
+  const flagged = households.filter((h) => h.auditStatus === 'फ्लैग');
 
   const updateFilter = (key: keyof LocationFilters, value: string) => {
     // Cascading rule: selecting a parent limits the next field to that parent's children.
@@ -134,13 +139,13 @@ export const AdminRecordsPage: React.FC<Props> = ({
         </>
       )}
 
-      {section === 'village-profile' && <VillageProfilePage villages={villages} selectedVillage={selectedVillage} onSelectHousehold={setSelectedId} selectedId={selectedId} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
+      {section === 'village-profile' && <VillageProfilePage villages={villages} selectedVillage={selectedVillage} resetFilter={resetSectionFilter} />}
       {section === 'scheme-document-gaps' && <SchemeGapSection households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
       {section === 'audit-verification' && <AuditVerificationSection households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} flaggedCount={flagged.length} onVerify={onVerify} onOpenTicket={onOpenTicket} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
       {section === 'discrepancy-review' && <DiscrepancySection households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
       {section === 'correction-ticket' && <CorrectionSection households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} onOpenTicket={onOpenTicket} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
       {section === 'registry-status' && <RegistryStatusSection households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} onUpdateStatus={onUpdateStatus} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
-      {section === 'audit-logs' && <AuditLogsSection households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
+      {section === 'audit-logs' && <AuditLogsSection auditLogs={auditLogs} households={sectionRows} household={selectedSectionHousehold} selectedId={selectedId} onSelect={setSelectedId} filter={sectionFilter} setFilter={updateSectionFilter} resetFilter={resetSectionFilter} />}
 
       {section !== 'home' && (
         <div className="flex justify-end">
@@ -204,8 +209,6 @@ const toTime = (value: string, end = false) => {
   return Number.isNaN(time) ? null : time;
 };
 
-const isNo = (value: unknown) => value === false || value === 0 || value === 'नहीं' || value === 'No' || value === 'no';
-
 function applyHouseholdSectionFilter(rows: HouseholdRecord[], f: SectionFilter): HouseholdRecord[] {
   const q = f.query.trim().toLowerCase();
   const dateStart = f.fromDate ? new Date(`${f.fromDate}T00:00:00`).getTime() : null;
@@ -244,7 +247,7 @@ function applyHouseholdSectionFilter(rows: HouseholdRecord[], f: SectionFilter):
 }
 
 function getGapItems(h: HouseholdRecord): { label: string; value: string; type: 'दस्तावेज़' | 'योजनाएं' | 'सुविधाएं' }[] {
-  return [
+  const items: Array<{ label: string; value: string; type: 'दस्तावेज़' | 'योजनाएं' | 'सुविधाएं' }> = [
     { label: 'आधार', value: h.missingAadhaar ? 'अंतराल' : 'उपलब्ध', type: 'दस्तावेज़' },
     { label: 'जाति प्रमाणपत्र', value: h.missingCasteCert ? 'अंतराल' : 'उपलब्ध', type: 'दस्तावेज़' },
     { label: 'आयुष्मान', value: h.missingAyushman ? 'अंतराल' : 'उपलब्ध', type: 'दस्तावेज़' },
@@ -256,7 +259,8 @@ function getGapItems(h: HouseholdRecord): { label: string; value: string; type: 
     { label: 'विधवा पेंशन', value: h.widowPension, type: 'योजनाएं' }, { label: 'दिव्यांग पेंशन', value: h.divyangPension, type: 'योजनाएं' },
     { label: 'जन्म प्रमाणपत्र', value: h.hasBirthCert, type: 'दस्तावेज़' }, { label: 'टीकाकरण', value: h.childrenVaccinated, type: 'योजनाएं' },
     { label: 'शौचालय', value: h.hasToilet, type: 'सुविधाएं' }, { label: 'नल जल', value: h.hasTapWater, type: 'सुविधाएं' }, { label: 'बिजली', value: h.hasElectricity, type: 'सुविधाएं' },
-  ].map((item) => ({ ...item, value: item.value === 'नहीं' ? 'अंतराल' : item.value }));
+  ];
+  return items.map((item) => ({ ...item, value: item.value === 'नहीं' ? 'अंतराल' : item.value }));
 }
 
 function getDiscrepancies(h: HouseholdRecord, category: SectionFilter['discrepancyCategory']): string[] {
@@ -303,7 +307,7 @@ const HouseholdSectionFilters: React.FC<{ kind: 'scheme' | 'audit' | 'discrepanc
       {kind === 'discrepancy' && <FilterSelect label="विसंगति प्रकार (Category)" value={filter.discrepancyCategory} options={['दस्तावेज़', 'योजना', 'बाल एवं कल्याण', 'आवास एवं सुविधाएं']} onChange={(v) => setFilter('discrepancyCategory', v as SectionFilter['discrepancyCategory'])} />}
       {kind === 'ticket' && <><FilterSelect label="टिकट (Ticket)" value={filter.ticketStatus} options={['टिकट मौजूद', 'टिकट नहीं']} onChange={(v) => setFilter('ticketStatus', v as SectionFilter['ticketStatus'])} /><FilterSelect label="कारण (Reason)" value={filter.ticketReason} options={['दस्तावेज़', 'योजना', 'जनसांख्यिकी', 'सुविधा', 'अन्य']} onChange={(v) => setFilter('ticketReason', v as SectionFilter['ticketReason'])} /><FilterSelect label="ऑडिट (Audit)" value={filter.auditStatus} options={['सत्यापित', 'लंबित', 'फ्लैग']} onChange={(v) => setFilter('auditStatus', v as SectionFilter['auditStatus'])} /></>}
       {kind === 'registry' && <><FilterSelect label="रजिस्ट्री स्थिति (Registry)" value={filter.registryStatus} options={['लंबित', 'सत्यापित', 'सुधार आवश्यक', 'पुनः सत्यापन आवश्यक', 'बंद']} onChange={(v) => setFilter('registryStatus', v as SectionFilter['registryStatus'])} /><FilterSelect label="ऑडिट स्थिति (Audit)" value={filter.auditStatus} options={['सत्यापित', 'लंबित', 'फ्लैग']} onChange={(v) => setFilter('auditStatus', v as SectionFilter['auditStatus'])} /><DateField label="से (From)" value={filter.fromDate} onChange={(v) => setFilter('fromDate', v)} /><DateField label="तक (To)" value={filter.toDate} onChange={(v) => setFilter('toDate', v)} /></>}
-      {kind === 'logs' && <><FilterSelect label="कार्रवाई (Action)" value={filter.action} options={['सर्वेक्षण प्राप्त', 'फील्ड सत्यापन', 'सुधार टिकट', 'रजिस्ट्री स्थिति अपडेट']} onChange={(v) => setFilter('action', v as SectionFilter['action'])} /><div><label className="block text-[10px] font-semibold text-slate-500 mb-1">अभिनेता (Actor)</label><input value={filter.actor} onChange={(e) => setFilter('actor', e.target.value)} placeholder="उदा. Block Auditor" className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-xs" /></div><DateField label="से (From)" value={filter.fromDate} onChange={(v) => setFilter('fromDate', v)} /><DateField label="तक (To)" value={filter.toDate} onChange={(v) => setFilter('toDate', v)} /></>}
+      {kind === 'logs' && <><FilterSelect label="कार्रवाई (Action)" value={filter.action} options={['सर्वेक्षण प्राप्त', 'सर्वेक्षण संशोधन', 'रिकॉर्ड हटाया', 'फील्ड सत्यापन', 'सुधार टिकट', 'रजिस्ट्री स्थिति अपडेट']} onChange={(v) => setFilter('action', v as SectionFilter['action'])} /><div><label className="block text-[10px] font-semibold text-slate-500 mb-1">अभिनेता (Actor)</label><input value={filter.actor} onChange={(e) => setFilter('actor', e.target.value)} placeholder="उदा. Block Auditor" className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-xs" /></div><DateField label="से (From)" value={filter.fromDate} onChange={(v) => setFilter('fromDate', v)} /><DateField label="तक (To)" value={filter.toDate} onChange={(v) => setFilter('toDate', v)} /></>}
       <FilterReset onReset={resetFilter} />
     </div>
   </SectionCard>;
@@ -311,7 +315,7 @@ const HouseholdSectionFilters: React.FC<{ kind: 'scheme' | 'audit' | 'discrepanc
 
 const DateField: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => <div><label className="block text-[10px] font-semibold text-slate-500 mb-1">{label}</label><input type="date" value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-xs" /></div>;
 
-const VillageProfilePage: React.FC<{ villages: VillageRecord[]; selectedVillage: VillageRecord | null; selectedId: string; onSelectHousehold: (id: string) => void; filter: SectionFilter; setFilter: <K extends keyof SectionFilter>(key: K, value: SectionFilter[K]) => void; resetFilter: () => void }> = ({ villages, selectedVillage, selectedId, onSelectHousehold, filter, setFilter, resetFilter }) => {
+const VillageProfilePage: React.FC<{ villages: VillageRecord[]; selectedVillage: VillageRecord | null; resetFilter: () => void }> = ({ villages, selectedVillage, resetFilter }) => {
   const [villageQuery, setVillageQuery] = useState('');
   const [block, setBlock] = useState('सभी');
   const [panchayat, setPanchayat] = useState('सभी');
@@ -324,7 +328,7 @@ const VillageProfilePage: React.FC<{ villages: VillageRecord[]; selectedVillage:
   return <div className="space-y-4"><SectionCard title="खोज और फ़िल्टर (Search & Filter)" sub="ग्राम प्रोफ़ाइल को ग्राम, विकासखंड, पंचायत और सुविधा स्थिति से फ़िल्टर करें."><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5"><FilterSearch value={villageQuery} placeholder="ग्राम, पंचायत, ID..." onChange={setVillageQuery} /><FilterSelect label="विकासखंड (Block)" value={block} options={blocks} onChange={(v) => { setBlock(v); setPanchayat('सभी'); }} /><FilterSelect label="ग्राम पंचायत (Panchayat)" value={panchayat} options={panchayats} onChange={setPanchayat} /><FilterSelect label="पक्की सड़क (Pucca Road)" value={road} options={['हां', 'नहीं']} onChange={setRoad} /><FilterSelect label="ODF स्थिति (ODF)" value={odf} options={Array.from(new Set(villages.map((v) => v.odfStatus)))} onChange={setOdf} /><FilterReset onReset={() => { setVillageQuery(''); setBlock('सभी'); setPanchayat('सभी'); setRoad('सभी'); setOdf('सभी'); resetFilter(); }} /></div></SectionCard><SectionCard title="ग्राम परिणाम (Village Results)" sub={`${results.length} ग्राम मिले`}><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="border-b bg-slate-50 text-slate-500"><tr><th className="p-2">ग्राम</th><th className="p-2">पंचायत</th><th className="p-2">विकासखंड</th><th className="p-2">जनसंख्या</th><th className="p-2">पूर्णता</th></tr></thead><tbody className="divide-y">{results.map((v) => <tr key={v.id} className={activeVillage?.id === v.id ? 'bg-slate-50' : ''}><td className="p-2 font-medium">{v.villageName}</td><td className="p-2">{v.panchayat}</td><td className="p-2">{v.block}</td><td className="p-2">{v.totalPopulation}</td><td className="p-2">{v.completionPercent}%</td></tr>)}</tbody></table></div></SectionCard><VillageDetails village={activeVillage} /></div>;
 };
 
-const VillageDetails: React.FC<{ village: VillageRecord | null }> = ({ village: v }) => <SectionCard title="ग्राम प्रोफ़ाइल (Village Profile)" sub="ग्राम सर्वेक्षण और आधारभूत संरचना का प्रशासनिक सारांश">{!v ? <EmptyState message="इन फ़िल्टर के लिए कोई ग्राम नहीं मिला।" /> : <div className="space-y-4"><div className="grid grid-cols-2 lg:grid-cols-4 gap-2">{[['ग्राम (Village)', v.villageName], ['पंचायत (Panchayat)', v.panchayat], ['विकासखंड (Block)', v.block], ['जनसंख्या (Population)', v.totalPopulation], ['कुल परिवार (Households)', v.totalHouseholds], ['SC जनसंख्या (SC)', v.scCount], ['ST जनसंख्या (ST)', v.stCount], ['पक्का घर (Pucca)', v.puccaHouses], ['अर्ध-पक्का (Semi-pucca)', v.semiPuccaHouses], ['कच्चा घर (Kaccha)', v.kacchaHouses], ['खदान दूरी (Mine Distance)', v.mineDistanceKm], ['पक्की सड़क (Pucca Road)', v.hasPuccaRoad], ['मानसून कट-ऑफ (Monsoon)', v.monsoonCutOff], ['विद्यालय (School)', v.schoolType], ['स्वास्थ्य केंद्र (Health Centre)', v.hospitalType], ['विद्युतीकरण (Electrification)', v.electrification], ['आंगनवाड़ी (AWC)', v.hasAnganwadi], ['ODF स्थिति (ODF)', v.odfStatus]].map(([l, val]) => <Field key={l} label={l} value={val} />)}</div><div><h4 className="text-xs font-bold mb-2">अंतराल मैट्रिक्स (Infrastructure Gap Matrix)</h4><div className="overflow-x-auto"><table className="w-full text-xs"><thead className="bg-slate-50"><tr><th className="p-2 text-left">सुविधा (Facility)</th><th>वर्तमान</th><th>कार्यशील</th><th>आवश्यक</th><th>अंतराल</th></tr></thead><tbody className="divide-y">{Object.entries(v.gapMatrix).map(([label, g]) => <tr key={label}><td className="p-2">{label}</td><td className="text-center">{g.current}</td><td className="text-center">{g.functional}</td><td className="text-center">{g.required}</td><td className="text-center font-bold">{g.gap}</td></tr>)}</tbody></table></div></div></div>}</SectionCard>;
+const VillageDetails: React.FC<{ village: VillageRecord | null }> = ({ village: v }) => <SectionCard title="ग्राम प्रोफ़ाइल (Village Profile)" sub="ग्राम सर्वेक्षण और आधारभूत संरचना का प्रशासनिक सारांश">{!v ? <EmptyState message="इन फ़िल्टर के लिए कोई ग्राम नहीं मिला।" /> : <div className="space-y-4"><div className="grid grid-cols-2 lg:grid-cols-4 gap-2">{[['ग्राम (Village)', v.villageName], ['पंचायत (Panchayat)', v.panchayat], ['विकासखंड (Block)', v.block], ['जनसंख्या (Population)', v.totalPopulation], ['कुल परिवार (Households)', v.totalHouseholds], ['SC जनसंख्या (SC)', v.scCount], ['ST जनसंख्या (ST)', v.stCount], ['पक्का घर (Pucca)', v.puccaHouses], ['अर्ध-पक्का (Semi-pucca)', v.semiPuccaHouses], ['कच्चा घर (Kaccha)', v.kacchaHouses], ['खदान दूरी (Mine Distance)', v.mineDistanceKm], ['पक्की सड़क (Pucca Road)', v.hasPuccaRoad], ['मानसून कट-ऑफ (Monsoon)', v.monsoonCutOff], ['विद्यालय (School)', v.schoolType], ['स्वास्थ्य केंद्र (Health Centre)', v.hospitalType], ['विद्युतीकरण (Electrification)', v.electrification], ['आंगनवाड़ी (AWC)', v.hasAnganwadi], ['ODF स्थिति (ODF)', v.odfStatus]].map(([l, val]) => <Field key={String(l)} label={String(l)} value={val} />)}</div><div><h4 className="text-xs font-bold mb-2">अंतराल मैट्रिक्स (Infrastructure Gap Matrix)</h4><div className="overflow-x-auto"><table className="w-full text-xs"><thead className="bg-slate-50"><tr><th className="p-2 text-left">सुविधा (Facility)</th><th>वर्तमान</th><th>कार्यशील</th><th>आवश्यक</th><th>अंतराल</th></tr></thead><tbody className="divide-y">{Object.entries(v.gapMatrix).map(([label, g]) => <tr key={label}><td className="p-2">{label}</td><td className="text-center">{g.current}</td><td className="text-center">{g.functional}</td><td className="text-center">{g.required}</td><td className="text-center font-bold">{g.gap}</td></tr>)}</tbody></table></div></div></div>}</SectionCard>;
 
 const SchemeGapSection: React.FC<{ households: HouseholdRecord[]; household: HouseholdRecord | null; selectedId: string; onSelect: (id: string) => void; filter: SectionFilter; setFilter: <K extends keyof SectionFilter>(key: K, value: SectionFilter[K]) => void; resetFilter: () => void }> = ({ households, household: h, selectedId, onSelect, filter, setFilter, resetFilter }) => <div className="space-y-4"><HouseholdSectionFilters kind="scheme" filter={filter} setFilter={setFilter} resetFilter={resetFilter} /><SectionCard title="परिवार अंतराल परिणाम (Household Gap Results)" sub="दस्तावेज़, योजनाओं और सुविधाओं के gaps के आधार पर फ़िल्टर किए गए रिकॉर्ड"><HouseholdPicker households={households} selectedId={selectedId} onSelect={onSelect} /></SectionCard><SectionCard title="योजना और दस्तावेज़ अंतराल (Scheme & Document Gaps)" sub="चयनित परिवार की स्थिति">{!h ? <EmptyState message="ऊपर से परिवार रिकॉर्ड चुनें।" /> : <div className="grid grid-cols-2 md:grid-cols-4 gap-2">{getGapItems(h).map((item) => <div key={item.label} className={`rounded-lg border p-3 ${item.value === 'अंतराल' ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}><p className="text-[10px] text-slate-500">{item.label}</p><p className="text-xs font-bold mt-1">{item.value}</p><p className="text-[9px] text-slate-400 mt-1">{item.type}</p></div>)}</div>}</SectionCard></div>;
 
@@ -336,13 +340,14 @@ const CorrectionSection: React.FC<{ households: HouseholdRecord[]; household: Ho
 
 const RegistryStatusSection: React.FC<{ households: HouseholdRecord[]; household: HouseholdRecord | null; selectedId: string; onSelect: (id: string) => void; onUpdateStatus: (id: string, status: RegistryStatus) => void; filter: SectionFilter; setFilter: <K extends keyof SectionFilter>(key: K, value: SectionFilter[K]) => void; resetFilter: () => void }> = ({ households, household: h, selectedId, onSelect, onUpdateStatus, filter, setFilter, resetFilter }) => <div className="space-y-4"><HouseholdSectionFilters kind="registry" filter={filter} setFilter={setFilter} resetFilter={resetFilter} /><SectionCard title="रजिस्ट्री रिकॉर्ड (Registry Records)" sub="स्थिति और submission date से फ़िल्टर किए गए रिकॉर्ड"><HouseholdPicker households={households} selectedId={selectedId} onSelect={onSelect} /></SectionCard><SectionCard title="रजिस्ट्री स्थिति अपडेट (Update Registry Status)" sub="चयनित रिकॉर्ड की registry स्थिति बदलें">{!h ? <EmptyState message="ऊपर से परिवार रिकॉर्ड चुनें।" /> : <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"><Field label="रिकॉर्ड ID (Record ID)" value={h.id} /><Field label="वर्तमान स्थिति (Current Status)" value={h.registryStatus || 'लंबित'} /><Field label="अंतिम सबमिशन (Submitted At)" value={new Date(h.submittedAt).toLocaleString('en-IN')} /><div><label className="block text-[10px] text-slate-400 mb-1">नई स्थिति (New Status)</label><select defaultValue={h.registryStatus || 'लंबित'} onChange={(e) => onUpdateStatus(h.id, e.target.value as RegistryStatus)} className="w-full border rounded-md px-2.5 py-2 text-xs"><option>लंबित</option><option>सत्यापित</option><option>सुधार आवश्यक</option><option>पुनः सत्यापन आवश्यक</option><option>बंद</option></select></div></div>}</SectionCard></div>;
 
-const AuditLogsSection: React.FC<{ households: HouseholdRecord[]; household: HouseholdRecord | null; selectedId: string; onSelect: (id: string) => void; filter: SectionFilter; setFilter: <K extends keyof SectionFilter>(key: K, value: SectionFilter[K]) => void; resetFilter: () => void }> = ({ households, household: h, selectedId, onSelect, filter, setFilter, resetFilter }) => {
-  const events = households.flatMap((row) => {
-    const base = [{ type: 'सर्वेक्षण प्राप्त', actor: 'Survey System', timestamp: row.submittedAt, message: `रिकॉर्ड ${row.id} सर्वेक्षण से प्राप्त हुआ` }];
-    if (row.verifiedAt) base.push({ type: 'फील्ड सत्यापन', actor: row.verifiedBy || 'Block Auditor', timestamp: row.verifiedAt, message: `${row.id} का सत्यापन परिणाम: ${row.verificationResult || row.auditStatus}` });
-    if (row.correctionCreatedAt) base.push({ type: 'सुधार टिकट', actor: 'Block Auditor', timestamp: row.correctionCreatedAt, message: `${row.id} के लिए ${row.correctionTicketId || 'correction ticket'} बनाया गया` });
-    return base;
-  }).filter((event) => filter.action === 'सभी' || event.type === filter.action).filter((event) => !filter.actor || event.actor.toLowerCase().includes(filter.actor.toLowerCase())).filter((event) => !filter.fromDate || new Date(event.timestamp).getTime() >= (toTime(filter.fromDate) ?? Infinity)).filter((event) => !filter.toDate || new Date(event.timestamp).getTime() <= (toTime(filter.toDate, true) ?? -Infinity)).filter((event) => !filter.query || `${event.message} ${event.actor}`.toLowerCase().includes(filter.query.toLowerCase()));
+const AuditLogsSection: React.FC<{ auditLogs: AuditLogEntry[]; households: HouseholdRecord[]; household: HouseholdRecord | null; selectedId: string; onSelect: (id: string) => void; filter: SectionFilter; setFilter: <K extends keyof SectionFilter>(key: K, value: SectionFilter[K]) => void; resetFilter: () => void }> = ({ auditLogs, households, household: h, selectedId, onSelect, filter, setFilter, resetFilter }) => {
+  const events = auditLogs
+    .map((log) => ({ type: log.action, actor: log.actor, timestamp: log.timestamp, message: log.message }))
+    .filter((event) => filter.action === 'सभी' || event.type === filter.action)
+    .filter((event) => !filter.actor || event.actor.toLowerCase().includes(filter.actor.toLowerCase()))
+    .filter((event) => !filter.fromDate || new Date(event.timestamp).getTime() >= (toTime(filter.fromDate) ?? Infinity))
+    .filter((event) => !filter.toDate || new Date(event.timestamp).getTime() <= (toTime(filter.toDate, true) ?? -Infinity))
+    .filter((event) => !filter.query || `${event.message} ${event.actor}`.toLowerCase().includes(filter.query.toLowerCase()));
   return <div className="space-y-4"><HouseholdSectionFilters kind="logs" filter={filter} setFilter={setFilter} resetFilter={resetFilter} /><SectionCard title="ऑडिट लॉग परिणाम (Audit Log Results)" sub={`${events.length} events मिले`}><div className="space-y-2">{events.length ? events.map((event, index) => <div key={`${event.timestamp}-${index}`} className="flex items-start gap-3 p-3 border rounded-lg"><ClipboardCheck className="w-4 h-4 mt-0.5 text-slate-500" /><div><p className="font-semibold text-xs">{event.message}</p><p className="text-[10px] text-slate-500">{event.type} · {event.actor} · {new Date(event.timestamp).toLocaleString('en-IN')}</p></div></div>) : <EmptyState message="इन फ़िल्टर के लिए कोई audit event नहीं मिला।" />}</div></SectionCard><SectionCard title="संबंधित रिकॉर्ड (Related Records)" sub="किसी रिकॉर्ड को चुनकर उसकी activity देखें"><HouseholdPicker households={households} selectedId={selectedId} onSelect={onSelect} /></SectionCard>{h && <SectionCard title="चयनित रिकॉर्ड (Selected Record)" sub={h.id}><div className="grid grid-cols-2 lg:grid-cols-4 gap-2"><Field label="मुखिया (Head)" value={h.headName} /><Field label="ग्राम (Village)" value={h.villageName} /><Field label="ऑडिट स्थिति (Audit)" value={h.auditStatus} /><Field label="रजिस्ट्री स्थिति (Registry)" value={h.registryStatus || 'लंबित'} /></div></SectionCard>}</div>;
 };
 

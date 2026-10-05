@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
 import { invalidateAnalyticsCache } from './adminController';
+import { getActorId, toAuditSnapshot, writeAuditLog } from '../utils/auditLog';
+import { sendInternalError } from '../utils/httpErrors';
 
 let cachedVillages: any = null;
 let villageExpiry = 0;
@@ -13,21 +15,19 @@ export function invalidateVillageCache() {
 function formatVillageRecord(v: any) {
   const qm = (v.qualityMetrics as Record<string, any>) || {};
   const vs = (v.villageSurvey as Record<string, any>) || {};
-  const surveyedHouseholds = (v as any).surveyedHouseholds !== undefined 
-    ? (v as any).surveyedHouseholds 
-    : (v.totalHouseholds || 0);
+  const surveyedHouseholds = (v as any).surveyedHouseholds ?? 0;
   const completionPercent = v.totalHouseholds > 0 
     ? Math.min(100, Math.round((surveyedHouseholds / v.totalHouseholds) * 100))
-    : 100;
+    : 0;
 
   return {
     ...v,
-    hasAnganwadi: qm.hasAnganwadi || (v as any).hasAnganwadi || 'Yes',
-    odfStatus: qm.odfStatus || (v as any).odfStatus || 'ODF Certified',
+    hasAnganwadi: qm.hasAnganwadi || (v as any).hasAnganwadi || 'Not reported',
+    odfStatus: qm.odfStatus || (v as any).odfStatus || 'Not reported',
     villageSurvey: vs,
     surveyedHouseholds,
     completionPercent,
-    updatedAt: v.updatedAt ? v.updatedAt.toISOString() : new Date().toISOString()
+    updatedAt: v.updatedAt ? v.updatedAt.toISOString() : undefined
   };
 }
 
@@ -55,7 +55,7 @@ export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyR
 
     const result: Record<string, any> = {};
     villages.forEach((v) => {
-      const surveyedCount = countMap[v.villageName] !== undefined ? countMap[v.villageName] : v.totalHouseholds;
+      const surveyedCount = countMap[v.villageName] ?? 0;
       result[v.villageName] = formatVillageRecord({ ...v, surveyedHouseholds: surveyedCount });
     });
 
@@ -63,7 +63,7 @@ export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyR
     villageExpiry = now + 60000;
     return reply.send(result);
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Village profile query failed');
   }
 }
 
@@ -83,7 +83,7 @@ export async function getVillageProfile(req: FastifyRequest, reply: FastifyReply
     }
     return reply.send(formatVillageRecord(village));
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Village profile lookup failed');
   }
 }
 
@@ -119,62 +119,80 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
 
   const mergedQualityMetrics = {
     ...(quality || {}),
-    hasAnganwadi: hasAnganwadi || (quality && quality.hasAnganwadi) || 'Yes',
-    odfStatus: odfStatus || (quality && quality.odfStatus) || 'ODF Certified'
+    hasAnganwadi: hasAnganwadi || (quality && quality.hasAnganwadi) || 'Not reported',
+    odfStatus: odfStatus || (quality && quality.odfStatus) || 'Not reported'
   };
 
   try {
-    const upserted = await prisma.villageProfile.upsert({
-      where: { villageName },
-      update: {
-        block,
-        panchayat,
-        totalPopulation: totalPopulation || 0,
-        totalHouseholds: totalHouseholds || 0,
-        scCount: scCount || 0,
-        stCount: stCount || 0,
-        puccaHouses: puccaHouses || 0,
-        semiPuccaHouses: semiPuccaHouses || 0,
-        kacchaHouses: kacchaHouses || 0,
-        mineDistanceKm: mineDistanceKm || '0 to 5 KM',
-        hasPuccaRoad: hasPuccaRoad || 'Yes',
-        monsoonCutOff: monsoonCutOff || 'No',
-        schoolType: schoolType || 'Primary School',
-        hospitalType: hospitalType || 'Sub-Health Centre (SHC)',
-        electrification: electrification || 'Fully Electrified',
-        qualityMetrics: mergedQualityMetrics,
-        gapMatrix: gapMatrix || {},
-        villageSurvey: villageSurvey || {},
-        version: { increment: 1 }
-      },
-      create: {
-        block,
-        panchayat,
-        villageName,
-        totalPopulation: totalPopulation || 0,
-        totalHouseholds: totalHouseholds || 0,
-        scCount: scCount || 0,
-        stCount: stCount || 0,
-        puccaHouses: puccaHouses || 0,
-        semiPuccaHouses: semiPuccaHouses || 0,
-        kacchaHouses: kacchaHouses || 0,
-        mineDistanceKm: mineDistanceKm || '0 to 5 KM',
-        hasPuccaRoad: hasPuccaRoad || 'Yes',
-        monsoonCutOff: monsoonCutOff || 'No',
-        schoolType: schoolType || 'Primary School',
-        hospitalType: hospitalType || 'Sub-Health Centre (SHC)',
-        electrification: electrification || 'Fully Electrified',
-        qualityMetrics: mergedQualityMetrics,
-        gapMatrix: gapMatrix || {},
-        villageSurvey: villageSurvey || {}
-      }
+    const upserted = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT pg_advisory_xact_lock(hashtext(${villageName}), -1);
+      `;
+      const existing = await tx.villageProfile.findUnique({ where: { villageName } });
+      const actorId = getActorId(req);
+      const record = await tx.villageProfile.upsert({
+        where: { villageName },
+        update: {
+          block,
+          panchayat,
+          totalPopulation: totalPopulation || 0,
+          totalHouseholds: totalHouseholds || 0,
+          scCount: scCount || 0,
+          stCount: stCount || 0,
+          puccaHouses: puccaHouses || 0,
+          semiPuccaHouses: semiPuccaHouses || 0,
+          kacchaHouses: kacchaHouses || 0,
+          mineDistanceKm: mineDistanceKm || 'Not reported',
+          hasPuccaRoad: hasPuccaRoad || 'Not reported',
+          monsoonCutOff: monsoonCutOff || 'Not reported',
+          schoolType: schoolType || 'Not reported',
+          hospitalType: hospitalType || 'Not reported',
+          electrification: electrification || 'Not reported',
+          qualityMetrics: mergedQualityMetrics,
+          gapMatrix: gapMatrix || {},
+          villageSurvey: villageSurvey || {},
+          version: { increment: 1 }
+        },
+        create: {
+          block,
+          panchayat,
+          villageName,
+          totalPopulation: totalPopulation || 0,
+          totalHouseholds: totalHouseholds || 0,
+          scCount: scCount || 0,
+          stCount: stCount || 0,
+          puccaHouses: puccaHouses || 0,
+          semiPuccaHouses: semiPuccaHouses || 0,
+          kacchaHouses: kacchaHouses || 0,
+          mineDistanceKm: mineDistanceKm || 'Not reported',
+          hasPuccaRoad: hasPuccaRoad || 'Not reported',
+          monsoonCutOff: monsoonCutOff || 'Not reported',
+          schoolType: schoolType || 'Not reported',
+          hospitalType: hospitalType || 'Not reported',
+          electrification: electrification || 'Not reported',
+          qualityMetrics: mergedQualityMetrics,
+          gapMatrix: gapMatrix || {},
+          villageSurvey: villageSurvey || {},
+          createdBy: actorId
+        }
+      });
+      await writeAuditLog(tx, {
+        entityType: 'village', entityId: record.id, action: existing ? 'updated' : 'created', changedBy: actorId,
+        changes: {
+          reason: 'Village survey submission',
+          changedFields: Object.keys(body),
+          before: toAuditSnapshot(existing),
+          after: toAuditSnapshot(record)
+        }
+      });
+      return record;
     });
 
     invalidateVillageCache();
     invalidateAnalyticsCache();
     return reply.status(200).send({ success: true, data: formatVillageRecord(upserted) });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Village profile save failed');
   }
 }
 
@@ -189,28 +207,46 @@ export async function patchVillageProfile(req: FastifyRequest, reply: FastifyRep
   }
 
   try {
-    const updated = await prisma.villageProfile.updateMany({
-      where: { id, version },
-      data: {
-        totalPopulation: updates.totalPopulation !== undefined ? updates.totalPopulation : undefined,
-        totalHouseholds: updates.totalHouseholds !== undefined ? updates.totalHouseholds : undefined,
-        qualityMetrics: updates.quality !== undefined ? updates.quality : undefined,
-        gapMatrix: updates.gapMatrix !== undefined ? updates.gapMatrix : undefined,
-        villageSurvey: updates.villageSurvey !== undefined ? updates.villageSurvey : undefined,
-        version: { increment: 1 }
-      }
+    const result = await prisma.$transaction(async (tx) => {
+      const before = await tx.villageProfile.findUnique({ where: { id } });
+      if (!before || before.version !== version) return null;
+
+      const updated = await tx.villageProfile.updateMany({
+        where: { id, version },
+        data: {
+          totalPopulation: updates.totalPopulation !== undefined ? updates.totalPopulation : undefined,
+          totalHouseholds: updates.totalHouseholds !== undefined ? updates.totalHouseholds : undefined,
+          qualityMetrics: updates.quality !== undefined ? updates.quality : undefined,
+          gapMatrix: updates.gapMatrix !== undefined ? updates.gapMatrix : undefined,
+          villageSurvey: updates.villageSurvey !== undefined ? updates.villageSurvey : undefined,
+          version: { increment: 1 }
+        }
+      });
+      if (updated.count === 0) return null;
+
+      const record = await tx.villageProfile.findUnique({ where: { id } });
+      if (!record) return null;
+      await writeAuditLog(tx, {
+        entityType: 'village', entityId: id, action: 'updated', changedBy: getActorId(req),
+        changes: {
+          reason: 'Village survey correction',
+          changedFields: Object.keys(updates),
+          before: toAuditSnapshot(before),
+          after: toAuditSnapshot(record)
+        }
+      });
+      return record;
     });
 
-    if (updated.count === 0) {
+    if (!result) {
       return reply.status(409).send({ error: 'Conflict: Village profile was updated by another user. Reload and try again.' });
     }
 
     invalidateVillageCache();
     invalidateAnalyticsCache();
-    const result = await prisma.villageProfile.findUnique({ where: { id } });
     return reply.send({ success: true, data: result ? formatVillageRecord(result) : null });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Village profile update failed');
   }
 }
 
@@ -218,14 +254,19 @@ export async function deleteVillageProfile(req: FastifyRequest, reply: FastifyRe
   const params = (req.params || {}) as { id: string };
   const { id } = params;
   try {
-    const deleted = await prisma.villageProfile.delete({
-      where: { id }
+    const deleted = await prisma.$transaction(async (tx) => {
+      const record = await tx.villageProfile.delete({ where: { id } });
+      await writeAuditLog(tx, {
+        entityType: 'village', entityId: id, action: 'deleted', changedBy: getActorId(req),
+        changes: { reason: 'Administrative village deletion', before: toAuditSnapshot(record), after: null }
+      });
+      return record;
     });
     invalidateVillageCache();
     invalidateAnalyticsCache();
     return reply.send({ success: true, data: formatVillageRecord(deleted) });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Village profile delete failed');
   }
 }
 

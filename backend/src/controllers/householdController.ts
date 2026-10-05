@@ -1,8 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { randomUUID } from 'crypto';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
 import { withDbRetry } from '../utils/dbRetry';
 import { invalidateAnalyticsCache } from './adminController';
 import { invalidateVillageCache } from './villageController';
+import { getActorId, toAuditSnapshot, writeAuditLog } from '../utils/auditLog';
+import { sendInternalError } from '../utils/httpErrors';
 
 export async function getHouseholdSurveys(req: FastifyRequest, reply: FastifyReply) {
   const query = (req.query || {}) as { villageName?: string };
@@ -26,7 +30,7 @@ export async function getHouseholdSurveys(req: FastifyRequest, reply: FastifyRep
         houseNumber: h.houseNumber,
         villageName: h.villageName,
         panchayat: answers.panchayat || answers.panchayatName || '',
-        block: answers.block || answers.blockName || 'Narayanpur',
+        block: answers.block || answers.blockName || '',
         headName: h.headName,
         mobile: h.mobile,
         caste: h.caste,
@@ -56,13 +60,120 @@ export async function getHouseholdSurveys(req: FastifyRequest, reply: FastifyRep
         auditNote: h.auditNote,
         version: h.version,
         submittedAt: h.submittedAt ? h.submittedAt.toISOString() : new Date().toISOString(),
+        surveyAnswers: answers,
         ...answers
       };
     });
 
     return reply.send(result);
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Household survey query failed');
+  }
+}
+
+export async function createHouseholdSlots(req: FastifyRequest, reply: FastifyReply) {
+  const { villageName, block, panchayat, count } = req.body as {
+    villageName: string;
+    block: string;
+    panchayat: string;
+    count: number;
+  };
+
+  try {
+    const data = await prisma.$transaction(async (tx) => {
+      const actorId = getActorId(req);
+      await tx.$queryRaw`
+        SELECT pg_advisory_xact_lock(hashtext(${villageName}), -1);
+      `;
+      const existingVillage = await tx.villageProfile.findUnique({ where: { villageName } });
+      const village = await tx.villageProfile.upsert({
+        where: { villageName },
+        update: {},
+        create: {
+          villageName, block, panchayat,
+          mineDistanceKm: 'Not reported', hasPuccaRoad: 'Not reported',
+          monsoonCutOff: 'Not reported', schoolType: 'Not reported',
+          hospitalType: 'Not reported', electrification: 'Not reported', createdBy: actorId
+        }
+      });
+      if (!existingVillage) {
+        await writeAuditLog(tx, {
+          entityType: 'village', entityId: village.id, action: 'created', changedBy: actorId,
+          changes: {
+            reason: 'Village initialized for household survey',
+            before: null,
+            after: toAuditSnapshot(village)
+          }
+        });
+      }
+
+      const completionFields = [
+        'generalCompleted', 'demographyCompleted', 'documentsCompleted', 'womenCompleted',
+        'disabilityCompleted', 'educationCompleted', 'employmentCompleted', 'housingCompleted',
+        'healthCompleted', 'shgCompleted', 'otherCompleted'
+      ];
+      const created = await tx.householdSurvey.createManyAndReturn({
+        data: Array.from({ length: count }, (_, index) => {
+          const houseNumber = index + 1;
+          return {
+            trackingId: `DMFT-HHD-${randomUUID()}`,
+            villageName,
+            houseNumber,
+            headName: '',
+            mobile: '',
+            caste: '',
+            isBPL: '',
+            totalMembers: 1,
+            eldersCount: 0,
+            childrenCount: 0,
+            unemployedCount: 0,
+            incomeSource: '',
+            missingAadhaar: 0,
+            missingCasteCert: 0,
+            missingAyushman: 0,
+            missingVoterId: 0,
+            isMiningWorker: '',
+            houseType: '',
+            hasToilet: '',
+            hasTapWater: '',
+            surveyAnswers: {
+              villageName, block, panchayat, houseNumber,
+              ...Object.fromEntries(completionFields.map((field) => [field, false]))
+            },
+            createdBy: actorId
+          };
+        }),
+        skipDuplicates: true,
+        select: { id: true, trackingId: true, houseNumber: true, version: true, surveyAnswers: true }
+      });
+
+      if (created.length > 0) {
+        await tx.surveyAuditLog.createMany({
+          data: created.map((record) => ({
+            entityType: 'household',
+            entityId: record.id,
+            action: 'created',
+            changedBy: actorId,
+            changes: {
+              reason: 'Household survey slot initialized',
+              before: null,
+              after: toAuditSnapshot(record)
+            } as Prisma.InputJsonValue
+          }))
+        });
+      }
+
+      return tx.householdSurvey.findMany({
+        where: { villageName, houseNumber: { lte: count } },
+        orderBy: { houseNumber: 'asc' }
+      });
+    });
+
+    invalidateAnalyticsCache();
+    invalidateVillageCache();
+    return reply.status(200).send({ success: true, data });
+  } catch (error) {
+    return sendInternalError(req, reply, error, 'Household survey slots initialization failed');
   }
 }
 
@@ -81,28 +192,38 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
 
     const result = await withDbRetry(async () => {
       return await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT pg_advisory_xact_lock(hashtext(${villageName}), ${houseNumber});
+        `;
+        const actorId = getActorId(req);
+        const existing = await tx.householdSurvey.findUnique({
+          where: { uniqueHousePerVillage: { villageName, houseNumber } }
+        });
+
         // Ensure parent VillageProfile exists to satisfy FK constraint
-        await tx.villageProfile.upsert({
+        const existingVillage = await tx.villageProfile.findUnique({ where: { villageName } });
+        const village = await tx.villageProfile.upsert({
           where: { villageName },
           update: {},
           create: {
             villageName,
-            block: payloadData.blockName || payloadData.block || 'Narayanpur',
-            panchayat: payloadData.panchayatName || payloadData.panchayat || villageName,
-            mineDistanceKm: '0 to 5 KM',
-            hasPuccaRoad: 'Yes',
-            monsoonCutOff: 'No',
-            schoolType: 'Primary School',
-            hospitalType: 'Sub-Health Centre (SHC)',
-            electrification: 'Fully Electrified'
+            block: payloadData.blockName || payloadData.block || 'Not reported',
+            panchayat: payloadData.panchayatName || payloadData.panchayat || 'Not reported',
+            mineDistanceKm: 'Not reported',
+            hasPuccaRoad: 'Not reported',
+            monsoonCutOff: 'Not reported',
+            schoolType: 'Not reported',
+            hospitalType: 'Not reported',
+            electrification: 'Not reported',
+            createdBy: actorId
           }
         });
-
-        await tx.$executeRaw`
-          SELECT id FROM household_surveys 
-          WHERE village_name = ${villageName} AND house_number = ${houseNumber} 
-          FOR UPDATE;
-        `;
+        if (!existingVillage) {
+          await writeAuditLog(tx, {
+            entityType: 'village', entityId: village.id, action: 'created', changedBy: actorId,
+            changes: { villageName, block: village.block, panchayat: village.panchayat, source: 'household_survey' }
+          });
+        }
 
         const survey = await tx.householdSurvey.upsert({
           where: {
@@ -112,23 +233,23 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             }
           },
           update: {
-            headName: payloadData.headName || 'Household Head',
+            headName: payloadData.headName || '',
             mobile: payloadData.mobile || '',
-            caste: payloadData.caste || 'Scheduled Tribe (ST)',
-            isBPL: payloadData.isBPL || 'Yes',
+            caste: payloadData.caste || '',
+            isBPL: payloadData.isBPL || '',
             totalMembers: Number(payloadData.totalMembers || 1),
             eldersCount: Number(payloadData.eldersCount || 0),
             childrenCount: Number(payloadData.childrenCount || 0),
             unemployedCount: Number(payloadData.unemployedCount || 0),
-            incomeSource: payloadData.incomeSource || 'Agriculture',
+            incomeSource: payloadData.incomeSource || '',
             missingAadhaar: Number(payloadData.missingAadhaar || 0),
             missingCasteCert: Number(payloadData.missingCasteCert || 0),
             missingAyushman: Number(payloadData.missingAyushman || 0),
             missingVoterId: Number(payloadData.missingVoterId || 0),
-            isMiningWorker: payloadData.isMiningWorker || 'No',
-            houseType: payloadData.houseType || 'Kaccha House',
-            hasToilet: payloadData.hasToilet || 'Yes',
-            hasTapWater: payloadData.hasTapWater || 'No',
+            isMiningWorker: payloadData.isMiningWorker || '',
+            houseType: payloadData.houseType || '',
+            hasToilet: payloadData.hasToilet || '',
+            hasTapWater: payloadData.hasTapWater || '',
             surveyAnswers: payloadData,
             version: { increment: 1 }
           },
@@ -136,27 +257,40 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             trackingId,
             villageName,
             houseNumber,
-            headName: payloadData.headName || 'Household Head',
+            createdBy: actorId,
+            headName: payloadData.headName || '',
             mobile: payloadData.mobile || '',
-            caste: payloadData.caste || 'Scheduled Tribe (ST)',
-            isBPL: payloadData.isBPL || 'Yes',
+            caste: payloadData.caste || '',
+            isBPL: payloadData.isBPL || '',
             totalMembers: Number(payloadData.totalMembers || 1),
             eldersCount: Number(payloadData.eldersCount || 0),
             childrenCount: Number(payloadData.childrenCount || 0),
             unemployedCount: Number(payloadData.unemployedCount || 0),
-            incomeSource: payloadData.incomeSource || 'Agriculture',
+            incomeSource: payloadData.incomeSource || '',
             missingAadhaar: Number(payloadData.missingAadhaar || 0),
             missingCasteCert: Number(payloadData.missingCasteCert || 0),
             missingAyushman: Number(payloadData.missingAyushman || 0),
             missingVoterId: Number(payloadData.missingVoterId || 0),
-            isMiningWorker: payloadData.isMiningWorker || 'No',
-            houseType: payloadData.houseType || 'Kaccha House',
-            hasToilet: payloadData.hasToilet || 'Yes',
-            hasTapWater: payloadData.hasTapWater || 'No',
+            isMiningWorker: payloadData.isMiningWorker || '',
+            houseType: payloadData.houseType || '',
+            hasToilet: payloadData.hasToilet || '',
+            hasTapWater: payloadData.hasTapWater || '',
             surveyAnswers: payloadData
           }
         });
 
+        await writeAuditLog(tx, {
+          entityType: 'household',
+          entityId: survey.id,
+          action: existing ? 'updated' : 'created',
+          changedBy: actorId,
+          changes: {
+            reason: 'Household survey submission',
+            changedFields: Object.keys(payloadData),
+            before: toAuditSnapshot(existing),
+            after: toAuditSnapshot(survey)
+          }
+        });
         return survey;
       });
     });
@@ -165,7 +299,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
     invalidateVillageCache();
     return reply.status(200).send({ success: true, data: result });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Household survey save failed');
   }
 }
 
@@ -198,29 +332,42 @@ export async function patchHouseholdSurvey(req: FastifyRequest, reply: FastifyRe
     if (updates.auditStatus !== undefined) dataToUpdate.auditStatus = updates.auditStatus;
     if (updates.registryStatus !== undefined) dataToUpdate.registryStatus = updates.registryStatus;
 
-    if (version !== undefined) {
-      dataToUpdate.version = { increment: 1 };
-      const updated = await prisma.householdSurvey.updateMany({
+    dataToUpdate.version = { increment: 1 };
+    const result = await prisma.$transaction(async (tx) => {
+      const before = await tx.householdSurvey.findUnique({ where: { id } });
+      if (!before || before.version !== Number(version)) return null;
+
+      const updated = await tx.householdSurvey.updateMany({
         where: { id, version: Number(version) },
         data: dataToUpdate
       });
+      if (updated.count === 0) return null;
 
-      if (updated.count === 0) {
-        return reply.status(409).send({ error: 'Conflict: Survey record was modified by another user. Reload and retry.' });
-      }
-    } else {
-      await prisma.householdSurvey.update({
-        where: { id },
-        data: dataToUpdate
+      const record = await tx.householdSurvey.findUnique({ where: { id } });
+      if (!record) return null;
+      await writeAuditLog(tx, {
+        entityType: 'household',
+        entityId: id,
+        action: 'updated',
+        changedBy: getActorId(req),
+        changes: {
+          changedFields: Object.keys(dataToUpdate).filter((field) => field !== 'version'),
+          before: toAuditSnapshot(before),
+          after: toAuditSnapshot(record)
+        }
       });
+      return record;
+    });
+
+    if (!result) {
+      return reply.status(409).send({ error: 'Conflict: Survey record was modified by another user. Reload and retry.' });
     }
 
     invalidateAnalyticsCache();
     invalidateVillageCache();
-    const result = await prisma.householdSurvey.findUnique({ where: { id } });
     return reply.send({ success: true, data: result });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Household survey update failed');
   }
 }
 
@@ -228,44 +375,61 @@ export async function deleteHouseholdSurvey(req: FastifyRequest, reply: FastifyR
   const params = (req.params || {}) as { id: string };
   const { id } = params;
   try {
-    const deleted = await prisma.householdSurvey.delete({
-      where: { id }
+    const deleted = await prisma.$transaction(async (tx) => {
+      const record = await tx.householdSurvey.delete({ where: { id } });
+      await writeAuditLog(tx, {
+        entityType: 'household', entityId: id, action: 'deleted', changedBy: getActorId(req),
+        changes: { reason: 'Administrative household deletion', before: toAuditSnapshot(record), after: null }
+      });
+      return record;
     });
     invalidateAnalyticsCache();
     invalidateVillageCache();
     return reply.send({ success: true, data: deleted });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Household survey delete failed');
   }
 }
 
 export async function verifyHouseholdRecord(req: FastifyRequest, reply: FastifyReply) {
   const params = (req.params || {}) as { id: string };
-  const body = (req.body || {}) as { result?: string; actor?: string };
+  const body = (req.body || {}) as { result?: string };
   const { id } = params;
   const resultStr = body.result || 'सत्यापित';
-  const actorStr = body.actor || 'Block Auditor';
 
   try {
     const auditStatus = resultStr === 'सत्यापित' ? 'सत्यापित' : 'फ्लैग';
     const registryStatus = resultStr === 'सत्यापित' ? 'सत्यापित' : resultStr === 'विसंगति मिली' ? 'सुधार आवश्यक' : 'पुनः सत्यापन आवश्यक';
 
-    const updated = await prisma.householdSurvey.update({
-      where: { id },
-      data: {
-        verificationResult: resultStr,
-        verifiedBy: actorStr,
-        verifiedAt: new Date(),
-        auditStatus,
-        registryStatus
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      const actorId = getActorId(req);
+      const before = await tx.householdSurvey.findUnique({ where: { id } });
+      const record = await tx.householdSurvey.update({
+        where: { id },
+        data: {
+          verificationResult: resultStr,
+          verifiedBy: actorId,
+          verifiedAt: new Date(),
+          auditStatus,
+          registryStatus
+        }
+      });
+      await writeAuditLog(tx, {
+        entityType: 'household', entityId: id, action: 'verified', changedBy: actorId,
+        changes: {
+          reason: 'Administrative verification',
+          before: toAuditSnapshot(before),
+          after: toAuditSnapshot(record)
+        }
+      });
+      return record;
     });
 
     invalidateAnalyticsCache();
     invalidateVillageCache();
     return reply.send({ success: true, data: updated });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Household verification failed');
   }
 }
 
@@ -278,48 +442,72 @@ export async function updateRegistryStatusRecord(req: FastifyRequest, reply: Fas
   try {
     const auditStatus = (statusStr === 'सत्यापित' || statusStr === 'बंद') ? 'सत्यापित' : 'फ्लैग';
 
-    const updated = await prisma.householdSurvey.update({
-      where: { id },
-      data: {
-        registryStatus: statusStr,
-        auditStatus
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      const actorId = getActorId(req);
+      const before = await tx.householdSurvey.findUnique({ where: { id } });
+      const record = await tx.householdSurvey.update({
+        where: { id },
+        data: { registryStatus: statusStr, auditStatus }
+      });
+      await writeAuditLog(tx, {
+        entityType: 'household', entityId: id, action: 'registry_status_changed', changedBy: actorId,
+        changes: {
+          reason: 'Administrative registry status change',
+          before: toAuditSnapshot(before),
+          after: toAuditSnapshot(record)
+        }
+      });
+      return record;
     });
 
     invalidateAnalyticsCache();
     invalidateVillageCache();
     return reply.send({ success: true, data: updated });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Household registry update failed');
   }
 }
 
 export async function createCorrectionTicketRecord(req: FastifyRequest, reply: FastifyReply) {
   const params = (req.params || {}) as { id: string };
-  const body = (req.body || {}) as { reason?: string; note?: string; actor?: string };
+  const body = (req.body || {}) as { reason?: string; note?: string };
   const { id } = params;
   const reasonStr = body.reason || 'दस्तावेज़ सुधार आवश्यक';
   const noteStr = body.note || '';
 
   try {
     const ticketId = `CT-${Date.now()}`;
-    const updated = await prisma.householdSurvey.update({
-      where: { id },
-      data: {
-        correctionTicketId: ticketId,
-        correctionReason: reasonStr,
-        correctionNote: noteStr,
-        correctionCreatedAt: new Date(),
-        auditNote: `${reasonStr}${noteStr ? `: ${noteStr}` : ''}`,
-        registryStatus: 'सुधार आवश्यक',
-        auditStatus: 'फ्लैग'
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      const actorId = getActorId(req);
+      const before = await tx.householdSurvey.findUnique({ where: { id } });
+      const record = await tx.householdSurvey.update({
+        where: { id },
+        data: {
+          correctionTicketId: ticketId,
+          correctionReason: reasonStr,
+          correctionNote: noteStr,
+          correctionCreatedAt: new Date(),
+          auditNote: `${reasonStr}${noteStr ? `: ${noteStr}` : ''}`,
+          registryStatus: 'सुधार आवश्यक',
+          auditStatus: 'फ्लैग'
+        }
+      });
+      await writeAuditLog(tx, {
+        entityType: 'household', entityId: id, action: 'correction_ticket_created', changedBy: actorId,
+        changes: {
+          reason: reasonStr,
+          note: noteStr,
+          before: toAuditSnapshot(before),
+          after: toAuditSnapshot(record)
+        }
+      });
+      return record;
     });
 
     invalidateAnalyticsCache();
     invalidateVillageCache();
     return reply.send({ success: true, ticketId, data: updated });
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Correction ticket creation failed');
   }
 }

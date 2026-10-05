@@ -6,7 +6,7 @@ import {
   Lock,
 } from "lucide-react";
 
-import GeneralInformation from "./general/GeneralInformation";
+import GeneralInformation, { type GeneralInformationFormData } from "./general/GeneralInformation";
 import AnganbadiSection from "./anganbadi/AnganbadiSection";
 import SchoolSection from "./school/SchoolSection";
 import HostelSection from "./hostel/HostelSection";
@@ -197,48 +197,40 @@ const SectionCard: React.FC<SectionProps> = ({
   </button>
 );
 
-const Field: React.FC<{
-  label: string;
-  children: React.ReactNode;
-  required?: boolean;
-}> = ({ label, children, required }) => (
-  <div>
-    <label className="block text-xs font-bold text-slate-700 mb-1.5">
-      {label}{" "}
-      {required && (
-        <span className="text-rose-600">*</span>
-      )}
-    </label>
-
-    {children}
-  </div>
-);
-
-const inputClass =
-  "w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-900";
-
 export const VillageSurveyForm: React.FC<{
   village: Village;
   blockName: string;
   panchayatName: string;
+  initialData?: Record<string, unknown>;
   onBack: () => void;
-  onComplete: (data: any) => void;
+  onComplete: (data: Record<string, unknown>) => void;
 }> = ({
   village,
   blockName,
   panchayatName,
+  initialData,
   onBack,
   onComplete,
 }) => {
   const [activeSection, setActiveSection] =
     useState<string | null>(null);
 
-  const [completedSections, setCompletedSections] =
-    useState<string[]>([]);
+  const [completedSections, setCompletedSections] = useState<string[]>(() => {
+    if (!initialData) return [];
+    const sectionFields: Record<string, string> = {
+      education: "anganbadiData", school: "schoolData", hostel: "hostelData", health: "healthData",
+      water: "waterData", livelihood: "employmentData", ladies: "ladiesData",
+      cleanliness: "cleanlinessData", pension: "pensionData", development: "developmentData"
+    };
+    return [
+      ...(initialData.totalHouseholds ? ["general"] : []),
+      ...Object.entries(sectionFields)
+        .filter(([, field]) => Object.prototype.hasOwnProperty.call(initialData, field))
+        .map(([section]) => section)
+    ];
+  });
 
-  const [formData, setFormData] = useState<
-    Record<string, any>
-  >({
+  const [formData, setFormData] = useState<GeneralInformationFormData & Record<string, unknown>>({
     totalHouseholds: "",
     totalPopulation: "",
     scPopulation: "",
@@ -254,6 +246,8 @@ export const VillageSurveyForm: React.FC<{
     mobileNetwork: "",
     electricity: "",
     road: "",
+    roadconnectivity: "",
+    roadReasons: [],
     tapWater: "",
     ponds: "",
 
@@ -272,11 +266,12 @@ export const VillageSurveyForm: React.FC<{
     housingNotSanctioned: "",
     banking: "",
     irrigatedLand: "",
+    ...initialData,
   });
 
-  const setValue = (
-    key: string,
-    value: string
+  const setValue = <K extends keyof GeneralInformationFormData>(
+    key: K,
+    value: GeneralInformationFormData[K]
   ) => {
     setFormData((prev) => ({
       ...prev,

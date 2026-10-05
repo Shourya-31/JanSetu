@@ -1,8 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CheckCircle2, LogOut, ArrowLeft } from "lucide-react";
 
-import { CENSUS_HIERARCHY } from "../../data/narayanpurHierarchy";
-import type { Village } from "../../data/narayanpurHierarchy";
+import type { Block, Village } from "../../data/narayanpurHierarchy";
+import {
+  fetchHierarchy,
+  fetchHouseholdSurveys,
+  fetchVillageProfile,
+  initializeHouseholdSlots,
+  saveHouseholdSurvey,
+  saveVillageSurvey,
+  updateHouseholdSurvey
+} from "../../services/surveyorApi";
 
 import { VillageSurveyForm } from "./village-survey/VillageSurveyForm";
 
@@ -32,12 +40,25 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   const [viewMode, setViewMode] = useState<
     "selection" | "village_menu" | "village_survey" | "household_survey"
   >("selection");
+  const [hierarchy, setHierarchy] = useState<Block[]>([]);
+  const [dataError, setDataError] = useState("");
+  const [dataLoading, setDataLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchHierarchy()
+      .then((rows) => { if (active) setHierarchy(rows); })
+      .catch((error: unknown) => {
+        if (active) setDataError(error instanceof Error ? error.message : "ग्राम सूची लोड नहीं हो सकी।");
+      });
+    return () => { active = false; };
+  }, []);
 
   // =========================================================
   // VILLAGE SURVEY DATA
   // =========================================================
 
-  const [villageData, setVillageData] = useState<any>(null);
+  const [villageData, setVillageData] = useState<Record<string, unknown> | null>(null);
 
   // =========================================================
   // HOUSEHOLD DATA
@@ -49,7 +70,7 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   // SELECTED BLOCK / PANCHAYAT / VILLAGES
   // =========================================================
 
-  const selectedBlock = CENSUS_HIERARCHY.find(
+  const selectedBlock = hierarchy.find(
     (block) => block.id === selectedBlockId
   );
 
@@ -105,54 +126,104 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
   const handleVillageSelect = (village: Village) => {
     setSelectedVillage(village);
-
-    // New village => fresh survey state
-    setVillageData(null);
-    setHouseholds([]);
-
-    setViewMode("village_menu");
+    setDataError("");
+    setDataLoading(true);
+    Promise.all([
+      fetchVillageProfile(village.nameHindi),
+      fetchHouseholdSurveys(village.nameHindi)
+    ]).then(([profile, records]) => {
+      setVillageData(profile?.villageSurvey ?? null);
+      const loaded = Object.values(records)
+        .sort((left, right) => left.houseNumber - right.houseNumber)
+        .map((record) => {
+          const answers = record.surveyAnswers ?? {};
+          const completed = [
+            "generalCompleted", "demographyCompleted", "documentsCompleted", "womenCompleted",
+            "disabilityCompleted", "educationCompleted", "employmentCompleted", "housingCompleted",
+            "healthCompleted", "shgCompleted", "otherCompleted"
+          ].every((key) => answers[key] === true);
+          return {
+            id: record.id,
+            version: record.version,
+            houseNumber: record.houseNumber,
+            headName: record.headName,
+            isCompleted: completed,
+            data: answers
+          };
+        });
+      setHouseholds(loaded);
+        setViewMode("village_menu");
+    }).catch((error: unknown) => {
+      setDataError(error instanceof Error ? error.message : "ग्राम सर्वे डेटा लोड नहीं हो सका।");
+      setVillageData(null);
+      setHouseholds([]);
+    }).finally(() => setDataLoading(false));
   };
 
   // =========================================================
   // SAVE HOUSEHOLD
   // =========================================================
 
-  const handleSaveHousehold = (
-  houseNumber: number,
-  formData: any
-) => {
-  const requiredSections = [
-    "generalCompleted",
-    "demographyCompleted",
-    "documentsCompleted",
-    "womenCompleted",
-    "disabilityCompleted",
-    "educationCompleted",
-    "employmentCompleted",
-    "housingCompleted",
-    "healthCompleted",
-    "shgCompleted",
-    "otherCompleted",
-  ];
+  const handleSaveHousehold = async (houseNumber: number, formData: Record<string, unknown>) => {
+    const requiredSections = [
+      "generalCompleted", "demographyCompleted", "documentsCompleted", "womenCompleted",
+      "disabilityCompleted", "educationCompleted", "employmentCompleted", "housingCompleted",
+      "healthCompleted", "shgCompleted", "otherCompleted"
+    ];
+    const isFullyCompleted = requiredSections.every((key) => formData?.[key] === true);
+    if (!selectedVillage) return;
 
-  const isFullyCompleted = requiredSections.every(
-    (key) => Boolean(formData?.[key])
-  );
+    setDataError("");
+    const count = (value: unknown, fallback = 0) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+    };
+    const surveyAnswers = {
+      ...formData,
+      villageName: selectedVillage.nameHindi,
+      houseNumber,
+      block: selectedBlock?.blockName ?? "",
+      blockName: selectedBlock?.blockName ?? "",
+      panchayat: selectedPanchayat?.name ?? "",
+      panchayatName: selectedPanchayat?.name ?? "",
+      surveyorName: formData.surveyorName || surveyorId,
+      isBPL: formData.isBPL || formData.isBpl || "Yes",
+      isMiningWorker: formData.isMiningWorker || formData.miningEmployment || "No",
+      totalMembers: count(formData.totalMembers, 1),
+      eldersCount: count(formData.eldersCount ?? formData.elderly),
+      childrenCount: count(formData.childrenCount ?? formData.children),
+      unemployedCount: count(formData.unemployedCount ?? formData.unemployedMembers),
+      missingAadhaar: count(formData.missingAadhaar ?? formData.noAadhaarMembers),
+      missingCasteCert: count(formData.missingCasteCert ?? formData.noCasteCertificateMembers),
+      missingAyushman: count(formData.missingAyushman ?? formData.noAyushmanMembers),
+      missingVoterId: count(formData.missingVoterId ?? formData.noVoterIdMembers),
+      incomeSource: formData.incomeSource || formData.mainIncomeSource || "Agriculture",
+      hasToilet: formData.hasToilet || formData.toiletStatus || "No",
+      hasTapWater: formData.hasTapWater || formData.tapWaterConnection || "No"
+    };
+    const existing = households.find((household) => household.houseNumber === houseNumber);
 
-  setHouseholds((prev) =>
-    prev.map((household) =>
-      household.houseNumber === houseNumber
-        ? {
-            ...household,
-            isCompleted: isFullyCompleted,
-            headName:
-              formData?.headName || household.headName,
-            data: formData,
-          }
-        : household
-    )
-  );
-};
+    try {
+      const response = existing?.id && existing.version
+        ? await updateHouseholdSurvey(existing.id, existing.version, surveyAnswers)
+        : await saveHouseholdSurvey(selectedVillage.nameHindi, houseNumber, surveyAnswers);
+      const saved = response.data;
+      const item: HouseholdItem = {
+        id: saved.id,
+        version: saved.version,
+        houseNumber: saved.houseNumber,
+        isCompleted: isFullyCompleted,
+        headName: saved.headName,
+        data: saved.surveyAnswers ?? surveyAnswers
+      };
+      setHouseholds((previous) => previous.some((row) => row.houseNumber === houseNumber)
+        ? previous.map((row) => row.houseNumber === houseNumber ? item : row)
+        : [...previous, item].sort((left, right) => left.houseNumber - right.houseNumber));
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "परिवार सर्वे सहेजा नहीं जा सका।");
+      throw error;
+    }
+  };
   // =========================================================
   // HOUSEHOLD COUNT SUBMIT
   // =========================================================
@@ -161,16 +232,31 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   // Then cards are generated according to that number.
   // =========================================================
 
-  const handleHouseholdCountSubmit = (count: number) => {
-    const newHouseholds: HouseholdItem[] = Array.from(
-      { length: count },
-      (_, index) => ({
-        houseNumber: index + 1,
+  const handleHouseholdCountSubmit = async (count: number) => {
+    if (!selectedVillage) return;
+    setDataError("");
+    setDataLoading(true);
+    try {
+      const response = await initializeHouseholdSlots({
+        villageName: selectedVillage.nameHindi,
+        block: selectedBlock?.blockName ?? "",
+        panchayat: selectedPanchayat?.name ?? "",
+        count
+      });
+      setHouseholds(response.data.map((record) => ({
+        id: record.id,
+        version: record.version,
+        houseNumber: record.houseNumber,
+        headName: record.headName,
         isCompleted: false,
-      })
-    );
-
-    setHouseholds(newHouseholds);
+        data: record.surveyAnswers ?? {}
+      })));
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "परिवार सूची आरंभ नहीं हो सकी।");
+      throw error;
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   // =========================================================
@@ -218,6 +304,8 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
       ====================================================== */}
 
       <main className="max-w-6xl mx-auto px-4 mt-6">
+        {dataError && <div role="alert" className="mb-4 flex items-center justify-between gap-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 rounded-lg"><span>{dataError}</span><button type="button" onClick={() => setDataError("")} className="text-xs font-semibold underline">बंद करें</button></div>}
+        {dataLoading && <div role="status" className="mb-4 text-sm text-slate-500">ग्राम का डेटा लोड हो रहा है…</div>}
 
         {/* ===================================================
             1. BLOCK / PANCHAYAT / VILLAGE SELECTION
@@ -266,7 +354,7 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
                       -- विकासखंड चुनें --
                     </option>
 
-                    {CENSUS_HIERARCHY.map((block) => (
+                    {hierarchy.map((block) => (
                       <option
                         key={block.id}
                         value={block.id}
@@ -567,24 +655,50 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
               onBack={() =>
                 setViewMode("village_menu")
               }
-              onComplete={(data) => {
-
-                // IMPORTANT:
-                // Village Survey का totalHouseholds
-                // household cards create नहीं करेगा.
-
-                setVillageData({
-                  ...data,
-                  district: "नारायणपुर",
-                  block:
-                    selectedBlock?.blockName ?? "",
-                  panchayat:
-                    selectedPanchayat?.name ?? "",
-                  villageName:
-                    selectedVillage.nameHindi,
-                });
-
-                setViewMode("village_menu");
+              initialData={villageData ?? undefined}
+              onComplete={async (data) => {
+                const block = selectedBlock?.blockName ?? "";
+                const panchayat = selectedPanchayat?.name ?? "";
+                const villageName = selectedVillage.nameHindi;
+                const schoolRows = Array.isArray(data.schoolData) ? data.schoolData : [];
+                const healthRows = Array.isArray(data.healthData) ? data.healthData : [];
+                const firstSchool = schoolRows[0] && typeof schoolRows[0] === "object"
+                  ? schoolRows[0] as Record<string, unknown>
+                  : undefined;
+                const firstHealthFacility = healthRows[0] && typeof healthRows[0] === "object"
+                  ? healthRows[0] as Record<string, unknown>
+                  : undefined;
+                setDataError("");
+                setDataLoading(true);
+                try {
+                  const response = await saveVillageSurvey({
+                    block,
+                    panchayat,
+                    villageName,
+                    totalPopulation: Number(data.totalPopulation) || 0,
+                    totalHouseholds: Number(data.totalHouseholds) || 0,
+                    scCount: Number(data.scPopulation) || 0,
+                    stCount: Number(data.stPopulation) || 0,
+                    puccaHouses: Number(data.puccaHouses) || 0,
+                    mineDistanceKm: data.shopDistance || "Not reported",
+                    hasPuccaRoad: data.roadconnectivity || data.road || "Not reported",
+                    monsoonCutOff: data.rainCutoff || "Not reported",
+                    schoolType: firstSchool?.schoolType || "Not reported",
+                    hospitalType: firstHealthFacility?.healthCenterType || "Not reported",
+                    electrification: data.electricity || "Not reported",
+                    hasAnganwadi: Number(data.totalAnganwadi) > 0 ? "Yes" : "No",
+                    odfStatus: data.odf || "Not reported",
+                    quality: {},
+                    gapMatrix: {},
+                    villageSurvey: { ...data, district: "नारायणपुर", block, panchayat, villageName }
+                  });
+                  setVillageData(response.data.villageSurvey);
+                  setViewMode("village_menu");
+                } catch (error) {
+                  setDataError(error instanceof Error ? error.message : "ग्राम सर्वे सहेजा नहीं जा सका।");
+                } finally {
+                  setDataLoading(false);
+                }
               }}
             />
           )}

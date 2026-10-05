@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const dbUrl = process.env.DATABASE_URL || 'postgresql://jansetu_user:jansetu_secure_pass_2026@localhost:5432/jansetu';
+const dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) throw new Error('DATABASE_URL must be configured');
 
 async function runProductionDbSetup() {
   console.log('==================================================================');

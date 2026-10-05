@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 
 export interface HouseholdItem {
+  id?: string;
+  version?: number;
   houseNumber: number;
   isCompleted: boolean;
   headName?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 interface HouseholdSurveyProps {
@@ -28,12 +30,12 @@ interface HouseholdSurveyProps {
 
   onHouseholdSave: (
     houseNumber: number,
-    data: any
-  ) => void;
+    data: Record<string, unknown>
+  ) => Promise<void>;
 
   onHouseholdCountSubmit: (
     count: number
-  ) => void;
+  ) => Promise<void>;
 }
 
 /* =========================================================
@@ -62,7 +64,7 @@ const TOTAL_SECTIONS =
 ========================================================= */
 
 const getCompletedSectionCount = (
-  data: any
+  data: Record<string, unknown> | undefined
 ): number => {
   if (!data) return 0;
 
@@ -97,6 +99,7 @@ const HouseholdSurvey: React.FC<
 
   const [familyCount, setFamilyCount] =
     useState("");
+  const [isStarting, setIsStarting] = useState(false);
 
   // =======================================================
   // SEARCH
@@ -170,14 +173,21 @@ const HouseholdSurvey: React.FC<
   // START SURVEY
   // =======================================================
 
-  const handleStartSurvey = () => {
+  const handleStartSurvey = async () => {
     const count = Number(familyCount);
 
     if (!count || count <= 0) {
       return;
     }
 
-    onHouseholdCountSubmit(count);
+    setIsStarting(true);
+    try {
+      await onHouseholdCountSubmit(count);
+    } catch {
+      // Keep the count form available so the surveyor can retry.
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   // =======================================================
@@ -194,13 +204,13 @@ const HouseholdSurvey: React.FC<
         surveyorName={surveyorName}
         existingData={activeHouseData?.data}
         onBack={() => setActiveHouse(null)}
-        onComplete={(data) => {
-          onHouseholdSave(
-            activeHouse,
-            data
-          );
-
-          setActiveHouse(null);
+        onComplete={async (data) => {
+          try {
+            await onHouseholdSave(activeHouse, data);
+            setActiveHouse(null);
+          } catch {
+            // Keep the form open so the surveyor can retry the failed save.
+          }
         }}
       />
     );
@@ -318,18 +328,15 @@ const HouseholdSurvey: React.FC<
                   <button
                     type="button"
                     onClick={handleStartSurvey}
-                    disabled={
-                      !familyCount ||
-                      Number(familyCount) <= 0
-                    }
+                    disabled={isStarting || !familyCount || Number(familyCount) <= 0 || Number(familyCount) > 5000}
                     className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-colors ${
                       familyCount &&
-                      Number(familyCount) > 0
+                      Number(familyCount) > 0 && Number(familyCount) <= 5000 && !isStarting
                         ? "bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
                     }`}
                   >
-                    सर्वे शुरू करें →
+                    {isStarting ? "सहेजा जा रहा है…" : "सर्वे शुरू करें →"}
                   </button>
 
                 </div>

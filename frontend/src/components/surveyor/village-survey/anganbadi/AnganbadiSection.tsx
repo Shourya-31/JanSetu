@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import AnganbadiForm from "./AnganbadiForm.tsx";
 import type { AnganbadiData } from "./AnganbadiForm.tsx";
 
@@ -15,6 +15,7 @@ const emptyAnganbadi = (): AnganbadiData => ({
   nutritionServices: "",
   toiletCondition: "",
   drinkingWater: "",
+  watersupply: "",
   electricity: "",
   nutritionGarden: "",
 });
@@ -23,7 +24,9 @@ export default function AnganbadiSection({
   totalAnganwadi,
   onSave,
 }: AnganbadiSectionProps) {
-  const [centers, setCenters] = useState<AnganbadiData[]>([]);
+  const [savedCenters, setSavedCenters] = useState<AnganbadiData[]>([]);
+  const centerCount = Math.max(0, Number(totalAnganwadi) || 0);
+  const centers = Array.from({ length: centerCount }, (_, index) => savedCenters[index] || emptyAnganbadi());
 
   /*
    * totalAnganwadi के हिसाब से forms बनेंगे.
@@ -34,25 +37,15 @@ export default function AnganbadiSection({
    * => Center 2
    * => Center 3
    */
-  useEffect(() => {
-    const count = Math.max(0, Number(totalAnganwadi) || 0);
-
-    setCenters((previous) =>
-      Array.from({ length: count }, (_, index) => {
-        return previous[index] || emptyAnganbadi();
-      })
-    );
-  }, [totalAnganwadi]);
-
   const updateCenter = (
     index: number,
     data: AnganbadiData
   ) => {
-    setCenters((previous) =>
-      previous.map((center, i) =>
-        i === index ? data : center
-      )
-    );
+    setSavedCenters((previous) => {
+      const next = Array.from({ length: centerCount }, (_, currentIndex) => previous[currentIndex] || emptyAnganbadi());
+      next[index] = data;
+      return next;
+    });
   };
 
   const handleSave = () => {

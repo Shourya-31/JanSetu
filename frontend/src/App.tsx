@@ -1,36 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LoginPage } from './components/surveyor/LoginPage';
 import { SurveyorDashboard } from './components/surveyor/SurveyorDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import type { UserRole } from './types/auth';
+import { login } from './services/authApi';
+import { clearAuthSession, getAuthSession, onUnauthorized, setAuthSession, type AuthSession } from './services/apiClient';
 
 export const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<{
-    role: UserRole;
-    id: string;
-  } | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(() => getAuthSession());
 
-  const handleLogin = (role: UserRole, id: string) => {
-    setCurrentUser({ role, id });
+  useEffect(() => onUnauthorized(() => setSession(null)), []);
+
+  const handleLogin = async (role: 'admin' | 'surveyor', identifier: string, password: string) => {
+    const nextSession = await login(role, identifier, password);
+    setAuthSession(nextSession);
+    setSession(nextSession);
   };
 
   const handleLogout = () => {
-    setCurrentUser(null);
+    clearAuthSession();
+    setSession(null);
   };
 
-  // 1. Agar login nahi hai toh Login Page dikhega
-  if (!currentUser) {
+  if (!session) {
     return <LoginPage onLoginSuccess={handleLogin} />;
   }
 
-  // 2. Surveyor Flow (Village Profile -> Red/Green Household Grid -> Household Survey Form)
-  if (currentUser.role === 'surveyor') {
-    return <SurveyorDashboard surveyorId={currentUser.id} onLogout={handleLogout} />;
+  if (session.user.role === 'surveyor') {
+    return <SurveyorDashboard surveyorId={session.user.userCode} onLogout={handleLogout} />;
   }
 
-  // 3. Admin / Block Auditor Flow
-  if (currentUser.role === 'admin') {
-    return <AdminDashboard adminId={currentUser.id} onLogout={handleLogout} />;
+  if (session.user.role === 'admin') {
+    return <AdminDashboard adminId={session.user.userCode} onLogout={handleLogout} />;
   }
 
   // Baaki roles ke liye simple placeholder (jab tak unka number nahi aata)

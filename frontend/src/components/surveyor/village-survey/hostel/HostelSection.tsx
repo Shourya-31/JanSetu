@@ -18,6 +18,7 @@ export default function HostelSection({
     Array.from({ length: totalHostels }, () => ({
       facilityType: "",
       condition: "",
+      washrooms: "",
     }))
   );
 
