@@ -187,22 +187,26 @@ const HouseholdSurvey: React.FC<
   if (activeHouse !== null) {
     return (
       <HouseholdForm
-        houseNumber={activeHouse}
-        villageName={villageName}
-        blockName={blockName}
-        panchayatName={panchayatName}
-        surveyorName={surveyorName}
-        existingData={activeHouseData?.data}
-        onBack={() => setActiveHouse(null)}
-        onComplete={(data) => {
-          onHouseholdSave(
-            activeHouse,
-            data
-          );
+  houseNumber={activeHouse}
+  villageName={villageName}
+  blockName={blockName}
+  panchayatName={panchayatName}
+  surveyorName={surveyorName}
+  existingData={activeHouseData?.data}
 
-          setActiveHouse(null);
-        }}
-      />
+  onBack={() => setActiveHouse(null)}
+
+  // Section save होते ही parent में partial data save होगा
+  onSave={(data) => {
+    onHouseholdSave(activeHouse, data);
+  }}
+
+  // 11/11 complete होने पर
+  onComplete={(data) => {
+    onHouseholdSave(activeHouse, data);
+    setActiveHouse(null);
+  }}
+/>
     );
   }
 
