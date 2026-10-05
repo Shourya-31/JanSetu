@@ -99,7 +99,6 @@ const HouseholdSurvey: React.FC<
 
   const [familyCount, setFamilyCount] =
     useState("");
-  const [isStarting, setIsStarting] = useState(false);
 
   // =======================================================
   // SEARCH
@@ -173,21 +172,14 @@ const HouseholdSurvey: React.FC<
   // START SURVEY
   // =======================================================
 
-  const handleStartSurvey = async () => {
+  const handleStartSurvey = () => {
     const count = Number(familyCount);
 
     if (!count || count <= 0) {
       return;
     }
 
-    setIsStarting(true);
-    try {
-      await onHouseholdCountSubmit(count);
-    } catch {
-      // Keep the count form available so the surveyor can retry.
-    } finally {
-      setIsStarting(false);
-    }
+    onHouseholdCountSubmit(count);
   };
 
   // =======================================================
@@ -197,22 +189,26 @@ const HouseholdSurvey: React.FC<
   if (activeHouse !== null) {
     return (
       <HouseholdForm
-        houseNumber={activeHouse}
-        villageName={villageName}
-        blockName={blockName}
-        panchayatName={panchayatName}
-        surveyorName={surveyorName}
-        existingData={activeHouseData?.data}
-        onBack={() => setActiveHouse(null)}
-        onComplete={async (data) => {
-          try {
-            await onHouseholdSave(activeHouse, data);
-            setActiveHouse(null);
-          } catch {
-            // Keep the form open so the surveyor can retry the failed save.
-          }
-        }}
-      />
+  houseNumber={activeHouse}
+  villageName={villageName}
+  blockName={blockName}
+  panchayatName={panchayatName}
+  surveyorName={surveyorName}
+  existingData={activeHouseData?.data}
+
+  onBack={() => setActiveHouse(null)}
+
+  // Section save होते ही parent में partial data save होगा
+  onSave={(data) => {
+    onHouseholdSave(activeHouse, data);
+  }}
+
+  // 11/11 complete होने पर
+  onComplete={(data) => {
+    onHouseholdSave(activeHouse, data);
+    setActiveHouse(null);
+  }}
+/>
     );
   }
 
@@ -328,15 +324,18 @@ const HouseholdSurvey: React.FC<
                   <button
                     type="button"
                     onClick={handleStartSurvey}
-                    disabled={isStarting || !familyCount || Number(familyCount) <= 0 || Number(familyCount) > 5000}
+                    disabled={
+                      !familyCount ||
+                      Number(familyCount) <= 0
+                    }
                     className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-colors ${
                       familyCount &&
-                      Number(familyCount) > 0 && Number(familyCount) <= 5000 && !isStarting
+                      Number(familyCount) > 0
                         ? "bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
                     }`}
                   >
-                    {isStarting ? "सहेजा जा रहा है…" : "सर्वे शुरू करें →"}
+                    सर्वे शुरू करें →
                   </button>
 
                 </div>

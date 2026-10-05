@@ -48,11 +48,14 @@ interface HouseholdFormProps {
 
   surveyorName: string;
 
-  existingData?: any;
+  existingData?: Record<string, unknown>;
 
   onBack: () => void;
 
-  onComplete: (data: any) => void;
+  // हर section save होने पर parent/dashboard में partial data save होगा
+  onSave: (data: Record<string, unknown>) => void;
+
+  onComplete: (data: Record<string, unknown>) => void;
 
 }
 
@@ -74,6 +77,8 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
 
   onBack,
 
+  onSave,
+
   onComplete,
 
 }) => {
@@ -82,7 +87,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
 
 
 
-  const [formData, setFormData] = useState<any>(
+  const [formData, setFormData] = useState<Record<string, unknown>>(
 
     existingData ?? {}
 
@@ -272,26 +277,33 @@ const sections = [
 
 
 
-  const handleGeneralNext = (data: any) => {
+  // =========================================================
+  // PARTIAL SECTION SAVE
+  // =========================================================
+  // Section save होते ही data parent/dashboard में भी store होगा.
+  // इसलिए surveyor बीच में बाहर निकलकर बाद में उसी मकान से
+  // वहीं से survey continue कर सकता है.
+  // =========================================================
 
-    setFormData((prev: any) => ({
-
-      ...prev,
-
+  const saveSectionData = (
+    data: Record<string, unknown>,
+    completionKey: string
+  ) => {
+    const updatedData = {
+      ...formData,
       ...data,
+      [completionKey]: true,
+    };
 
-
-
-      // Section 1 explicitly completed
-
-      generalCompleted: true,
-
-    }));
-
-
-
+    setFormData(updatedData);
+    onSave(updatedData);
     setActiveSection(null);
+  };
 
+
+
+  const handleGeneralNext = (data: Record<string, unknown>) => {
+    saveSectionData(data, "generalCompleted");
   };
 
 
@@ -304,26 +316,8 @@ const sections = [
 
 
 
-  const handleDemographyNext = (data: any) => {
-
-    setFormData((prev: any) => ({
-
-      ...prev,
-
-      ...data,
-
-
-
-      // Section 2 explicitly completed
-
-      demographyCompleted: true,
-
-    }));
-
-
-
-    setActiveSection(null);
-
+  const handleDemographyNext = (data: Record<string, unknown>) => {
+    saveSectionData(data, "demographyCompleted");
   };
 
 
@@ -917,19 +911,7 @@ if (activeSection === "documents") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                documentsCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "documentsCompleted");
 
             }}
 
@@ -1126,19 +1108,7 @@ if (activeSection === "women") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                womenCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "womenCompleted");
 
             }}
 
@@ -1335,19 +1305,7 @@ if (activeSection === "disability") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                disabilityCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "disabilityCompleted");
 
             }}
 
@@ -1544,19 +1502,7 @@ if (activeSection === "education") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                educationCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "educationCompleted");
 
             }}
 
@@ -1753,19 +1699,7 @@ if (activeSection === "employment") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                employmentCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "employmentCompleted");
 
             }}
 
@@ -1962,19 +1896,7 @@ if (activeSection === "housing") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                housingCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "housingCompleted");
 
             }}
 
@@ -2164,19 +2086,7 @@ if (activeSection === "health") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                healthCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "healthCompleted");
 
             }}
 
@@ -2368,19 +2278,7 @@ if (activeSection === "shg") {
 
             onNext={(data) => {
 
-              setFormData((prev: any) => ({
-
-                ...prev,
-
-                ...data,
-
-                shgCompleted: true,
-
-              }));
-
-
-
-              setActiveSection(null);
+              saveSectionData(data, "shgCompleted");
 
             }}
 
@@ -2604,14 +2502,7 @@ if (activeSection === "other") {
 
 
             onComplete={(data) => {
-              const finalData = {
-                ...formData,
-                ...data,
-                otherCompleted: true,
-              };
-
-              setFormData(finalData);
-              setActiveSection(null);
+              saveSectionData(data, "otherCompleted");
             }}
 
           />
