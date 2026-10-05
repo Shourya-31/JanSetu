@@ -4,7 +4,7 @@ import type { UserRole } from '../../types/auth';
 import { ClipboardList, BarChart3, ArrowRight, Lock, Info } from 'lucide-react';
 
 interface LoginPageProps {
-  onLoginSuccess: (role: UserRole, identifier: string) => void;
+  onLoginSuccess: (role: 'surveyor' | 'admin', identifier: string, password: string) => Promise<void>;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -12,6 +12,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [selectedRole, setSelectedRole] = useState<UserRole>('surveyor');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Villager ke alawa baki roles filter kar rahe hain (Surveyor aur Admin)
   const availableRoles = ROLES.filter((role) => role.id !== 'villager');
@@ -22,13 +24,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setPassword('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim()) {
-      alert('कृपया आवश्यक विवरण दर्ज करें');
+    if (!identifier.trim() || !password) {
+      setErrorMessage('आईडी और पासवर्ड दोनों दर्ज करें।');
       return;
     }
-    onLoginSuccess(selectedRole, identifier);
+    setErrorMessage('');
+    setIsSubmitting(true);
+    try {
+      await onLoginSuccess(selectedRole as 'surveyor' | 'admin', identifier.trim(), password);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'लॉगिन असफल हुआ।');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getRoleIcon = (roleId: UserRole) => {
@@ -141,6 +151,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </label>
                     <input
                       type="text"
+                      required
+                      autoComplete="username"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder="उदा. SUR-NYR-2026"
@@ -155,6 +167,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                       <input
                         type="password"
+                        required
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -179,6 +193,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </label>
                     <input
                       type="text"
+                      required
+                      autoComplete="username"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder="उदा. auditor.narayanpur@gov.in"
@@ -193,6 +209,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                       <input
                         type="password"
+                        required
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -203,11 +221,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </div>
               )}
 
+              {errorMessage && <p role="alert" className="text-sm text-rose-700">{errorMessage}</p>}
               <button
                 type="submit"
-                className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-medium text-sm rounded-md shadow-xs transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white font-medium text-sm rounded-md shadow-xs transition-colors cursor-pointer"
               >
-                सत्यापित करें एवं आगे बढ़ें
+                {isSubmitting ? 'प्रवेश सत्यापित हो रहा है…' : 'सत्यापित करें एवं आगे बढ़ें'}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </button>
             </div>

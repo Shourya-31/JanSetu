@@ -1,18 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CheckCircle2, LogOut, ArrowLeft } from "lucide-react";
 
-import { CENSUS_HIERARCHY } from "../../data/narayanpurHierarchy";
-import type { Village } from "../../data/narayanpurHierarchy";
+import type { Block, Village } from "../../data/narayanpurHierarchy";
+import {
+  fetchHierarchy,
+  fetchHouseholdSurveys,
+  fetchVillageProfile,
+  initializeHouseholdSlots,
+  saveHouseholdSurvey,
+  saveVillageSurvey,
+  updateHouseholdSurvey
+} from "../../services/surveyorApi";
 
 import { VillageSurveyForm } from "./village-survey/VillageSurveyForm";
 
 import HouseholdSurvey from "./household/HouseholdSurvey";
 import type { HouseholdItem } from "./household/HouseholdSurvey";
-
-import VillageReportDashboard from "./reports/VillageReportDashboard";
-import VillageOverview from "./reports/VillageOverview";
-import VillageCategoryDetail from "./reports/VillageCategoryDetail";
-import HouseholdOverview from "./reports/HouseholdOverview";
 
 interface SurveyorDashboardProps {
   surveyorId: string;
@@ -27,10 +30,7 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   // LOCATION / NAVIGATION STATE
   // =========================================================
 
-  const [selectedBlockId, setSelectedBlockId] =
-    useState<string>("");
-    const [selectedCategory, setSelectedCategory] = useState("");
-
+  const [selectedBlockId, setSelectedBlockId] = useState<string>("");
   const [selectedPanchayatId, setSelectedPanchayatId] =
     useState<string>("");
 
@@ -38,49 +38,49 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
     useState<Village | null>(null);
 
   const [viewMode, setViewMode] = useState<
-    | "selection"
-    | "village_menu"
-    | "village_survey"
-    | "household_survey"
-    | "reports"
-    | "village_overview"
-    | "household_overview"
-    | "village_category_detail"
+    "selection" | "village_menu" | "village_survey" | "household_survey"
   >("selection");
+  const [hierarchy, setHierarchy] = useState<Block[]>([]);
+  const [dataError, setDataError] = useState("");
+  const [dataLoading, setDataLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchHierarchy()
+      .then((rows) => { if (active) setHierarchy(rows); })
+      .catch((error: unknown) => {
+        if (active) setDataError(error instanceof Error ? error.message : "ग्राम सूची लोड नहीं हो सकी।");
+      });
+    return () => { active = false; };
+  }, []);
 
   // =========================================================
   // VILLAGE SURVEY DATA
   // =========================================================
 
-  const [villageData, setVillageData] =
-    useState<any>(null);
+  const [villageData, setVillageData] = useState<Record<string, unknown> | null>(null);
 
   // =========================================================
   // HOUSEHOLD DATA
   // =========================================================
 
-  const [households, setHouseholds] =
-    useState<HouseholdItem[]>([]);
+  const [households, setHouseholds] = useState<HouseholdItem[]>([]);
 
   // =========================================================
   // SELECTED BLOCK / PANCHAYAT / VILLAGES
   // =========================================================
 
-  const selectedBlock = CENSUS_HIERARCHY.find(
+  const selectedBlock = hierarchy.find(
     (block) => block.id === selectedBlockId
   );
 
-  const panchayatOptions =
-    selectedBlock?.panchayats ?? [];
+  const panchayatOptions = selectedBlock?.panchayats ?? [];
 
-  const selectedPanchayat =
-    panchayatOptions.find(
-      (panchayat) =>
-        panchayat.id === selectedPanchayatId
-    );
+  const selectedPanchayat = panchayatOptions.find(
+    (panchayat) => panchayat.id === selectedPanchayatId
+  );
 
-  const villageOptions =
-    selectedPanchayat?.villages ?? [];
+  const villageOptions = selectedPanchayat?.villages ?? [];
 
   // =========================================================
   // BLOCK CHANGE
@@ -91,9 +91,11 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   ) => {
     setSelectedBlockId(e.target.value);
 
+    // Reset dependent selections
     setSelectedPanchayatId("");
     setSelectedVillage(null);
 
+    // Reset survey-related data
     setVillageData(null);
     setHouseholds([]);
 
@@ -111,6 +113,7 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
     setSelectedVillage(null);
 
+    // Reset village survey data
     setVillageData(null);
     setHouseholds([]);
 
@@ -121,78 +124,139 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   // VILLAGE SELECT
   // =========================================================
 
-  const handleVillageSelect = (
-    village: Village
-  ) => {
+  const handleVillageSelect = (village: Village) => {
     setSelectedVillage(village);
-
-    // New village => fresh survey state
-    setVillageData(null);
-    setHouseholds([]);
-
-    setViewMode("village_menu");
+    setDataError("");
+    setDataLoading(true);
+    Promise.all([
+      fetchVillageProfile(village.nameHindi),
+      fetchHouseholdSurveys(village.nameHindi)
+    ]).then(([profile, records]) => {
+      setVillageData(profile?.villageSurvey ?? null);
+      const loaded = Object.values(records)
+        .sort((left, right) => left.houseNumber - right.houseNumber)
+        .map((record) => {
+          const answers = record.surveyAnswers ?? {};
+          const completed = [
+            "generalCompleted", "demographyCompleted", "documentsCompleted", "womenCompleted",
+            "disabilityCompleted", "educationCompleted", "employmentCompleted", "housingCompleted",
+            "healthCompleted", "shgCompleted", "otherCompleted"
+          ].every((key) => answers[key] === true);
+          return {
+            id: record.id,
+            version: record.version,
+            houseNumber: record.houseNumber,
+            headName: record.headName,
+            isCompleted: completed,
+            data: answers
+          };
+        });
+      setHouseholds(loaded);
+        setViewMode("village_menu");
+    }).catch((error: unknown) => {
+      setDataError(error instanceof Error ? error.message : "ग्राम सर्वे डेटा लोड नहीं हो सका।");
+      setVillageData(null);
+      setHouseholds([]);
+    }).finally(() => setDataLoading(false));
   };
 
   // =========================================================
   // SAVE HOUSEHOLD
   // =========================================================
 
-  const handleSaveHousehold = (
-    houseNumber: number,
-    formData: any
-  ) => {
+  const handleSaveHousehold = async (houseNumber: number, formData: Record<string, unknown>) => {
     const requiredSections = [
-      "generalCompleted",
-      "demographyCompleted",
-      "documentsCompleted",
-      "womenCompleted",
-      "disabilityCompleted",
-      "educationCompleted",
-      "employmentCompleted",
-      "housingCompleted",
-      "healthCompleted",
-      "shgCompleted",
-      "otherCompleted",
+      "generalCompleted", "demographyCompleted", "documentsCompleted", "womenCompleted",
+      "disabilityCompleted", "educationCompleted", "employmentCompleted", "housingCompleted",
+      "healthCompleted", "shgCompleted", "otherCompleted"
     ];
+    const isFullyCompleted = requiredSections.every((key) => formData?.[key] === true);
+    if (!selectedVillage) return;
 
-    const isFullyCompleted =
-      requiredSections.every(
-        (key) => Boolean(formData?.[key])
-      );
+    setDataError("");
+    const count = (value: unknown, fallback = 0) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+    };
+    const surveyAnswers = {
+      ...formData,
+      villageName: selectedVillage.nameHindi,
+      houseNumber,
+      block: selectedBlock?.blockName ?? "",
+      blockName: selectedBlock?.blockName ?? "",
+      panchayat: selectedPanchayat?.name ?? "",
+      panchayatName: selectedPanchayat?.name ?? "",
+      surveyorName: formData.surveyorName || surveyorId,
+      isBPL: formData.isBPL || formData.isBpl || "Yes",
+      isMiningWorker: formData.isMiningWorker || formData.miningEmployment || "No",
+      totalMembers: count(formData.totalMembers, 1),
+      eldersCount: count(formData.eldersCount ?? formData.elderly),
+      childrenCount: count(formData.childrenCount ?? formData.children),
+      unemployedCount: count(formData.unemployedCount ?? formData.unemployedMembers),
+      missingAadhaar: count(formData.missingAadhaar ?? formData.noAadhaarMembers),
+      missingCasteCert: count(formData.missingCasteCert ?? formData.noCasteCertificateMembers),
+      missingAyushman: count(formData.missingAyushman ?? formData.noAyushmanMembers),
+      missingVoterId: count(formData.missingVoterId ?? formData.noVoterIdMembers),
+      incomeSource: formData.incomeSource || formData.mainIncomeSource || "Agriculture",
+      hasToilet: formData.hasToilet || formData.toiletStatus || "No",
+      hasTapWater: formData.hasTapWater || formData.tapWaterConnection || "No"
+    };
+    const existing = households.find((household) => household.houseNumber === houseNumber);
 
-    setHouseholds((prev) =>
-      prev.map((household) =>
-        household.houseNumber === houseNumber
-          ? {
-              ...household,
-              isCompleted: isFullyCompleted,
-              headName:
-                formData?.headName ||
-                household.headName,
-              data: formData,
-            }
-          : household
-      )
-    );
+    try {
+      const response = existing?.id && existing.version
+        ? await updateHouseholdSurvey(existing.id, existing.version, surveyAnswers)
+        : await saveHouseholdSurvey(selectedVillage.nameHindi, houseNumber, surveyAnswers);
+      const saved = response.data;
+      const item: HouseholdItem = {
+        id: saved.id,
+        version: saved.version,
+        houseNumber: saved.houseNumber,
+        isCompleted: isFullyCompleted,
+        headName: saved.headName,
+        data: saved.surveyAnswers ?? surveyAnswers
+      };
+      setHouseholds((previous) => previous.some((row) => row.houseNumber === houseNumber)
+        ? previous.map((row) => row.houseNumber === houseNumber ? item : row)
+        : [...previous, item].sort((left, right) => left.houseNumber - right.houseNumber));
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "परिवार सर्वे सहेजा नहीं जा सका।");
+      throw error;
+    }
   };
-
   // =========================================================
   // HOUSEHOLD COUNT SUBMIT
   // =========================================================
+  // Household Survey is independent from Village Survey.
+  // User first enters total families.
+  // Then cards are generated according to that number.
+  // =========================================================
 
-  const handleHouseholdCountSubmit = (
-    count: number
-  ) => {
-    const newHouseholds: HouseholdItem[] =
-      Array.from(
-        { length: count },
-        (_, index) => ({
-          houseNumber: index + 1,
-          isCompleted: false,
-        })
-      );
-
-    setHouseholds(newHouseholds);
+  const handleHouseholdCountSubmit = async (count: number) => {
+    if (!selectedVillage) return;
+    setDataError("");
+    setDataLoading(true);
+    try {
+      const response = await initializeHouseholdSlots({
+        villageName: selectedVillage.nameHindi,
+        block: selectedBlock?.blockName ?? "",
+        panchayat: selectedPanchayat?.name ?? "",
+        count
+      });
+      setHouseholds(response.data.map((record) => ({
+        id: record.id,
+        version: record.version,
+        houseNumber: record.houseNumber,
+        headName: record.headName,
+        isCompleted: false,
+        data: record.surveyAnswers ?? {}
+      })));
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "परिवार सूची आरंभ नहीं हो सकी।");
+      throw error;
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   // =========================================================
@@ -240,6 +304,8 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
       ====================================================== */}
 
       <main className="max-w-6xl mx-auto px-4 mt-6">
+        {dataError && <div role="alert" className="mb-4 flex items-center justify-between gap-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 rounded-lg"><span>{dataError}</span><button type="button" onClick={() => setDataError("")} className="text-xs font-semibold underline">बंद करें</button></div>}
+        {dataLoading && <div role="status" className="mb-4 text-sm text-slate-500">ग्राम का डेटा लोड हो रहा है…</div>}
 
         {/* ===================================================
             1. BLOCK / PANCHAYAT / VILLAGE SELECTION
@@ -288,16 +354,14 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
                       -- विकासखंड चुनें --
                     </option>
 
-                    {CENSUS_HIERARCHY.map(
-                      (block) => (
-                        <option
-                          key={block.id}
-                          value={block.id}
-                        >
-                          {block.blockName}
-                        </option>
-                      )
-                    )}
+                    {hierarchy.map((block) => (
+                      <option
+                        key={block.id}
+                        value={block.id}
+                      >
+                        {block.blockName}
+                      </option>
+                    ))}
                   </select>
 
                 </div>
@@ -320,16 +384,14 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
                       -- ग्राम पंचायत चुनें --
                     </option>
 
-                    {panchayatOptions.map(
-                      (panchayat) => (
-                        <option
-                          key={panchayat.id}
-                          value={panchayat.id}
-                        >
-                          {panchayat.name}
-                        </option>
-                      )
-                    )}
+                    {panchayatOptions.map((panchayat) => (
+                      <option
+                        key={panchayat.id}
+                        value={panchayat.id}
+                      >
+                        {panchayat.name}
+                      </option>
+                    ))}
                   </select>
 
                 </div>
@@ -368,68 +430,61 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
 
-                    {villageOptions.map(
-                      (village) => {
+                    {villageOptions.map((village) => {
 
-                        const isSelected =
-                          selectedVillage?.id ===
-                          village.id;
+                      const isSelected =
+                        selectedVillage?.id === village.id;
 
-                        return (
-                          <button
-                            type="button"
-                            key={village.id}
-                            onClick={() =>
-                              handleVillageSelect(
-                                village
-                              )
+                      return (
+                        <button
+                          type="button"
+                          key={village.id}
+                          onClick={() =>
+                            handleVillageSelect(village)
+                          }
+                          className={`
+                            p-4 rounded-xl border text-left
+                            transition-all cursor-pointer
+                            hover:-translate-y-0.5 shadow-2xs
+                            ${
+                              isSelected
+                                ? "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300"
+                                : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300"
                             }
-                            className={`
-                              p-4 rounded-xl border text-left
-                              transition-all cursor-pointer
-                              hover:-translate-y-0.5 shadow-2xs
-                              ${
-                                isSelected
-                                  ? "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300"
-                                  : "bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300"
-                              }
-                            `}
-                          >
+                          `}
+                        >
 
-                            <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-2">
 
-                              <div className="min-w-0">
+                            <div className="min-w-0">
 
-                                <p className="font-bold text-sm text-slate-900 truncate">
-                                  {village.nameHindi}
-                                </p>
+                              <p className="font-bold text-sm text-slate-900 truncate">
+                                {village.nameHindi}
+                              </p>
 
-                                <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                                  {village.nameEnglish}
-                                </p>
-
-                              </div>
-
-                              {isSelected && (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-                              )}
+                              <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                                {village.nameEnglish}
+                              </p>
 
                             </div>
 
-                            <p className="text-[10px] text-slate-500 mt-3">
-                              {village.action ===
-                              "Direct Affected"
-                                ? "प्रत्यक्ष प्रभावित"
-                                : village.action ===
-                                  "Indirect Affected"
-                                ? "अप्रत्यक्ष प्रभावित"
-                                : "प्रत्यक्ष एवं अप्रत्यक्ष प्रभावित"}
-                            </p>
+                            {isSelected && (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                            )}
 
-                          </button>
-                        );
-                      }
-                    )}
+                          </div>
+
+                          <p className="text-[10px] text-slate-500 mt-3">
+                            {village.action === "Direct Affected"
+                              ? "प्रत्यक्ष प्रभावित"
+                              : village.action === "Indirect Affected"
+                              ? "अप्रत्यक्ष प्रभावित"
+                              : "प्रत्यक्ष एवं अप्रत्यक्ष प्रभावित"}
+                          </p>
+
+                        </button>
+                      );
+                    })}
 
                   </div>
 
@@ -455,132 +510,137 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
             2. VILLAGE MENU
         ==================================================== */}
 
-        {viewMode === "village_menu" &&
-          selectedVillage && (
-            <div className="space-y-5">
+        {viewMode === "village_menu" && selectedVillage && (
+          <div className="space-y-5">
 
-              {/* Village Header */}
+            {/* Village Header */}
 
-              <div className="bg-white border rounded-xl p-5 shadow-2xs">
+            <div className="bg-white border rounded-xl p-5 shadow-2xs">
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
-                  <div>
+                <div>
 
-                    <span className="text-xs font-bold text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      चयनित ग्राम
-                    </span>
+                  <span className="text-xs font-bold text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    चयनित ग्राम
+                  </span>
 
-                    <h2 className="text-xl font-bold text-slate-900 mt-1">
-                      {selectedVillage.nameHindi}
-                    </h2>
+                  <h2 className="text-xl font-bold text-slate-900 mt-1">
+                    {selectedVillage.nameHindi}
+                  </h2>
 
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {selectedVillage.nameEnglish} •{" "}
-                      {selectedPanchayat?.name} •{" "}
-                      {selectedBlock?.blockName}
-                    </p>
-
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedVillage(null);
-                      setVillageData(null);
-                      setHouseholds([]);
-                      setViewMode("selection");
-                    }}
-                    className="px-3.5 py-2 border text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center cursor-pointer transition-colors"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                    गाँवों की सूची
-                  </button>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {selectedVillage.nameEnglish} •{" "}
+                    {selectedPanchayat?.name} •{" "}
+                    {selectedBlock?.blockName}
+                  </p>
 
                 </div>
 
-              </div>
-
-              {/* 3 OPTIONS */}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                {/* ग्राम सर्वे */}
-
                 <button
                   type="button"
-                  onClick={() =>
-                    setViewMode("village_survey")
-                  }
-                  className="bg-white border rounded-xl p-6 text-left shadow-2xs hover:-translate-y-0.5 hover:border-emerald-400 transition-all cursor-pointer"
+                  onClick={() => {
+                    setSelectedVillage(null);
+                    setVillageData(null);
+                    setHouseholds([]);
+                    setViewMode("selection");
+                  }}
+                  className="px-3.5 py-2 border text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center cursor-pointer transition-colors"
                 >
-
-                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-4">
-                    1
-                  </div>
-
-                  <h3 className="text-base font-bold text-slate-900">
-                    ग्राम सर्वे
-                  </h3>
-
-                  <p className="text-xs text-slate-500 mt-1">
-                    ग्राम का परिचय, सुविधाएँ एवं अंतराल मैट्रिक्स
-                  </p>
-
-                </button>
-
-                {/* हाउसहोल्ड सर्वे */}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setViewMode("household_survey")
-                  }
-                  className="bg-white border rounded-xl p-6 text-left shadow-2xs hover:-translate-y-0.5 hover:border-blue-400 transition-all cursor-pointer"
-                >
-
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold mb-4">
-                    2
-                  </div>
-
-                  <h3 className="text-base font-bold text-slate-900">
-                    हाउसहोल्ड सर्वे
-                  </h3>
-
-                  <p className="text-xs text-slate-500 mt-1">
-                    गाँव के प्रत्येक परिवार का सर्वेक्षण
-                  </p>
-
-                </button>
-
-                {/* REPORTS */}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setViewMode("reports")
-                  }
-                  className="bg-white border rounded-xl p-6 text-left shadow-2xs hover:-translate-y-0.5 hover:border-amber-400 transition-all cursor-pointer"
-                >
-
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-4">
-                    3
-                  </div>
-
-                  <h3 className="text-base font-bold text-slate-900">
-                    रिपोर्ट्स
-                  </h3>
-
-                  <p className="text-xs text-slate-500 mt-1">
-                    ग्राम एवं परिवार की विस्तृत रिपोर्ट
-                  </p>
-
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                  गाँवों की सूची
                 </button>
 
               </div>
 
             </div>
-          )}
+
+            {/* =================================================
+                3 OPTIONS
+            ================================================== */}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* ग्राम सर्वे */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setViewMode("village_survey")
+                }
+                className="bg-white border rounded-xl p-6 text-left shadow-2xs hover:-translate-y-0.5 hover:border-emerald-400 transition-all cursor-pointer"
+              >
+
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-4">
+                  1
+                </div>
+
+                <h3 className="text-base font-bold text-slate-900">
+                  ग्राम सर्वे
+                </h3>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  ग्राम का परिचय, सुविधाएँ एवं अंतराल मैट्रिक्स
+                </p>
+
+              </button>
+
+              {/* =================================================
+                  हाउसहोल्ड सर्वे
+              ================================================== */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setViewMode("household_survey")
+                }
+                className="bg-white border rounded-xl p-6 text-left shadow-2xs hover:-translate-y-0.5 hover:border-blue-400 transition-all cursor-pointer"
+              >
+
+                <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold mb-4">
+                  2
+                </div>
+
+                <h3 className="text-base font-bold text-slate-900">
+                  हाउसहोल्ड सर्वे
+                </h3>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  गाँव के प्रत्येक परिवार का सर्वेक्षण
+                </p>
+
+              </button>
+
+              {/* REPORTS */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  alert(
+                    "रिपोर्ट विकल्प अगला चरण में जोड़ा जाएगा।"
+                  )
+                }
+                className="bg-white border rounded-xl p-6 text-left shadow-2xs hover:-translate-y-0.5 hover:border-amber-400 transition-all cursor-pointer"
+              >
+
+                <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-4">
+                  3
+                </div>
+
+                <h3 className="text-base font-bold text-slate-900">
+                  रिपोर्ट्स
+                </h3>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  ग्राम सर्वे एवं हाउसहोल्ड सर्वे की रिपोर्ट
+                </p>
+
+              </button>
+
+            </div>
+
+          </div>
+        )}
 
         {/* ===================================================
             3. VILLAGE SURVEY
@@ -590,28 +650,55 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
           selectedVillage && (
             <VillageSurveyForm
               village={selectedVillage}
-              blockName={
-                selectedBlock?.blockName ?? ""
-              }
-              panchayatName={
-                selectedPanchayat?.name ?? ""
-              }
+              blockName={selectedBlock?.blockName ?? ""}
+              panchayatName={selectedPanchayat?.name ?? ""}
               onBack={() =>
                 setViewMode("village_menu")
               }
-              onComplete={(data) => {
-                setVillageData({
-                  ...data,
-                  district: "नारायणपुर",
-                  block:
-                    selectedBlock?.blockName ?? "",
-                  panchayat:
-                    selectedPanchayat?.name ?? "",
-                  villageName:
-                    selectedVillage.nameHindi,
-                });
-
-                setViewMode("village_menu");
+              initialData={villageData ?? undefined}
+              onComplete={async (data) => {
+                const block = selectedBlock?.blockName ?? "";
+                const panchayat = selectedPanchayat?.name ?? "";
+                const villageName = selectedVillage.nameHindi;
+                const schoolRows = Array.isArray(data.schoolData) ? data.schoolData : [];
+                const healthRows = Array.isArray(data.healthData) ? data.healthData : [];
+                const firstSchool = schoolRows[0] && typeof schoolRows[0] === "object"
+                  ? schoolRows[0] as Record<string, unknown>
+                  : undefined;
+                const firstHealthFacility = healthRows[0] && typeof healthRows[0] === "object"
+                  ? healthRows[0] as Record<string, unknown>
+                  : undefined;
+                setDataError("");
+                setDataLoading(true);
+                try {
+                  const response = await saveVillageSurvey({
+                    block,
+                    panchayat,
+                    villageName,
+                    totalPopulation: Number(data.totalPopulation) || 0,
+                    totalHouseholds: Number(data.totalHouseholds) || 0,
+                    scCount: Number(data.scPopulation) || 0,
+                    stCount: Number(data.stPopulation) || 0,
+                    puccaHouses: Number(data.puccaHouses) || 0,
+                    mineDistanceKm: data.shopDistance || "Not reported",
+                    hasPuccaRoad: data.roadconnectivity || data.road || "Not reported",
+                    monsoonCutOff: data.rainCutoff || "Not reported",
+                    schoolType: firstSchool?.schoolType || "Not reported",
+                    hospitalType: firstHealthFacility?.healthCenterType || "Not reported",
+                    electrification: data.electricity || "Not reported",
+                    hasAnganwadi: Number(data.totalAnganwadi) > 0 ? "Yes" : "No",
+                    odfStatus: data.odf || "Not reported",
+                    quality: {},
+                    gapMatrix: {},
+                    villageSurvey: { ...data, district: "नारायणपुर", block, panchayat, villageName }
+                  });
+                  setVillageData(response.data.villageSurvey);
+                  setViewMode("village_menu");
+                } catch (error) {
+                  setDataError(error instanceof Error ? error.message : "ग्राम सर्वे सहेजा नहीं जा सका।");
+                } finally {
+                  setDataLoading(false);
+                }
               }}
             />
           )}
@@ -623,99 +710,20 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
         {viewMode === "household_survey" &&
           selectedVillage && (
             <HouseholdSurvey
-              villageName={
-                selectedVillage.nameHindi
-              }
-              blockName={
-                selectedBlock?.blockName ?? ""
-              }
-              panchayatName={
-                selectedPanchayat?.name ?? ""
-              }
+              villageName={selectedVillage.nameHindi}
+              blockName={selectedBlock?.blockName ?? ""}
+              panchayatName={selectedPanchayat?.name ?? ""}
               households={households}
               surveyorName={surveyorId}
               onBack={() =>
                 setViewMode("village_menu")
               }
-              onHouseholdSave={
-                handleSaveHousehold
-              }
+              onHouseholdSave={handleSaveHousehold}
               onHouseholdCountSubmit={
                 handleHouseholdCountSubmit
               }
             />
           )}
-
-        {/* ===================================================
-            5. REPORT DASHBOARD
-        ==================================================== */}
-
-        {viewMode === "reports" &&
-          selectedVillage && (
-            <VillageReportDashboard
-              villageName={
-                selectedVillage.nameHindi
-              }
-              blockName={
-                selectedBlock?.blockName ?? ""
-              }
-              panchayatName={
-                selectedPanchayat?.name ?? ""
-              }
-              onBack={() =>
-                setViewMode("village_menu")
-              }
-              onVillageOverview={() =>
-                setViewMode("village_overview")
-              }
-              onHouseholdOverview={() =>
-                setViewMode("household_overview")
-              }
-            />
-          )}
-
-        {/* ===================================================
-            6. VILLAGE OVERVIEW
-        ==================================================== */}
-
-      {viewMode === "village_overview" && selectedVillage && (
-  <VillageOverview
-    villageName={selectedVillage.nameHindi}
-    blockName={selectedBlock?.blockName ?? ""}
-    panchayatName={selectedPanchayat?.name ?? ""}
-    villageData={villageData}
-    onBack={() => setViewMode("reports")}
-    onCategoryClick={(category) => {
-      setSelectedCategory(category);
-      setViewMode("village_category_detail");
-    }}
-  />
-)}
-
-{viewMode === "village_category_detail" && selectedVillage && (
-  <VillageCategoryDetail
-    category={selectedCategory}
-    villageName={selectedVillage.nameHindi}
-    blockName={selectedBlock?.blockName ?? ""}
-    panchayatName={selectedPanchayat?.name ?? ""}
-    villageData={villageData}
-    onBack={() => setViewMode("village_overview")}
-  />
-)}
-
-        {/* ===================================================
-            7. HOUSEHOLD OVERVIEW
-        ==================================================== */}
-
-      {viewMode === "household_overview" && selectedVillage && (
-  <HouseholdOverview
-    villageName={selectedVillage.nameHindi}
-    blockName={selectedBlock?.blockName ?? ""}
-    panchayatName={selectedPanchayat?.name ?? ""}
-    households={households}
-    onBack={() => setViewMode("reports")}
-  />
-)}
 
       </main>
     </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import type { HouseholdItem } from "../household/HouseholdSurvey";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -14,13 +15,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-interface HouseholdItem {
-  houseNumber: number;
-  isCompleted: boolean;
-  headName?: string;
-  data?: any;
-}
-
 interface HouseholdOverviewProps {
   villageName: string;
   blockName: string;
@@ -33,7 +27,7 @@ interface HouseholdOverviewProps {
    HELPERS
 ========================================================= */
 
-const getValue = (data: any, keys: string[]) => {
+const getValue = (data: Record<string, unknown> | undefined, keys: string[]): unknown => {
   if (!data) return "";
 
   for (const key of keys) {
@@ -53,14 +47,14 @@ const getValue = (data: any, keys: string[]) => {
 
 const getHeadName = (house: HouseholdItem) =>
   house.headName ||
-  getValue(house.data, [
+  formatValue(getValue(house.data, [
     "headName",
     "head_name",
     "familyHeadName",
     "family_head_name",
     "मुखिया",
     "मुखिया का नाम",
-  ]) ||
+  ])) ||
   "नाम उपलब्ध नहीं";
 
 const getMemberCount = (house: HouseholdItem) => {
@@ -74,10 +68,10 @@ const getMemberCount = (house: HouseholdItem) => {
     "numberOfMembers",
   ]);
 
-  return value !== "" ? value : "—";
+  return value !== "" ? formatValue(value) : "—";
 };
 
-const formatValue = (value: any): string => {
+const formatValue = (value: unknown): string => {
   if (value === null || value === undefined || value === "") {
     return "उपलब्ध नहीं";
   }
@@ -109,8 +103,9 @@ const formatValue = (value: any): string => {
 type SummaryStatus = "yes" | "no" | "missing";
 
 interface SummaryItem {
+  key: string;
   label: string;
-  value: any;
+  value: unknown;
   status: SummaryStatus;
 }
 
@@ -143,7 +138,7 @@ const YES_NO_FIELDS: Array<{
   { key: "freeMedicine", label: "निःशुल्क दवा" },
 ];
 
-const normalizeYesNo = (value: any): SummaryStatus => {
+const normalizeYesNo = (value: unknown): SummaryStatus => {
   if (value === undefined || value === null || value === "") return "missing";
 
   const v = String(value).trim().toLowerCase();
@@ -172,7 +167,7 @@ const normalizeYesNo = (value: any): SummaryStatus => {
   return "missing";
 };
 
-const buildSummary = (data: any) => {
+const buildSummary = (data: Record<string, unknown> | undefined) => {
   const items: SummaryItem[] = YES_NO_FIELDS.map(({ key, label }) => ({
     key,
     label,
@@ -314,7 +309,7 @@ const getHindiLabel = (key: string): string => {
 ========================================================= */
 
 interface DataRendererProps {
-  data: any;
+  data: unknown;
   level?: number;
 }
 
@@ -322,7 +317,7 @@ const DataRenderer: React.FC<DataRendererProps> = ({
   data,
   level = 0,
 }) => {
-  if (!data || typeof data !== "object") return null;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
 
   return (
     <div
@@ -384,7 +379,7 @@ const DataRenderer: React.FC<DataRendererProps> = ({
 
 const StatusRow: React.FC<{
   label: string;
-  value: any;
+  value: unknown;
   status: SummaryStatus;
 }> = ({ label, value, status }) => {
   const config = {

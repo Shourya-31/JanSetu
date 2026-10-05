@@ -1,20 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
 
-const DEFAULT_HIERARCHY = [
-  {
-    blockName: 'Narayanpur',
-    panchayats: [
-      { name: 'Khadkagaon', villages: [{ nameEnglish: 'Khadkagaon', nameHindi: 'खड़कागांव' }, { nameEnglish: 'Khairabhat', nameHindi: 'खैराभाट' }] },
-      { name: 'Kerlapal', villages: [{ nameEnglish: 'Kerlapal', nameHindi: 'केरलापाल' }] },
-      { name: 'Binjali', villages: [{ nameEnglish: 'Binjali', nameHindi: 'बिंजली' }, { nameEnglish: 'Telsi', nameHindi: 'तेलसी' }] },
-      { name: 'Sulenga', villages: [{ nameEnglish: 'Sulenga', nameHindi: 'सुलेंगा' }, { nameEnglish: 'Guriya', nameHindi: 'गुरिया' }] },
-      { name: 'Karlakha', villages: [{ nameEnglish: 'Karlakha', nameHindi: 'करलखा' }, { nameEnglish: 'Kanera', nameHindi: 'कनेरा' }, { nameEnglish: 'Paturbeda', nameHindi: 'पातुरबेड़ा' }] },
-      { name: 'Edka', villages: [{ nameEnglish: 'Edka', nameHindi: 'एड़का' }, { nameEnglish: 'Irko', nameHindi: 'ईरको' }, { nameEnglish: 'Kanagaon', nameHindi: 'कानागांव' }] }
-    ]
-  }
-];
-
 let cachedHierarchy: any = null;
 let hierarchyExpiry = 0;
 
@@ -30,37 +16,66 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
     });
 
     if (records.length === 0) {
-      cachedHierarchy = DEFAULT_HIERARCHY;
-      hierarchyExpiry = now + 300000;
-      return reply.send(DEFAULT_HIERARCHY);
+      return reply.status(503).send({ error: 'Village hierarchy has not been seeded.' });
     }
 
-    const blockMap: Record<string, Record<string, Array<{ nameEnglish: string; nameHindi: string }>>> = {};
+    const blockMap = new Map<string, {
+      id: string;
+      blockName: string;
+      blockNameEnglish: string;
+      panchayats: Map<string, {
+        id: string;
+        name: string;
+        nameEnglish: string;
+        villages: Array<{ id: string; nameEnglish: string; nameHindi: string; action: string; population: number }>;
+      }>;
+    }>();
     records.forEach((row) => {
-      if (!blockMap[row.blockName]) {
-        blockMap[row.blockName] = {};
+      let block = blockMap.get(row.blockName);
+      if (!block) {
+        const englishName = row.blockNameEnglish || row.blockName;
+        block = {
+          id: englishName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          blockName: row.blockName,
+          blockNameEnglish: englishName,
+          panchayats: new Map()
+        };
+        blockMap.set(row.blockName, block);
       }
-      if (!blockMap[row.blockName][row.panchayatName]) {
-        blockMap[row.blockName][row.panchayatName] = [];
+
+      let panchayat = block.panchayats.get(row.panchayatName);
+      if (!panchayat) {
+        const englishName = row.panchayatNameEnglish || row.panchayatName;
+        panchayat = {
+          id: `${block.id}-${englishName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+          name: row.panchayatName,
+          nameEnglish: englishName,
+          villages: []
+        };
+        block.panchayats.set(row.panchayatName, panchayat);
       }
-      blockMap[row.blockName][row.panchayatName].push({
-        nameEnglish: row.villageName,
-        nameHindi: row.villageName
+
+      panchayat.villages.push({
+        id: String(row.id),
+        nameEnglish: row.villageNameEnglish || row.villageName,
+        nameHindi: row.villageName,
+        action: row.affectedStatus || 'Direct Affected',
+        population: row.population
       });
     });
 
-    const hierarchy = Object.entries(blockMap).map(([blockName, panchayatsObj]) => ({
-      blockName,
-      panchayats: Object.entries(panchayatsObj).map(([pName, vList]) => ({
-        name: pName,
-        villages: vList
-      }))
+    const hierarchy = Array.from(blockMap.values()).map((block) => ({
+      id: block.id,
+      blockName: block.blockName,
+      blockNameEnglish: block.blockNameEnglish,
+      panchayats: Array.from(block.panchayats.values())
     }));
 
     cachedHierarchy = hierarchy;
     hierarchyExpiry = now + 300000;
     return reply.send(hierarchy);
-  } catch (err) {
-    return reply.send(DEFAULT_HIERARCHY);
+  } catch (error) {
+    req.log.error({ err: error }, 'Village hierarchy query failed');
+    return reply.status(503).send({ error: 'Village hierarchy is temporarily unavailable.' });
   }
 }

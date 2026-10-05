@@ -48,14 +48,14 @@ interface HouseholdFormProps {
 
   surveyorName: string;
 
-  existingData?: any;
+  existingData?: Record<string, unknown>;
 
   onBack: () => void;
 
   // हर section save होने पर parent/dashboard में partial data save होगा
-  onSave: (data: any) => void;
+  onSave: (data: Record<string, unknown>) => void;
 
-  onComplete: (data: any) => void;
+  onComplete: (data: Record<string, unknown>) => void;
 
 }
 
@@ -87,7 +87,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
 
 
 
-  const [formData, setFormData] = useState<any>(
+  const [formData, setFormData] = useState<Record<string, unknown>>(
 
     existingData ?? {}
 
@@ -286,7 +286,7 @@ const sections = [
   // =========================================================
 
   const saveSectionData = (
-    data: any,
+    data: Record<string, unknown>,
     completionKey: string
   ) => {
     const updatedData = {
@@ -302,7 +302,7 @@ const sections = [
 
 
 
-  const handleGeneralNext = (data: any) => {
+  const handleGeneralNext = (data: Record<string, unknown>) => {
     saveSectionData(data, "generalCompleted");
   };
 
@@ -316,7 +316,7 @@ const sections = [
 
 
 
-  const handleDemographyNext = (data: any) => {
+  const handleDemographyNext = (data: Record<string, unknown>) => {
     saveSectionData(data, "demographyCompleted");
   };
 

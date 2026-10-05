@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 dotenv.config();
 
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'postgres://adityaboxi@localhost:5432/jansetu';
+  throw new Error('DATABASE_URL must be configured');
 }
 
 const prisma = new PrismaClient({

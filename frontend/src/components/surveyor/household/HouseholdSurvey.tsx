@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 
 export interface HouseholdItem {
+  id?: string;
+  version?: number;
   houseNumber: number;
   isCompleted: boolean;
   headName?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 interface HouseholdSurveyProps {
@@ -28,12 +30,12 @@ interface HouseholdSurveyProps {
 
   onHouseholdSave: (
     houseNumber: number,
-    data: any
-  ) => void;
+    data: Record<string, unknown>
+  ) => Promise<void>;
 
   onHouseholdCountSubmit: (
     count: number
-  ) => void;
+  ) => Promise<void>;
 }
 
 /* =========================================================
@@ -62,7 +64,7 @@ const TOTAL_SECTIONS =
 ========================================================= */
 
 const getCompletedSectionCount = (
-  data: any
+  data: Record<string, unknown> | undefined
 ): number => {
   if (!data) return 0;
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LogOut, LayoutDashboard, ClipboardList, BarChart3 } from 'lucide-react';
-import { CENSUS_HIERARCHY } from '../../data/narayanpurHierarchy';
-import { INITIAL_AUDIT_LOG } from '../../data/adminMockData';
-import { fetchHouseholds, fetchSchemeGapStats, fetchVillages, sendCorrectionTicket, updateRegistryStatus, verifyHousehold } from '../../services/adminApi';
+import type { Block } from '../../data/narayanpurHierarchy';
+import { fetchAuditLogs, fetchHouseholds, fetchSchemeGapStats, fetchVillages, sendCorrectionTicket, updateRegistryStatus, verifyHousehold } from '../../services/liveAdminApi';
+import { fetchHierarchy } from '../../services/surveyorApi';
+import { downloadApiFile } from '../../services/apiClient';
 import type { AuditStatus, AuditLogEntry, HouseholdRecord, LocationFilters, RegistryStatus, SchemeGapStat, VerificationResult, VillageRecord } from '../../types/admin';
 import { EmptyState, LoadingBlock, SectionCard, StatCard } from './AdminUI';
 import { AdminRecordsPage, type AdminRecordSection } from './AdminRecordsPage';
@@ -28,61 +29,101 @@ export const AdminDashboard: React.FC<{ adminId: string; onLogout: () => void }>
   const [villages, setVillages] = useState<VillageRecord[]>([]);
   const [households, setHouseholds] = useState<HouseholdRecord[]>([]);
   const [schemeGaps, setSchemeGaps] = useState<SchemeGapStat[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(INITIAL_AUDIT_LOG);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [hierarchy, setHierarchy] = useState<Block[]>([]);
+  const [dataError, setDataError] = useState('');
   const [ticketTarget, setTicketTarget] = useState<HouseholdRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
   const districtOptions = ['नारायणपुर'];
-  const blockOptions = filters.district ? CENSUS_HIERARCHY.map((b) => b.blockName) : [];
+  const blockOptions = filters.district ? hierarchy.map((b) => b.blockName) : [];
   const panchayatOptions = useMemo(() => {
     if (!filters.block) return [];
-    return CENSUS_HIERARCHY.find((b) => b.blockName === filters.block)?.panchayats.map((p) => p.name) ?? [];
-  }, [filters.block]);
+    return hierarchy.find((b) => b.blockName === filters.block)?.panchayats.map((p) => p.name) ?? [];
+  }, [filters.block, hierarchy]);
   const villageOptions = useMemo(() => {
     if (!filters.block || !filters.panchayat) return [];
-    const block = CENSUS_HIERARCHY.find((b) => b.blockName === filters.block);
+    const block = hierarchy.find((b) => b.blockName === filters.block);
     return block?.panchayats.find((p) => p.name === filters.panchayat)?.villages.map((v) => v.nameHindi) ?? [];
-  }, [filters.block, filters.panchayat]);
+  }, [filters.block, filters.panchayat, hierarchy]);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    Promise.all([fetchVillages(filters), fetchHouseholds(filters, { status: statusFilter, search }), fetchSchemeGapStats(filters)])
-      .then(([v, h, g]) => { if (!active) return; setVillages(v); setHouseholds(h); setSchemeGaps(g); setLoading(false); })
-      .catch(() => { if (active) setLoading(false); });
+    const loadDashboard = async () => {
+      setLoading(true);
+      try {
+        const [v, h, g, logs, blocks] = await Promise.all([
+          fetchVillages(filters), fetchHouseholds(filters, { status: statusFilter, search }),
+          fetchSchemeGapStats(filters), fetchAuditLogs(), fetchHierarchy()
+        ]);
+        if (!active) return;
+        setVillages(v);
+        setHouseholds(h);
+        setSchemeGaps(g);
+        setAuditLog(logs);
+        setHierarchy(blocks);
+        setDataError('');
+        setLoading(false);
+      } catch (error: unknown) {
+        if (!active) return;
+        setDataError(error instanceof Error ? error.message : 'प्रशासनिक डेटा लोड नहीं हो सका।');
+        setLoading(false);
+      }
+    };
+    void loadDashboard();
     return () => { active = false; };
   }, [filters, search, statusFilter]);
 
-  const addLog = (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
-    setAuditLog((logs) => [{ ...entry, id: `LOG-${Date.now()}`, timestamp: new Date().toISOString() }, ...logs]);
-  };
-
   const handleVerify = async (id: string, result: VerificationResult) => {
-    const before = households.find((h) => h.id === id);
-    const updated = await verifyHousehold(id, result, adminId);
-    if (!updated) return;
-    setHouseholds((rows) => rows.map((row) => row.id === id ? updated : row));
-    addLog({ actor: adminId, action: 'Field Verification', recordId: id, fromStatus: before?.registryStatus || 'लंबित', toStatus: updated.registryStatus, message: `${updated.villageName} — मकान ${updated.houseNumber}: ${result}` });
+    try {
+      const updated = await verifyHousehold(id, result);
+      if (!updated) return;
+      setHouseholds((rows) => rows.map((row) => row.id === id ? updated : row));
+      setAuditLog(await fetchAuditLogs());
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : 'सत्यापन सहेजा नहीं जा सका।');
+    }
   };
 
   const handleUpdateStatus = async (id: string, status: RegistryStatus) => {
-    const before = households.find((h) => h.id === id);
-    const updated = await updateRegistryStatus(id, status);
-    if (!updated) return;
-    setHouseholds((rows) => rows.map((row) => row.id === id ? updated : row));
-    addLog({ actor: adminId, action: 'Registry Status Update', recordId: id, fromStatus: before?.registryStatus, toStatus: status, message: `${updated.villageName} — मकान ${updated.houseNumber} की registry स्थिति ${status} की गई।` });
+    try {
+      const updated = await updateRegistryStatus(id, status);
+      if (!updated) return;
+      setHouseholds((rows) => rows.map((row) => row.id === id ? updated : row));
+      setAuditLog(await fetchAuditLogs());
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : 'रजिस्ट्री स्थिति सहेजी नहीं जा सकी।');
+    }
   };
 
   const handleTicket = async (id: string, reason: string, note: string) => {
-    const result = await sendCorrectionTicket(id, reason, note, adminId);
-    const household = households.find((row) => row.id === id);
-    if (!result.success || !household) return;
-    setHouseholds((rows) => rows.map((row) => row.id === id ? { ...row, correctionTicketId: result.ticketId, correctionReason: reason, correctionNote: note, correctionCreatedAt: new Date().toISOString(), auditNote: `${reason}${note ? `: ${note}` : ''}`, registryStatus: 'सुधार आवश्यक', auditStatus: 'फ्लैग' } : row));
-    addLog({ actor: adminId, action: 'Correction Ticket', recordId: id, fromStatus: household.registryStatus, toStatus: 'सुधार आवश्यक', message: `${household.villageName} — मकान ${household.houseNumber} के लिए सुधार टिकट ${result.ticketId} बनाया गया।` });
-    setTicketTarget(null);
+    try {
+      const result = await sendCorrectionTicket(id, reason, note);
+      const household = households.find((row) => row.id === id);
+      if (!result.success || !household) return;
+      setHouseholds((rows) => rows.map((row) => row.id === id ? { ...row, correctionTicketId: result.ticketId, correctionReason: reason, correctionNote: note, correctionCreatedAt: new Date().toISOString(), auditNote: `${reason}${note ? `: ${note}` : ''}`, registryStatus: 'सुधार आवश्यक', auditStatus: 'फ्लैग' } : row));
+      setAuditLog(await fetchAuditLogs());
+      setTicketTarget(null);
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : 'सुधार टिकट नहीं बनाया जा सका।');
+    }
   };
 
   const resetFilters = () => { setFilters({ district: '', block: '', panchayat: '', village: '', houseNumber: '' }); setSearch(''); setStatusFilter('सभी'); };
+  const exportFilteredHouseholds = async () => {
+    const params = new URLSearchParams();
+    if (filters.block) params.set('block', filters.block);
+    if (filters.panchayat) params.set('panchayat', filters.panchayat);
+    if (filters.village) params.set('village', filters.village);
+    if (filters.houseNumber) params.set('houseNumber', filters.houseNumber);
+    if (statusFilter !== 'सभी') params.set('auditStatus', statusFilter);
+    if (search.trim()) params.set('searchQuery', search.trim());
+    try {
+      await downloadApiFile(`/api/admin/export${params.size ? `?${params}` : ''}`, 'jansetu_households.csv');
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : 'CSV निर्यात नहीं हो सका।');
+    }
+  };
   const totalHouseholds = villages.reduce((sum, v) => sum + v.totalHouseholds, 0);
   const surveyed = villages.reduce((sum, v) => sum + v.surveyedHouseholds, 0);
   const flagged = households.filter((h) => h.auditStatus === 'फ्लैग');
@@ -91,9 +132,9 @@ export const AdminDashboard: React.FC<{ adminId: string; onLogout: () => void }>
   return <div className="min-h-screen bg-slate-50 font-hindi">
     <header className="bg-white border-b sticky top-0 z-30"><div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[11px] font-bold">DMFT</div><div><h1 className="text-sm font-bold text-slate-900">प्रशासनिक / ब्लॉक ऑडिटर कार्यक्षेत्र (Administrative / Block Auditor Workspace)</h1><p className="text-[11px] text-slate-500">आईडी (ID): {adminId}</p></div></div><button onClick={onLogout} className="text-xs border rounded-md px-3 py-1.5 flex items-center gap-1.5 hover:bg-slate-50 cursor-pointer"><LogOut className="w-3.5 h-3.5" /> लॉग आउट (Log Out)</button></div></header>
     <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 lg:grid-cols-[230px_1fr] gap-5"><aside className="bg-white border rounded-xl p-2 h-fit lg:sticky lg:top-20">{NAV.map((item) => { const Icon=item.icon; return <button key={item.id} onClick={()=>setPage(item.id)} className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold text-left cursor-pointer ${page===item.id?'bg-slate-900 text-white':'text-slate-600 hover:bg-slate-50'}`}><Icon className="w-4 h-4" />{item.label}</button>; })}</aside>
-      <main className="space-y-5 min-w-0">{loading ? <LoadingBlock message="डेटा लोड हो रहा है…" /> : <>
+      <main className="space-y-5 min-w-0">{dataError && <div role="alert" className="border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 rounded-lg">{dataError}</div>}{loading ? <LoadingBlock message="डेटा लोड हो रहा है…" /> : <>
         {page==='overview' && <Overview villages={villages} totalHouseholds={totalHouseholds} surveyed={surveyed} flagged={flagged} auditLog={auditLog} onOpenRecords={()=>{setPage('records'); setRecordSection('home');}} />}
-        {page==='records' && <><div className="flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">एडमिन रिकॉर्ड (Admin Records)</h2><p className="text-xs text-slate-500">सभी प्रशासनिक रिकॉर्ड कार्य एक ही जगह से देखें और प्रबंधित करें।</p></div><button onClick={resetFilters} className="text-xs border rounded-md px-3 py-1.5 hover:bg-white cursor-pointer">फ़िल्टर रीसेट (Reset Filters)</button></div><AdminRecordsPage households={households} villages={villages} filters={filters} districtOptions={districtOptions} blockOptions={blockOptions} panchayatOptions={panchayatOptions} villageOptions={villageOptions} houseNumberOptions={houseNumberOptions} onFiltersChange={setFilters} search={search} onSearchChange={setSearch} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onVerify={handleVerify} onUpdateStatus={handleUpdateStatus} onOpenTicket={setTicketTarget} onExportCsv={()=>downloadCsv('jansetu_households.csv', households.map(h=>({id:h.id,trackingId:h.trackingId,village:h.villageName,houseNumber:h.houseNumber,head:h.headName,members:h.totalMembers,income:h.incomeSource,auditStatus:h.auditStatus,registryStatus:h.registryStatus||'लंबित'})))} section={recordSection} onSectionChange={setRecordSection} />{ticketTarget && <TicketModal household={ticketTarget} onClose={()=>setTicketTarget(null)} onSend={handleTicket} />}</>}
+        {page==='records' && <><div className="flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">एडमिन रिकॉर्ड (Admin Records)</h2><p className="text-xs text-slate-500">सभी प्रशासनिक रिकॉर्ड कार्य एक ही जगह से देखें और प्रबंधित करें।</p></div><button onClick={resetFilters} className="text-xs border rounded-md px-3 py-1.5 hover:bg-white cursor-pointer">फ़िल्टर रीसेट (Reset Filters)</button></div><AdminRecordsPage households={households} villages={villages} filters={filters} districtOptions={districtOptions} blockOptions={blockOptions} panchayatOptions={panchayatOptions} villageOptions={villageOptions} houseNumberOptions={houseNumberOptions} onFiltersChange={setFilters} search={search} onSearchChange={setSearch} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onVerify={handleVerify} onUpdateStatus={handleUpdateStatus} onOpenTicket={setTicketTarget} onExportCsv={exportFilteredHouseholds} section={recordSection} onSectionChange={setRecordSection} />{ticketTarget && <TicketModal household={ticketTarget} onClose={()=>setTicketTarget(null)} onSend={handleTicket} />}</>}
         {page==='analytics' && <><div><h2 className="text-lg font-bold text-slate-900">विश्लेषण और रिपोर्ट (Analytics & Reports)</h2><p className="text-xs text-slate-500">प्रत्येक विश्लेषण और रिपोर्ट भाग अलग page पर उपलब्ध है।</p></div><AdminAnalyticsReportsPage villages={villages} households={households} schemeGaps={schemeGaps} section={analyticsSection} onSectionChange={setAnalyticsSection} onExportVillages={()=>downloadCsv('jansetu_villages.csv',villages.map(v=>({village:v.villageName,panchayat:v.panchayat,block:v.block,population:v.totalPopulation,households:v.totalHouseholds,surveyed:v.surveyedHouseholds,completionPercent:v.completionPercent})))} onExportHouseholds={()=>downloadCsv('jansetu_households.csv',households.map(h=>({id:h.id,village:h.villageName,houseNumber:h.houseNumber,head:h.headName,members:h.totalMembers,income:h.incomeSource,auditStatus:h.auditStatus,registryStatus:h.registryStatus||'लंबित'})))} onExportGaps={()=>downloadCsv('jansetu_scheme_gaps.csv',schemeGaps.map(s=>({scheme:s.label,category:s.category,gapPercent:s.gapPercent,gapCount:s.gapCount,priority:s.priority})))} /></>}
       </>}</main></div>
   </div>;

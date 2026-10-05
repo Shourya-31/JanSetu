@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
+import { sendInternalError } from '../utils/httpErrors';
 
 let cachedAnalytics: any = null;
 let cacheExpiry = 0;
@@ -11,6 +12,8 @@ export function invalidateAnalyticsCache() {
 
 export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyReply) {
   const filter = (req.body || {}) as {
+    block?: string;
+    panchayat?: string;
     village?: string;
     isBPL?: string;
     caste?: string;
@@ -25,6 +28,24 @@ export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyRe
   };
   
   const where: any = {};
+  const andConditions: any[] = [];
+
+  if (filter.block) {
+    andConditions.push({
+      OR: [
+        { surveyAnswers: { path: ['block'], equals: filter.block } },
+        { surveyAnswers: { path: ['blockName'], equals: filter.block } }
+      ]
+    });
+  }
+  if (filter.panchayat) {
+    andConditions.push({
+      OR: [
+        { surveyAnswers: { path: ['panchayat'], equals: filter.panchayat } },
+        { surveyAnswers: { path: ['panchayatName'], equals: filter.panchayat } }
+      ]
+    });
+  }
 
   if (filter.village) {
     where.villageName = filter.village;
@@ -100,20 +121,20 @@ export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyRe
       if (!isNaN(numVal) && numVal < 2147483647) {
         orConditions.push({ houseNumber: numVal });
       }
-      where.AND = [{ OR: orConditions }];
+      andConditions.push({ OR: orConditions });
     } else {
-      where.AND = [
-        {
-          OR: [
+      andConditions.push({
+        OR: [
             { headName: { contains: q, mode: 'insensitive' } },
             { trackingId: { contains: q, mode: 'insensitive' } },
             { villageName: { contains: q, mode: 'insensitive' } },
             { mobile: { contains: q } }
-          ]
-        }
-      ];
+        ]
+      });
     }
   }
+
+  if (andConditions.length > 0) where.AND = andConditions;
 
   try {
     const households = await prisma.householdSurvey.findMany({
@@ -133,7 +154,7 @@ export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyRe
           houseNumber: h.houseNumber,
           villageName: h.villageName,
           panchayat: answers.panchayat || answers.panchayatName || '',
-          block: answers.block || answers.blockName || 'Narayanpur',
+          block: answers.block || answers.blockName || '',
           headName: h.headName,
           mobile: h.mobile,
           caste: h.caste,
@@ -169,7 +190,7 @@ export async function queryAdminHouseholds(req: FastifyRequest, reply: FastifyRe
 
     return reply.send(results);
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Admin household query failed');
   }
 }
 
@@ -184,12 +205,12 @@ export async function getAnalyticsSummary(req: FastifyRequest, reply: FastifyRep
       try {
         const mvRows = await prisma.$queryRaw<any[]>`
           SELECT 
-            COALESCE(SUM(total_households), 0)::int as total_households,
-            COALESCE(SUM(total_population), 0)::int as total_population,
-            COALESCE(SUM(bpl_count), 0)::int as bpl_count,
-            COALESCE(SUM(missing_aadhaar_total), 0)::int as missing_aadhaar_total,
-            COALESCE(SUM(missing_ayushman_total), 0)::int as missing_ayushman_total,
-            COALESCE(SUM(unemployed_youth_total), 0)::int as unemployed_youth_total
+            COALESCE(SUM("totalHouseholds"), 0)::int AS total_households,
+            COALESCE(SUM("totalPopulation"), 0)::int AS total_population,
+            COALESCE(SUM("bplCount"), 0)::int AS bpl_count,
+            COALESCE(SUM("missingAadhaarTotal"), 0)::int AS missing_aadhaar_total,
+            COALESCE(SUM("missingAyushmanTotal"), 0)::int AS missing_ayushman_total,
+            COALESCE(SUM("unemployedYouthTotal"), 0)::int AS unemployed_youth_total
           FROM mv_district_cluster_analytics;
         `;
         return mvRows[0];
@@ -218,28 +239,37 @@ export async function getAnalyticsSummary(req: FastifyRequest, reply: FastifyRep
       }
     };
 
-    const [totalVillages, summary] = await Promise.all([
+    const [totalVillages, summary, villageProfiles] = await Promise.all([
       prisma.villageProfile.count(),
-      fetchSummary()
+      fetchSummary(),
+      prisma.villageProfile.findMany({ select: { gapMatrix: true } })
     ]);
 
-    const totalHhd = summary.total_households || 1;
+    const totalHhd = summary.total_households || 0;
     const bplHhd = summary.bpl_count || 0;
+    const infrastructureGapTotal = villageProfiles.reduce((total, village) => {
+      const gapMatrix = village.gapMatrix as Record<string, unknown>;
+      return total + Object.values(gapMatrix || {}).reduce<number>((villageTotal, entry) => {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return villageTotal;
+        const gap = Number((entry as { gap?: unknown }).gap);
+        return Number.isFinite(gap) && gap > 0 ? villageTotal + gap : villageTotal;
+      }, 0);
+    }, 0);
 
     cachedAnalytics = {
-      totalVillages: totalVillages || 42,
+      totalVillages,
       totalHouseholds: totalHhd,
-      totalPopulation: summary.total_population || 38240,
-      bplPercentage: totalHhd > 0 ? Math.round((bplHhd / totalHhd) * 100) : 74,
+      totalPopulation: summary.total_population || 0,
+      bplPercentage: totalHhd > 0 ? Math.round((bplHhd / totalHhd) * 100) : 0,
       missingAadhaarTotal: summary.missing_aadhaar_total,
       missingAyushmanTotal: summary.missing_ayushman_total,
       unemployedYouthTotal: summary.unemployed_youth_total,
-      infrastructureGapTotal: 348
+      infrastructureGapTotal
     };
 
     cacheExpiry = now + 60000;
     return reply.send(cachedAnalytics);
   } catch (err: any) {
-    return reply.status(500).send({ error: err.message });
+    return sendInternalError(req, reply, err, 'Analytics summary query failed');
   }
 }

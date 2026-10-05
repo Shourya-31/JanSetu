@@ -16,11 +16,73 @@ const server = Fastify({
   connectionTimeout: Number(process.env.CONNECTION_TIMEOUT || 10000),
   keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT || 5000),
   bodyLimit: 10 * 1024 * 1024, // 10 MB payload limit
-  pluginTimeout: 30000
+  pluginTimeout: 30000,
+  ajv: {
+    customOptions: {
+      removeAdditional: false,
+      coerceTypes: 'array',
+      useDefaults: true,
+      allErrors: true
+    }
+  }
 });
+
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const REFRESH_RETRY_DELAYS_MS = [5000, 15000, 30000];
+let refreshTimer: NodeJS.Timeout | undefined;
+let shuttingDown = false;
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, milliseconds);
+    timer.unref();
+  });
+}
+
+async function refreshAnalyticsView(): Promise<void> {
+  for (let attempt = 0; attempt <= REFRESH_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const refreshed = await prisma.$transaction(async (tx) => {
+        const locks = await tx.$queryRaw<Array<{ acquired: boolean }>>`
+          SELECT pg_try_advisory_xact_lock(hashtext('jansetu-analytics'), hashtext('mv_district_cluster_analytics')) AS acquired;
+        `;
+        if (!locks[0]?.acquired) return false;
+
+        await tx.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_district_cluster_analytics`;
+        return true;
+      });
+      if (refreshed) {
+        server.log.info('Background refresh of mv_district_cluster_analytics completed.');
+      }
+      return;
+    } catch (error) {
+      if (attempt === REFRESH_RETRY_DELAYS_MS.length) {
+        server.log.error({ err: error }, 'Materialized view refresh failed after retries.');
+        return;
+      }
+
+      const retryDelay = REFRESH_RETRY_DELAYS_MS[attempt];
+      server.log.warn({ err: error, retryInMs: retryDelay }, 'Materialized view refresh failed; retry scheduled.');
+      await delay(retryDelay);
+    }
+  }
+}
+
+function scheduleAnalyticsRefresh(waitMs = REFRESH_INTERVAL_MS): void {
+  if (shuttingDown) return;
+  refreshTimer = setTimeout(async () => {
+    await refreshAnalyticsView();
+    scheduleAnalyticsRefresh();
+  }, waitMs);
+  refreshTimer.unref();
+}
 
 async function start() {
   try {
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+      throw new Error('JWT_SECRET must be configured with at least 32 characters');
+    }
+
     // 1. Security Headers Plugin
     await server.register(helmet, {
       contentSecurityPolicy: false
@@ -40,13 +102,15 @@ async function start() {
 
     // 4. Dynamic CORS Plugin
     await server.register(cors, {
-      origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
+      origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+        : process.env.NODE_ENV === 'production' ? false : ['http://localhost:5173'],
       credentials: true
     });
 
     // 5. JWT Authentication Plugin
     await server.register(fastifyJwt, {
-      secret: process.env.JWT_SECRET || 'jansetu_dmft_super_secret_key_2026'
+      secret: process.env.JWT_SECRET
     });
 
     // 6. PostgreSQL Plugin
@@ -113,7 +177,7 @@ async function start() {
 
       const statusCode = error.statusCode || 500;
       return reply.status(statusCode).send({
-        error: error.message || 'Internal Server Error',
+        error: statusCode >= 500 ? 'Internal Server Error' : error.message || 'Internal Server Error',
         statusCode
       });
     });
@@ -125,16 +189,8 @@ async function start() {
     await server.listen({ port: Number(PORT), host: HOST });
     console.log(`🚀 JanSetu Fastify Backend Engine (TypeScript) running on http://${HOST}:${PORT}`);
 
-    // 11. Automated Background Materialized View Refresh (Every 5 minutes)
-    const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-    setInterval(async () => {
-      try {
-        await prisma.$executeRawUnsafe('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_district_cluster_analytics;');
-        server.log.info('🔄 Background refresh of mv_district_cluster_analytics completed.');
-      } catch (err: any) {
-        server.log.warn('⚠️ Materialized view background refresh notice: ' + err.message);
-      }
-    }, REFRESH_INTERVAL_MS);
+    // Schedule only after the previous refresh and its retries have completed.
+    scheduleAnalyticsRefresh();
 
   } catch (err) {
     server.log.error(err);
@@ -145,6 +201,8 @@ async function start() {
 // Graceful Shutdown Handlers (SIGINT / SIGTERM)
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
+  shuttingDown = true;
+  if (refreshTimer) clearTimeout(refreshTimer);
   try {
     await server.close();
     await prisma.$disconnect();
