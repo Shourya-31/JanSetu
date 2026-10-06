@@ -1,5 +1,19 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
+
+export interface HouseholdChildrenEducationRef {
+  getData: () => {
+    childrenWithoutBirthCertificate: string;
+    vaccinationStatus: string;
+    anganwadiMeal: string;
+    childrenSchoolStatus: string;
+    schoolNotGoingReason: string[];
+    otherSchoolReason: string;
+  };
+}
 
 interface HouseholdChildrenEducationProps {
   houseNumber: number;
@@ -11,8 +25,6 @@ interface HouseholdChildrenEducationProps {
     schoolNotGoingReason?: string[];
     otherSchoolReason?: string;
   };
-  onBack: () => void;
-  onNext: (data: any) => void;
 }
 
 const inputClass =
@@ -20,13 +32,10 @@ const inputClass =
   "text-sm text-slate-900 focus:outline-none focus:ring-1 " +
   "focus:ring-slate-900 focus:border-slate-900";
 
-const HouseholdChildrenEducation: React.FC<
+const HouseholdChildrenEducation = forwardRef<
+  HouseholdChildrenEducationRef,
   HouseholdChildrenEducationProps
-> = ({
-  existingData,
-  onBack,
-  onNext,
-}) => {
+>(({ existingData }, ref) => {
   const [childrenWithoutBirthCertificate, setChildrenWithoutBirthCertificate] =
     useState(existingData?.childrenWithoutBirthCertificate ?? "");
 
@@ -66,16 +75,17 @@ const HouseholdChildrenEducation: React.FC<
     );
   };
 
-  const handleNext = () => {
-    onNext({
+  // Parent HouseholdForm के "सर्वे पूर्ण करें" पर current data लेगा
+  useImperativeHandle(ref, () => ({
+    getData: () => ({
       childrenWithoutBirthCertificate,
       vaccinationStatus,
       anganwadiMeal,
       childrenSchoolStatus,
       schoolNotGoingReason,
       otherSchoolReason,
-    });
-  };
+    }),
+  }));
 
   const RadioOption = ({
     name,
@@ -114,31 +124,6 @@ const HouseholdChildrenEducation: React.FC<
 
   return (
     <div className="space-y-5">
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <div className="border-b border-slate-200 pb-4">
-
-        <p className="text-[11px] text-slate-500">
-          हाउसहोल्ड सर्वे • अनुभाग 6
-        </p>
-
-        <h2 className="text-lg font-bold text-slate-900 mt-1">
-          बच्चे, आंगनवाड़ी एवं शिक्षा
-        </h2>
-
-        <p className="text-xs text-slate-500 mt-1">
-          बच्चों, टीकाकरण, आंगनवाड़ी एवं शिक्षा से संबंधित जानकारी दर्ज करें।
-        </p>
-
-      </div>
-
-      {/* =====================================================
-          FORM
-      ====================================================== */}
-
       <div className="space-y-6">
 
         {/* ===================================================
@@ -146,7 +131,6 @@ const HouseholdChildrenEducation: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-2">
             1. परिवार में ऐसे बच्चों की संख्या, जिनके पास जन्म प्रमाण-पत्र नहीं है
           </label>
@@ -161,7 +145,6 @@ const HouseholdChildrenEducation: React.FC<
             placeholder="बच्चों की संख्या"
             className={inputClass}
           />
-
         </div>
 
         {/* ===================================================
@@ -169,13 +152,11 @@ const HouseholdChildrenEducation: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             2. 0-5 वर्ष के बच्चों का टीकाकरण हुआ है?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="vaccinationStatus"
               value="सभी"
@@ -203,9 +184,7 @@ const HouseholdChildrenEducation: React.FC<
               checked={vaccinationStatus === "लागू नहीं"}
               onChange={setVaccinationStatus}
             />
-
           </div>
-
         </div>
 
         {/* ===================================================
@@ -213,13 +192,11 @@ const HouseholdChildrenEducation: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             3. 3-5 वर्ष के बच्चों को आंगनवाड़ी में गर्म/पका भोजन मिलता है?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="anganwadiMeal"
               value="हाँ"
@@ -240,9 +217,7 @@ const HouseholdChildrenEducation: React.FC<
               checked={anganwadiMeal === "लागू नहीं"}
               onChange={setAnganwadiMeal}
             />
-
           </div>
-
         </div>
 
         {/* ===================================================
@@ -250,13 +225,11 @@ const HouseholdChildrenEducation: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             4. परिवार के बच्चे स्कूल जाते हैं?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="childrenSchoolStatus"
               value="सभी"
@@ -284,25 +257,17 @@ const HouseholdChildrenEducation: React.FC<
               checked={childrenSchoolStatus === "लागू नहीं"}
               onChange={setChildrenSchoolStatus}
             />
-
           </div>
-
-          {/* =================================================
-              SCHOOL NOT GOING REASON
-          ================================================== */}
 
           {(childrenSchoolStatus === "कुछ" ||
             childrenSchoolStatus === "कोई नहीं") && (
             <div className="mt-4">
-
               <label className="block text-xs font-bold text-slate-600 mb-3">
                 यदि नहीं/कुछ नहीं जाते, मुख्य कारण
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
                 {schoolReasons.map((reason) => {
-
                   const checked =
                     schoolNotGoingReason.includes(reason);
 
@@ -315,7 +280,6 @@ const HouseholdChildrenEducation: React.FC<
                           : "border-slate-300 bg-white hover:border-slate-400"
                       }`}
                     >
-
                       <input
                         type="checkbox"
                         checked={checked}
@@ -328,18 +292,13 @@ const HouseholdChildrenEducation: React.FC<
                       <span className="text-sm text-slate-800">
                         {reason}
                       </span>
-
                     </label>
                   );
                 })}
-
               </div>
-
-              {/* OTHER REASON */}
 
               {schoolNotGoingReason.includes("अन्य") && (
                 <div className="mt-3">
-
                   <input
                     type="text"
                     value={otherSchoolReason}
@@ -349,44 +308,17 @@ const HouseholdChildrenEducation: React.FC<
                     placeholder="अन्य कारण लिखें"
                     className={inputClass}
                   />
-
                 </div>
               )}
-
             </div>
           )}
-
         </div>
-
       </div>
-
-      {/* =====================================================
-          BUTTONS
-      ====================================================== */}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          अनुभाग सूची
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          आगे बढ़ें →
-        </button>
-
-      </div>
-
     </div>
   );
-};
+});
+
+HouseholdChildrenEducation.displayName =
+  "HouseholdChildrenEducation";
 
 export default HouseholdChildrenEducation;

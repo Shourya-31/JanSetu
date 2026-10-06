@@ -1,5 +1,20 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
+
+export interface HouseholdHousingFacilitiesRef {
+  getData: () => {
+    houseType: string;
+    housingSchemeBenefit: string;
+    toiletStatus: string;
+    tapWaterConnection: string;
+    drinkingWaterSource: string;
+    electricityConnection: string;
+    solarEnergy: string;
+  };
+}
 
 interface HouseholdHousingFacilitiesProps {
   houseNumber: number;
@@ -12,8 +27,6 @@ interface HouseholdHousingFacilitiesProps {
     electricityConnection?: string;
     solarEnergy?: string;
   };
-  onBack: () => void;
-  onNext: (data: any) => void;
 }
 
 const inputClass =
@@ -21,13 +34,10 @@ const inputClass =
   "text-sm text-slate-900 focus:outline-none focus:ring-1 " +
   "focus:ring-slate-900 focus:border-slate-900";
 
-const HouseholdHousingFacilities: React.FC<
+const HouseholdHousingFacilities = forwardRef<
+  HouseholdHousingFacilitiesRef,
   HouseholdHousingFacilitiesProps
-> = ({
-  existingData,
-  onBack,
-  onNext,
-}) => {
+>(({ existingData }, ref) => {
   const [houseType, setHouseType] = useState(
     existingData?.houseType ?? ""
   );
@@ -65,8 +75,10 @@ const HouseholdHousingFacilities: React.FC<
     "अन्य",
   ];
 
-  const handleNext = () => {
-    onNext({
+  // Parent HouseholdForm के "सर्वे पूर्ण करें" पर
+  // current data प्राप्त करेगा
+  useImperativeHandle(ref, () => ({
+    getData: () => ({
       houseType,
       housingSchemeBenefit,
       toiletStatus,
@@ -74,8 +86,8 @@ const HouseholdHousingFacilities: React.FC<
       drinkingWaterSource,
       electricityConnection,
       solarEnergy,
-    });
-  };
+    }),
+  }));
 
   const RadioOption = ({
     name,
@@ -114,31 +126,6 @@ const HouseholdHousingFacilities: React.FC<
 
   return (
     <div className="space-y-5">
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <div className="border-b border-slate-200 pb-4">
-
-        <p className="text-[11px] text-slate-500">
-          हाउसहोल्ड सर्वे • अनुभाग 8
-        </p>
-
-        <h2 className="text-lg font-bold text-slate-900 mt-1">
-          आवास एवं घरेलू मूलभूत सुविधाएँ
-        </h2>
-
-        <p className="text-xs text-slate-500 mt-1">
-          परिवार के आवास एवं घरेलू मूलभूत सुविधाओं से संबंधित जानकारी दर्ज करें।
-        </p>
-
-      </div>
-
-      {/* =====================================================
-          FORM
-      ====================================================== */}
-
       <div className="space-y-6">
 
         {/* ===================================================
@@ -146,13 +133,11 @@ const HouseholdHousingFacilities: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             1. घर का प्रकार
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="houseType"
               value="कच्चा"
@@ -173,9 +158,7 @@ const HouseholdHousingFacilities: React.FC<
               checked={houseType === "अर्ध-पक्का"}
               onChange={setHouseType}
             />
-
           </div>
-
         </div>
 
         {/* ===================================================
@@ -183,13 +166,11 @@ const HouseholdHousingFacilities: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             2. ग्रामीण आवास/अन्य सरकारी आवास योजना का लाभ मिला?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="housingSchemeBenefit"
               value="हाँ"
@@ -210,9 +191,7 @@ const HouseholdHousingFacilities: React.FC<
               checked={housingSchemeBenefit === "पात्रता नहीं"}
               onChange={setHousingSchemeBenefit}
             />
-
           </div>
-
         </div>
 
         {/* ===================================================
@@ -220,13 +199,11 @@ const HouseholdHousingFacilities: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             3. घर में शौचालय है?
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-
             <RadioOption
               name="toiletStatus"
               value="हाँ, उपयोग में"
@@ -247,9 +224,7 @@ const HouseholdHousingFacilities: React.FC<
               checked={toiletStatus === "नहीं"}
               onChange={setToiletStatus}
             />
-
           </div>
-
         </div>
 
         {/* ===================================================
@@ -257,13 +232,11 @@ const HouseholdHousingFacilities: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             4. नल के पानी का कनेक्शन है?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="tapWaterConnection"
               value="हाँ"
@@ -277,20 +250,15 @@ const HouseholdHousingFacilities: React.FC<
               checked={tapWaterConnection === "नहीं"}
               onChange={setTapWaterConnection}
             />
-
           </div>
-
-          {/* मुख्य पेयजल स्रोत */}
 
           {tapWaterConnection === "नहीं" && (
             <div className="mt-4">
-
               <label className="block text-xs font-bold text-slate-600 mb-3">
                 यदि नहीं, मुख्य पेयजल स्रोत
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-
                 {drinkingWaterSources.map((source) => (
                   <label
                     key={source}
@@ -316,12 +284,9 @@ const HouseholdHousingFacilities: React.FC<
                     </span>
                   </label>
                 ))}
-
               </div>
-
             </div>
           )}
-
         </div>
 
         {/* ===================================================
@@ -329,13 +294,11 @@ const HouseholdHousingFacilities: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             5. घर में बिजली का कनेक्शन है?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="electricityConnection"
               value="हाँ"
@@ -349,9 +312,7 @@ const HouseholdHousingFacilities: React.FC<
               checked={electricityConnection === "नहीं"}
               onChange={setElectricityConnection}
             />
-
           </div>
-
         </div>
 
         {/* ===================================================
@@ -359,13 +320,11 @@ const HouseholdHousingFacilities: React.FC<
         ==================================================== */}
 
         <div>
-
           <label className="block text-sm font-bold text-slate-700 mb-3">
             6. क्या परिवार सौर ऊर्जा का उपयोग करता है?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="solarEnergy"
               value="हाँ"
@@ -379,40 +338,15 @@ const HouseholdHousingFacilities: React.FC<
               checked={solarEnergy === "नहीं"}
               onChange={setSolarEnergy}
             />
-
           </div>
-
         </div>
 
       </div>
-
-      {/* =====================================================
-          BUTTONS
-      ====================================================== */}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          अनुभाग सूची
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          आगे बढ़ें →
-        </button>
-
-      </div>
-
     </div>
   );
-};
+});
+
+HouseholdHousingFacilities.displayName =
+  "HouseholdHousingFacilities";
 
 export default HouseholdHousingFacilities;
