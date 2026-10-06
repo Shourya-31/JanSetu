@@ -1,59 +1,73 @@
-import React, { useState } from 'react';
-import { ROLES } from '../../types/auth';
-import type { UserRole } from '../../types/auth';
-import { ClipboardList, BarChart3, ArrowRight, Lock, Info } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  MapPinned,
+  Users,
+  BarChart3,
+  ArrowRight,
+  Lock,
+} from "lucide-react";
+
+export type SurveyMode = "village" | "household";
 
 interface LoginPageProps {
-  onLoginSuccess: (role: 'surveyor' | 'admin', identifier: string, password: string) => Promise<void>;
+  onProfileSelect: (mode: SurveyMode) => void;
+
+  onAdminLogin: (
+    role: "admin",
+    identifier: string,
+    password: string
+  ) => Promise<void>;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  // Villager option hatane ke baad default role 'surveyor' par set hai
-  const [selectedRole, setSelectedRole] = useState<UserRole>('surveyor');
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+export const LoginPage: React.FC<LoginPageProps> = ({
+  onProfileSelect,
+  onAdminLogin,
+}) => {
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Villager ke alawa baki roles filter kar rahe hain (Surveyor aur Admin)
-  const availableRoles = ROLES.filter((role) => role.id !== 'villager');
-
-  const handleRoleChange = (role: UserRole) => {
-    setSelectedRole(role);
-    setIdentifier('');
-    setPassword('');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!identifier.trim() || !password) {
-      setErrorMessage('आईडी और पासवर्ड दोनों दर्ज करें।');
+      setErrorMessage("प्रशासनिक आईडी और पासवर्ड दोनों दर्ज करें।");
       return;
     }
-    setErrorMessage('');
+
+    setErrorMessage("");
     setIsSubmitting(true);
+
     try {
-      await onLoginSuccess(selectedRole as 'surveyor' | 'admin', identifier.trim(), password);
+      await onAdminLogin(
+        "admin",
+        identifier.trim(),
+        password
+      );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'लॉगिन असफल हुआ।');
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "लॉगिन असफल हुआ। कृपया पुनः प्रयास करें।"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const getRoleIcon = (roleId: UserRole) => {
-    switch (roleId) {
-      case 'surveyor':
-        return <ClipboardList className="w-5 h-5 text-emerald-600" />;
-      case 'admin':
-        return <BarChart3 className="w-5 h-5 text-amber-600" />;
-      default:
-        return null;
-    }
+  const handleBackToHome = () => {
+    setShowAdminLogin(false);
+    setIdentifier("");
+    setPassword("");
+    setErrorMessage("");
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
       <header className="border-b bg-white shadow-xs">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -61,184 +75,217 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div className="w-10 h-10 bg-slate-900 text-white rounded-md flex items-center justify-center font-bold text-lg">
               भा
             </div>
+
             <div>
               <h1 className="text-lg font-bold text-slate-900 leading-tight">
                 सामाजिक-आर्थिक सर्वेक्षण एवं जनगणना पोर्टल
               </h1>
+
               <p className="text-xs text-slate-500 font-medium">
                 जिला खनिज संस्थान न्यास (DMFT) • ग्रामीण विकास प्रणाली
               </p>
             </div>
           </div>
+
           <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
             आधिकारिक उपयोग हेतु
           </span>
         </div>
       </header>
 
-      {/* Main Login Form */}
-      <main className="max-w-4xl mx-auto px-4 py-8 w-full">
-        <div className="bg-white border border-slate-200 rounded-xl shadow-xs p-6 sm:p-8">
-          <div className="text-center max-w-md mx-auto mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">
-              पोर्टल में प्रवेश करें
-            </h2>
-            <p className="text-sm text-slate-600 mt-1">
-              अपनी निर्धारित भूमिका चुनें और संबंधित विवरण दर्ज करें
-            </p>
-          </div>
+      {/* Main */}
+      <main className="flex-1 max-w-5xl mx-auto px-4 py-10 w-full">
+        {!showAdminLogin ? (
+          <>
+            {/* Heading */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-slate-900">
+                पोर्टल में प्रवेश करें
+              </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 1. Role Selection Grid (Surveyor & Admin Only) */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-2">
-                भूमिका का चयन करें (Select Role)
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availableRoles.map((role) => {
-                  const isSelected = selectedRole === role.id;
-                  return (
-                    <button
-                      type="button"
-                      key={role.id}
-                      onClick={() => handleRoleChange(role.id as UserRole)}
-                      className={`text-left p-4 rounded-lg border-2 transition-all flex flex-col justify-between cursor-pointer ${
-                        isSelected
-                          ? 'border-blue-700 bg-blue-50/40 shadow-xs'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="p-2 bg-white rounded border border-slate-200 shadow-2xs">
-                            {getRoleIcon(role.id as UserRole)}
-                          </div>
-                          <span
-                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                              isSelected ? 'bg-blue-200 text-blue-800' : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {role.badge}
-                          </span>
-                        </div>
-                        <h3 className="font-semibold text-sm text-slate-900">{role.title}</h3>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                          {role.description}
-                        </p>
-                      </div>
-                      <div className="mt-4 text-xs font-medium text-blue-700">
-                        {isSelected ? '✓ चयनित' : 'चुनने के लिए क्लिक करें'}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              <p className="text-sm text-slate-600 mt-2">
+                कृपया अपने कार्य के अनुसार विकल्प चुनें
+              </p>
             </div>
 
-            {/* 2. Role-specific Inputs */}
-            <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-4">
-              {selectedRole === 'surveyor' && (
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-xs text-slate-600 bg-white p-2.5 rounded border border-slate-200">
-                    <Info className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>
-                      सर्वेक्षक आईडी ब्लॉक कार्यालय अथवा जनपद पंचायत द्वारा जारी की जाती है।
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      सर्वेक्षक आईडी / कर्मचारी कोड
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      autoComplete="username"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="उदा. SUR-NYR-2026"
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      सुरक्षा पिन / पासवर्ड
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                      <input
-                        type="password"
-                        required
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Three Options */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-              {selectedRole === 'admin' && (
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-xs text-slate-600 bg-white p-2.5 rounded border border-slate-200">
-                    <Info className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>
-                      यह खाता केवल अधिकृत जिला/ब्लॉक स्तर के अधिकारियों के लिए सुरक्षित है।
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      अधिकारी ईमेल / यूजर आईडी
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      autoComplete="username"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="उदा. auditor.narayanpur@gov.in"
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      पासवर्ड
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                      <input
-                        type="password"
-                        required
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {errorMessage && <p role="alert" className="text-sm text-rose-700">{errorMessage}</p>}
+              {/* ================= ग्राम प्रोफाइल ================= */}
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white font-medium text-sm rounded-md shadow-xs transition-colors cursor-pointer"
+                type="button"
+                onClick={() => onProfileSelect("village")}
+                className="group text-left bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer"
               >
-                {isSubmitting ? 'प्रवेश सत्यापित हो रहा है…' : 'सत्यापित करें एवं आगे बढ़ें'}
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                    <MapPinned className="w-6 h-6 text-emerald-600" />
+                  </div>
+
+                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
+                </div>
+
+                <h3 className="text-lg font-bold text-slate-900">
+                  ग्राम प्रोफाइल
+                </h3>
+
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                  ग्राम का संपूर्ण सर्वेक्षण एवं ग्राम संबंधी जानकारी दर्ज करें।
+                </p>
+
+                <div className="mt-5 text-xs font-semibold text-emerald-700">
+                  ग्राम सर्वेक्षण शुरू करें →
+                </div>
+              </button>
+
+              {/* ================= परिवार प्रोफाइल ================= */}
+              <button
+                type="button"
+                onClick={() => onProfileSelect("household")}
+                className="group text-left bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+
+                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                </div>
+
+                <h3 className="text-lg font-bold text-slate-900">
+                  परिवार प्रोफाइल
+                </h3>
+
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                  ग्राम के परिवारों की संख्या एवं प्रत्येक परिवार का सर्वेक्षण
+                  करें।
+                </p>
+
+                <div className="mt-5 text-xs font-semibold text-blue-700">
+                  परिवार सर्वेक्षण शुरू करें →
+                </div>
+              </button>
+
+              {/* ================= प्रशासन ================= */}
+              <button
+                type="button"
+                onClick={() => setShowAdminLogin(true)}
+                className="group text-left bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center">
+                    <BarChart3 className="w-6 h-6 text-amber-600" />
+                  </div>
+
+                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+                </div>
+
+                <h3 className="text-lg font-bold text-slate-900">
+                  प्रशासन
+                </h3>
+
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                  प्रशासनिक डैशबोर्ड एवं सर्वेक्षण की निगरानी के लिए प्रवेश करें।
+                </p>
+
+                <div className="mt-5 text-xs font-semibold text-amber-700">
+                  प्रशासनिक लॉगिन →
+                </div>
               </button>
             </div>
-          </form>
-        </div>
-      </main>
+          </>
+        ) : (
+          /* ================= ADMIN LOGIN ================= */
+          <div className="max-w-md mx-auto">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-xs p-6 sm:p-8">
 
-      {/* Footer */}
-      <footer className="text-center py-4 text-xs text-slate-500 border-t bg-white">
-        राष्ट्रीय सूचना विज्ञान केंद्र (NIC) प्रारूप अनुसार विकसित • समस्त अधिकार सुरक्षित
-      </footer>
+              {/* Back */}
+              <button
+                type="button"
+                onClick={handleBackToHome}
+                className="text-sm text-slate-500 hover:text-slate-800 mb-6"
+              >
+                ← वापस जाएँ
+              </button>
+
+              {/* Login Heading */}
+              <div className="text-center mb-7">
+                <div className="w-14 h-14 mx-auto rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-4">
+                  <Lock className="w-7 h-7 text-amber-600" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-slate-900">
+                  प्रशासनिक लॉगिन
+                </h2>
+
+                <p className="text-sm text-slate-500 mt-1">
+                  प्रशासनिक खाते से प्रवेश करें
+                </p>
+              </div>
+
+              {/* Form */}
+              <form
+                onSubmit={handleAdminLogin}
+                className="space-y-5"
+              >
+                {/* ID */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    प्रशासनिक आईडी
+                  </label>
+
+                  <input
+                    type="text"
+                    value={identifier}
+                    onChange={(e) =>
+                      setIdentifier(e.target.value)
+                    }
+                    placeholder="प्रशासनिक आईडी दर्ज करें"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    पासवर्ड
+                  </label>
+
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
+                    placeholder="पासवर्ड दर्ज करें"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                {/* Error */}
+                {errorMessage && (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                    {errorMessage}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-lg font-semibold transition-colors"
+                >
+                  {isSubmitting
+                    ? "लॉगिन हो रहा है..."
+                    : "प्रवेश करें"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
+
+export default LoginPage;

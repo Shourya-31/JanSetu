@@ -1,5 +1,8 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
 
 interface HouseholdSHGProps {
   houseNumber: number;
@@ -7,25 +10,29 @@ interface HouseholdSHGProps {
   existingData?: {
     shgMember?: string;
   };
-
-  onBack: () => void;
-  onNext: (data: any) => void;
 }
 
-const HouseholdSHG: React.FC<HouseholdSHGProps> = ({
-  existingData,
-  onBack,
-  onNext,
-}) => {
+export interface HouseholdSHGRef {
+  getData: () => {
+    shgMember: string;
+  };
+}
+
+const HouseholdSHG = forwardRef<
+  HouseholdSHGRef,
+  HouseholdSHGProps
+>(({ existingData }, ref) => {
   const [shgMember, setShgMember] = useState(
     existingData?.shgMember ?? ""
   );
 
-  const handleNext = () => {
-    onNext({
+  // Parent HouseholdForm final save ke time
+  // current SHG data yahan se collect karega
+  useImperativeHandle(ref, () => ({
+    getData: () => ({
       shgMember,
-    });
-  };
+    }),
+  }));
 
   const RadioOption = ({
     name,
@@ -65,23 +72,9 @@ const HouseholdSHG: React.FC<HouseholdSHGProps> = ({
   return (
     <div className="space-y-5">
 
-      {/* HEADER */}
-
-      <div className="border-b border-slate-200 pb-4">
-        <p className="text-[11px] text-slate-500">
-          हाउसहोल्ड सर्वे • अनुभाग 10
-        </p>
-
-        <h2 className="text-lg font-bold text-slate-900 mt-1">
-          महिला स्वयं सहायता समूह
-        </h2>
-
-        <p className="text-xs text-slate-500 mt-1">
-          परिवार की महिलाओं के स्वयं सहायता समूह से संबंधित जानकारी दर्ज करें।
-        </p>
-      </div>
-
-      {/* QUESTION */}
+      {/* =====================================================
+          QUESTION
+      ====================================================== */}
 
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -105,31 +98,10 @@ const HouseholdSHG: React.FC<HouseholdSHGProps> = ({
         </div>
       </div>
 
-      {/* BUTTONS */}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          अनुभाग सूची
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          आगे बढ़ें →
-        </button>
-
-      </div>
-
     </div>
   );
-};
+});
+
+HouseholdSHG.displayName = "HouseholdSHG";
 
 export default HouseholdSHG;

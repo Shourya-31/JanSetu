@@ -1,8 +1,12 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
 
 interface HouseholdAgricultureEmploymentProps {
   houseNumber: number;
+
   existingData?: {
     unemployedMembers?: string;
     pmKisan?: string;
@@ -10,11 +14,22 @@ interface HouseholdAgricultureEmploymentProps {
     annualIncome?: string;
     mainIncomeSource?: string;
     livestockSource?: string;
-    animalEmployment?: string;
     otherLivestockSource?: string;
+    animalEmployment?: string;
   };
-  onBack: () => void;
-  onNext: (data: any) => void;
+}
+
+export interface HouseholdAgricultureEmploymentRef {
+  getData: () => {
+    unemployedMembers: string;
+    pmKisan: string;
+    miningEmployment: string;
+    annualIncome: string;
+    mainIncomeSource: string;
+    livestockSource: string;
+    otherLivestockSource: string;
+    animalEmployment: string;
+  };
 }
 
 const inputClass =
@@ -22,13 +37,10 @@ const inputClass =
   "text-sm text-slate-900 focus:outline-none focus:ring-1 " +
   "focus:ring-slate-900 focus:border-slate-900";
 
-const HouseholdAgricultureEmployment: React.FC<
+const HouseholdAgricultureEmployment = forwardRef<
+  HouseholdAgricultureEmploymentRef,
   HouseholdAgricultureEmploymentProps
-> = ({
-  existingData,
-  onBack,
-  onNext,
-}) => {
+>(({ existingData }, ref) => {
   const [unemployedMembers, setUnemployedMembers] = useState(
     existingData?.unemployedMembers ?? ""
   );
@@ -53,24 +65,19 @@ const HouseholdAgricultureEmployment: React.FC<
     existingData?.livestockSource ?? ""
   );
 
-  const [otherLivestockSource, setOtherLivestockSource] = useState(
-    existingData?.otherLivestockSource ?? ""
-  );
+  const [otherLivestockSource, setOtherLivestockSource] =
+    useState(existingData?.otherLivestockSource ?? "");
 
-  const [animalEmployment, setanimalEmployment] = useState(
+  const [animalEmployment, setAnimalEmployment] = useState(
     existingData?.animalEmployment ?? ""
   );
 
-  const livestockOptions = [
-    "गाय/भैंस",
-    "बकरी",
-    "मुर्गी/कुक्कुट",
-    "मछली पालन",
-    "अन्य",
-  ];
-
-  const handleNext = () => {
-    onNext({
+  /*
+   * Parent HouseholdForm final save par
+   * yahan se current data collect karega.
+   */
+  useImperativeHandle(ref, () => ({
+    getData: () => ({
       unemployedMembers,
       pmKisan,
       miningEmployment,
@@ -79,8 +86,8 @@ const HouseholdAgricultureEmployment: React.FC<
       livestockSource,
       otherLivestockSource,
       animalEmployment,
-    });
-  };
+    }),
+  }));
 
   const RadioOption = ({
     name,
@@ -118,336 +125,198 @@ const HouseholdAgricultureEmployment: React.FC<
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* =====================================================
-          HEADER
+          1. UNEMPLOYED MEMBERS
       ====================================================== */}
 
-      <div className="border-b border-slate-200 pb-4">
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          1. परिवार में कितने सदस्य वर्तमान में बेरोजगार हैं?
+        </label>
 
-        <p className="text-[11px] text-slate-500">
-          हाउसहोल्ड सर्वे • अनुभाग 7
-        </p>
-
-        <h2 className="text-lg font-bold text-slate-900 mt-1">
-          कृषि, रोजगार एवं आय
-        </h2>
-
-        <p className="text-xs text-slate-500 mt-1">
-          परिवार की कृषि, रोजगार एवं आय से संबंधित जानकारी दर्ज करें।
-        </p>
-
+        <input
+          type="number"
+          min="0"
+          value={unemployedMembers}
+          onChange={(e) => setUnemployedMembers(e.target.value)}
+          className={inputClass}
+          placeholder="सदस्यों की संख्या"
+        />
       </div>
 
       {/* =====================================================
-          FORM
+          2. PM KISAN
       ====================================================== */}
 
-      <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          2. क्या परिवार को PM किसान योजना का लाभ मिल रहा है?
+        </label>
 
-        {/* ===================================================
-            1. बेरोजगार सदस्य
-        ==================================================== */}
+        <div className="flex flex-wrap gap-3">
+          <RadioOption
+            name="pmKisan"
+            value="हाँ"
+            checked={pmKisan === "हाँ"}
+            onChange={setPmKisan}
+          />
 
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">
-            1. परिवार में बेरोजगार सदस्यों (18-45 वर्ष) की संख्या
-          </label>
+          <RadioOption
+            name="pmKisan"
+            value="नहीं"
+            checked={pmKisan === "नहीं"}
+            onChange={setPmKisan}
+          />
 
-          <input
-            type="number"
-            min="0"
-            value={unemployedMembers}
-            onChange={(e) => setUnemployedMembers(e.target.value)}
-            placeholder="सदस्यों की संख्या"
-            className={inputClass}
+          <RadioOption
+            name="pmKisan"
+            value="पात्रता नहीं"
+            checked={pmKisan === "पात्रता नहीं"}
+            onChange={setPmKisan}
+          />
+        </div>
+      </div>
+
+      {/* =====================================================
+          3. MINING EMPLOYMENT
+      ====================================================== */}
+
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          3. क्या परिवार का कोई सदस्य खनन कार्य में रोजगार करता है?
+        </label>
+
+        <div className="flex flex-wrap gap-3">
+          <RadioOption
+            name="miningEmployment"
+            value="हाँ"
+            checked={miningEmployment === "हाँ"}
+            onChange={setMiningEmployment}
+          />
+
+          <RadioOption
+            name="miningEmployment"
+            value="नहीं"
+            checked={miningEmployment === "नहीं"}
+            onChange={setMiningEmployment}
+          />
+        </div>
+      </div>
+
+      {/* =====================================================
+          4. ANNUAL INCOME
+      ====================================================== */}
+
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          4. परिवार की अनुमानित वार्षिक आय
+        </label>
+
+        <input
+          type="number"
+          min="0"
+          value={annualIncome}
+          onChange={(e) => setAnnualIncome(e.target.value)}
+          className={inputClass}
+          placeholder="वार्षिक आय दर्ज करें"
+        />
+      </div>
+
+      {/* =====================================================
+          5. MAIN INCOME SOURCE
+      ====================================================== */}
+
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          5. परिवार की आय का मुख्य स्रोत क्या है?
+        </label>
+
+        <input
+          type="text"
+          value={mainIncomeSource}
+          onChange={(e) => setMainIncomeSource(e.target.value)}
+          className={inputClass}
+          placeholder="मुख्य आय का स्रोत"
+        />
+      </div>
+
+      {/* =====================================================
+          6. LIVESTOCK SOURCE
+      ====================================================== */}
+
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          6. क्या परिवार की आजीविका पशुपालन से जुड़ी है?
+        </label>
+
+        <div className="flex flex-wrap gap-3">
+          <RadioOption
+            name="livestockSource"
+            value="हाँ"
+            checked={livestockSource === "हाँ"}
+            onChange={setLivestockSource}
+          />
+
+          <RadioOption
+            name="livestockSource"
+            value="नहीं"
+            checked={livestockSource === "नहीं"}
+            onChange={setLivestockSource}
           />
         </div>
 
-        {/* ===================================================
-            2. PM-KISAN
-        ==================================================== */}
+        {livestockSource === "हाँ" && (
+          <div className="mt-4">
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              पशुपालन का विवरण
+            </label>
 
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-3">
-            2. पिछले वर्ष PM-KISAN की राशि प्राप्त हुई?
-          </label>
-
-          <div className="flex flex-wrap gap-3">
-
-            <RadioOption
-              name="pmKisan"
-              value="हाँ"
-              checked={pmKisan === "हाँ"}
-              onChange={setPmKisan}
+            <input
+              type="text"
+              value={otherLivestockSource}
+              onChange={(e) =>
+                setOtherLivestockSource(e.target.value)
+              }
+              className={inputClass}
+              placeholder="जैसे गाय, भैंस, बकरी आदि"
             />
-
-            <RadioOption
-              name="pmKisan"
-              value="नहीं"
-              checked={pmKisan === "नहीं"}
-              onChange={setPmKisan}
-            />
-
-            <RadioOption
-              name="pmKisan"
-              value="पात्रता नहीं"
-              checked={pmKisan === "पात्रता नहीं"}
-              onChange={setPmKisan}
-            />
-
           </div>
-        </div>
-
-        {/* ===================================================
-            3. खनन
-        ==================================================== */}
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-3">
-            3. परिवार का कोई सदस्य खनन में कार्यरत है?
-          </label>
-
-          <div className="flex flex-wrap gap-3">
-
-            <RadioOption
-              name="miningEmployment"
-              value="हाँ"
-              checked={miningEmployment === "हाँ"}
-              onChange={setMiningEmployment}
-            />
-
-            <RadioOption
-              name="miningEmployment"
-              value="नहीं"
-              checked={miningEmployment === "नहीं"}
-              onChange={setMiningEmployment}
-            />
-
-          </div>
-        </div>
-
-        {/* ===================================================
-            4. वार्षिक आय
-        ==================================================== */}
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-3">
-            4. परिवार की कुल वार्षिक आय
-          </label>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-            <RadioOption
-              name="annualIncome"
-              value="₹20,000 से कम"
-              checked={annualIncome === "₹20,000 से कम"}
-              onChange={setAnnualIncome}
-            />
-
-            <RadioOption
-              name="annualIncome"
-              value="₹20,000–₹50,000"
-              checked={annualIncome === "₹20,000–₹50,000"}
-              onChange={setAnnualIncome}
-            />
-
-            <RadioOption
-              name="annualIncome"
-              value="₹50,000–₹2,00,000"
-              checked={annualIncome === "₹50,000–₹2,00,000"}
-              onChange={setAnnualIncome}
-            />
-
-            <RadioOption
-              name="annualIncome"
-              value="₹2,00,000 से अधिक"
-              checked={annualIncome === "₹2,00,000 से अधिक"}
-              onChange={setAnnualIncome}
-            />
-
-          </div>
-        </div>
-
-        {/* ===================================================
-            5. आय का मुख्य स्रोत
-        ==================================================== */}
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-3">
-            5. आय का मुख्य स्रोत
-          </label>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-            <RadioOption
-              name="mainIncomeSource"
-              value="कृषि"
-              checked={mainIncomeSource === "कृषि"}
-              onChange={setMainIncomeSource}
-            />
-
-            <RadioOption
-              name="mainIncomeSource"
-              value="कृषि/दैनिक मजदूरी"
-              checked={mainIncomeSource === "कृषि/दैनिक मजदूरी"}
-              onChange={setMainIncomeSource}
-            />
-
-            <RadioOption
-              name="mainIncomeSource"
-              value="सरकारी/निजी नौकरी"
-              checked={mainIncomeSource === "सरकारी/निजी नौकरी"}
-              onChange={setMainIncomeSource}
-            />
-
-            <RadioOption
-              name="mainIncomeSource"
-              value="व्यवसाय/स्वरोजगार"
-              checked={mainIncomeSource === "व्यवसाय/स्वरोजगार"}
-              onChange={setMainIncomeSource}
-            />
-
-            <RadioOption
-              name="mainIncomeSource"
-              value="पशुपालन"
-              checked={mainIncomeSource === "पशुपालन"}
-              onChange={setMainIncomeSource}
-            />
-
-          </div>
-
-          {/* ===============================================
-              पशुपालन का प्रकार
-          ================================================ */}
-
-          {mainIncomeSource === "पशुपालन" && (
-            <div className="mt-4">
-
-              <label className="block text-xs font-bold text-slate-600 mb-3">
-                यदि पशुपालन मुख्य स्रोत है
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                {livestockOptions.map((option) => {
-
-                  const checked =
-                    livestockSource === option;
-
-                  return (
-                    <label
-                      key={option}
-                      className={`flex items-center gap-3 px-4 py-3 border rounded-lg cursor-pointer transition-colors ${
-                        checked
-                          ? "border-slate-900 bg-slate-50"
-                          : "border-slate-300 bg-white hover:border-slate-400"
-                      }`}
-                    >
-
-                      <input
-                        type="radio"
-                        name="livestockSource"
-                        value={option}
-                        checked={checked}
-                        onChange={(e) =>
-                          setLivestockSource(e.target.value)
-                        }
-                        className="w-4 h-4 accent-slate-900"
-                      />
-
-                      <span className="text-sm text-slate-800">
-                        {option}
-                      </span>
-
-                    </label>
-                  );
-                })}
-
-              </div>
-
-              {livestockSource === "अन्य" && (
-                <div className="mt-3">
-
-                  <input
-                    type="text"
-                    value={otherLivestockSource}
-                    onChange={(e) =>
-                      setOtherLivestockSource(e.target.value)
-                    }
-                    placeholder="अन्य पशुपालन का विवरण"
-                    className={inputClass}
-                  />
-
-                </div>
-              )}
-
-            </div>
-          )}
-
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-3">
-            6. क्या आपको किसी शासकीय योजना के अंतर्गत पशुपालन के लिए पशु शेड प्राप्त हुआ है?
-          </label>
-
-          <div className="flex flex-wrap gap-3">
-
-            <RadioOption
-              name="animalEmployment"
-              value="हाँ"
-              checked={animalEmployment === "हाँ"}
-              onChange={setanimalEmployment}
-            />
-
-            <RadioOption
-              name="animalEmployment"
-              value="नहीं"
-              checked={animalEmployment === "नहीं"}
-              onChange={setanimalEmployment}
-            />
-
-            <RadioOption
-              name="animalEmployment"
-              value="पात्रता नहीं है"
-              checked={animalEmployment === "पात्रता नहीं"}
-              onChange={setanimalEmployment}
-            />
-
-          </div>
-        </div>
-
+        )}
       </div>
 
       {/* =====================================================
-          BUTTONS
+          7. ANIMAL EMPLOYMENT
       ====================================================== */}
 
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+      <div>
+        <label className="block text-sm font-bold text-slate-700 mb-3">
+          7. क्या परिवार के सदस्य पशुपालन/पशु आधारित कार्य से रोजगार प्राप्त करते हैं?
+        </label>
 
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          अनुभाग सूची
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <RadioOption
+            name="animalEmployment"
+            value="हाँ"
+            checked={animalEmployment === "हाँ"}
+            onChange={setAnimalEmployment}
+          />
 
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          आगे बढ़ें →
-        </button>
-
+          <RadioOption
+            name="animalEmployment"
+            value="नहीं"
+            checked={animalEmployment === "नहीं"}
+            onChange={setAnimalEmployment}
+          />
+        </div>
       </div>
 
     </div>
   );
-};
+});
+
+HouseholdAgricultureEmployment.displayName =
+  "HouseholdAgricultureEmployment";
 
 export default HouseholdAgricultureEmployment;

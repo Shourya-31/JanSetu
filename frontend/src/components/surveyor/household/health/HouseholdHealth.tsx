@@ -1,5 +1,15 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
+
+export interface HouseholdHealthRef {
+  getData: () => {
+    familyDisease: string;
+    freeMedicines: string;
+  };
+}
 
 interface HouseholdHealthProps {
   houseNumber: number;
@@ -8,16 +18,12 @@ interface HouseholdHealthProps {
     familyDisease?: string;
     freeMedicines?: string;
   };
-
-  onBack: () => void;
-  onNext: (data: any) => void;
 }
 
-const HouseholdHealth: React.FC<HouseholdHealthProps> = ({
-  existingData,
-  onBack,
-  onNext,
-}) => {
+const HouseholdHealth = forwardRef<
+  HouseholdHealthRef,
+  HouseholdHealthProps
+>(({ existingData }, ref) => {
   const [familyDisease, setFamilyDisease] = useState(
     existingData?.familyDisease ?? ""
   );
@@ -26,12 +32,14 @@ const HouseholdHealth: React.FC<HouseholdHealthProps> = ({
     existingData?.freeMedicines ?? ""
   );
 
-  const handleNext = () => {
-    onNext({
+  // Parent HouseholdForm के "सर्वे पूर्ण करें" पर
+  // current data प्राप्त करेगा
+  useImperativeHandle(ref, () => ({
+    getData: () => ({
       familyDisease,
       freeMedicines,
-    });
-  };
+    }),
+  }));
 
   const RadioOption = ({
     name,
@@ -70,28 +78,9 @@ const HouseholdHealth: React.FC<HouseholdHealthProps> = ({
 
   return (
     <div className="space-y-5">
-
-      {/* HEADER */}
-
-      <div className="border-b border-slate-200 pb-4">
-        <p className="text-[11px] text-slate-500">
-          हाउसहोल्ड सर्वे • अनुभाग 9
-        </p>
-
-        <h2 className="text-lg font-bold text-slate-900 mt-1">
-          स्वास्थ्य
-        </h2>
-
-        <p className="text-xs text-slate-500 mt-1">
-          परिवार के स्वास्थ्य एवं स्वास्थ्य सेवाओं से संबंधित जानकारी दर्ज करें।
-        </p>
-      </div>
-
-      {/* QUESTIONS */}
-
       <div className="space-y-6">
 
-        {/* QUESTION 1 */}
+        {/* प्रश्न 1 */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -115,7 +104,7 @@ const HouseholdHealth: React.FC<HouseholdHealthProps> = ({
           </div>
         </div>
 
-        {/* QUESTION 2 */}
+        {/* प्रश्न 2 */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -147,32 +136,10 @@ const HouseholdHealth: React.FC<HouseholdHealthProps> = ({
         </div>
 
       </div>
-
-      {/* BUTTONS */}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          अनुभाग सूची
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          आगे बढ़ें →
-        </button>
-
-      </div>
-
     </div>
   );
-};
+});
+
+HouseholdHealth.displayName = "HouseholdHealth";
 
 export default HouseholdHealth;

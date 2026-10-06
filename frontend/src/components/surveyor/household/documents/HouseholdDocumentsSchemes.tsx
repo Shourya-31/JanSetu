@@ -1,5 +1,26 @@
-import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
+
+export interface HouseholdDocumentsSchemesRef {
+  getData: () => {
+    rationCard: string;
+    noAadhaarMembers: string;
+    aadhaarEkyc: string;
+    noCasteCertificateMembers: string;
+    noAyushmanMembers: string;
+    noVoterIdMembers: string;
+    mnregaJobCard: string;
+    noShramikCardMembers: string;
+    janDhanAccount: string;
+    kcc: string;
+    forestRightsPatta: string;
+    marriagecertificate: string;
+    bankName: string;
+  };
+}
 
 interface HouseholdDocumentsSchemesProps {
   houseNumber: number;
@@ -18,8 +39,6 @@ interface HouseholdDocumentsSchemesProps {
     marriagecertificate?: string;
     bankName?: string;
   };
-  onBack: () => void;
-  onNext: (data: any) => void;
 }
 
 const inputClass =
@@ -27,14 +46,10 @@ const inputClass =
   "text-sm text-slate-900 focus:outline-none focus:ring-1 " +
   "focus:ring-slate-900 focus:border-slate-900";
 
-const HouseholdDocumentsSchemes: React.FC<
+const HouseholdDocumentsSchemes = forwardRef<
+  HouseholdDocumentsSchemesRef,
   HouseholdDocumentsSchemesProps
-> = ({
-  houseNumber,
-  existingData,
-  onBack,
-  onNext,
-}) => {
+>(({ existingData }, ref) => {
   const [rationCard, setRationCard] = useState(
     existingData?.rationCard ?? ""
   );
@@ -70,9 +85,7 @@ const HouseholdDocumentsSchemes: React.FC<
     existingData?.janDhanAccount ?? ""
   );
 
-  const [kcc, setKcc] = useState(
-    existingData?.kcc ?? ""
-  );
+  const [kcc, setKcc] = useState(existingData?.kcc ?? "");
 
   const [forestRightsPatta, setForestRightsPatta] = useState(
     existingData?.forestRightsPatta ?? ""
@@ -86,8 +99,9 @@ const HouseholdDocumentsSchemes: React.FC<
     existingData?.bankName ?? ""
   );
 
-  const handleNext = () => {
-    onNext({
+  // HouseholdForm के "सर्वे पूर्ण करें" पर current data मिलेगा
+  useImperativeHandle(ref, () => ({
+    getData: () => ({
       rationCard,
       noAadhaarMembers,
       aadhaarEkyc,
@@ -101,8 +115,8 @@ const HouseholdDocumentsSchemes: React.FC<
       forestRightsPatta,
       marriagecertificate,
       bankName,
-    });
-  };
+    }),
+  }));
 
   const RadioOption = ({
     name,
@@ -143,34 +157,9 @@ const HouseholdDocumentsSchemes: React.FC<
 
   return (
     <div className="space-y-5">
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <div className="border-b border-slate-200 pb-4">
-
-        <p className="text-[11px] text-slate-500">
-          हाउसहोल्ड सर्वे • अनुभाग 3
-        </p>
-
-        <h2 className="text-lg font-bold text-slate-900 mt-1">
-          दस्तावेज एवं शासकीय योजनाएँ
-        </h2>
-
-        <p className="text-xs text-slate-500 mt-1">
-          परिवार के दस्तावेज एवं शासकीय योजनाओं से संबंधित जानकारी दर्ज करें।
-        </p>
-
-      </div>
-
-      {/* =====================================================
-          FORM
-      ====================================================== */}
-
       <div className="space-y-6">
 
-        {/* 4. राशन कार्ड */}
+        {/* 1. राशन कार्ड */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -178,7 +167,6 @@ const HouseholdDocumentsSchemes: React.FC<
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="rationCard"
               value="हाँ"
@@ -196,11 +184,10 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               नहीं
             </RadioOption>
-
           </div>
         </div>
 
-        {/* 5. आधार कार्ड */}
+        {/* 2. आधार कार्ड */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -211,13 +198,15 @@ const HouseholdDocumentsSchemes: React.FC<
             type="number"
             min="0"
             value={noAadhaarMembers}
-            onChange={(e) => setNoAadhaarMembers(e.target.value)}
+            onChange={(e) =>
+              setNoAadhaarMembers(e.target.value)
+            }
             placeholder="सदस्यों की संख्या"
             className={inputClass}
           />
         </div>
 
-        {/* 6. Aadhaar e-KYC */}
+        {/* 3. Aadhaar e-KYC */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -225,7 +214,6 @@ const HouseholdDocumentsSchemes: React.FC<
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="aadhaarEkyc"
               value="हाँ"
@@ -243,11 +231,10 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               नहीं
             </RadioOption>
-
           </div>
         </div>
 
-        {/* 7. जाति प्रमाण-पत्र */}
+        {/* 4. जाति प्रमाण-पत्र */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -266,7 +253,7 @@ const HouseholdDocumentsSchemes: React.FC<
           />
         </div>
 
-        {/* 8. आयुष्मान कार्ड */}
+        {/* 5. आयुष्मान कार्ड */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -285,7 +272,7 @@ const HouseholdDocumentsSchemes: React.FC<
           />
         </div>
 
-        {/* 9. Voter ID */}
+        {/* 6. Voter ID */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -304,7 +291,7 @@ const HouseholdDocumentsSchemes: React.FC<
           />
         </div>
 
-        {/* 10. मनरेगा */}
+        {/* 7. मनरेगा */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -312,7 +299,6 @@ const HouseholdDocumentsSchemes: React.FC<
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="mnregaJobCard"
               value="हाँ"
@@ -333,7 +319,7 @@ const HouseholdDocumentsSchemes: React.FC<
           </div>
         </div>
 
-        {/* 11. श्रमिक कार्ड */}
+        {/* 8. श्रमिक कार्ड */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -352,7 +338,7 @@ const HouseholdDocumentsSchemes: React.FC<
           />
         </div>
 
-        {/* 12. जन-धन खाता */}
+        {/* 9. जन-धन खाता */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -360,7 +346,6 @@ const HouseholdDocumentsSchemes: React.FC<
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="janDhanAccount"
               value="हाँ"
@@ -378,9 +363,10 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               नहीं
             </RadioOption>
-
           </div>
         </div>
+
+        {/* बैंक का नाम */}
 
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -391,12 +377,12 @@ const HouseholdDocumentsSchemes: React.FC<
             type="text"
             value={bankName}
             onChange={(e) => setbankName(e.target.value)}
-            placeholder="परिवार मुखिया का नाम"
+            placeholder="बैंक का नाम"
             className={inputClass}
           />
         </div>
 
-        {/* 13. KCC */}
+        {/* 10. KCC */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -404,7 +390,6 @@ const HouseholdDocumentsSchemes: React.FC<
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="kcc"
               value="हाँ"
@@ -431,11 +416,10 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               पात्रता नहीं
             </RadioOption>
-
           </div>
         </div>
 
-        {/* 14. वनाधिकार पट्टा */}
+        {/* 11. वनाधिकार पट्टा */}
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
@@ -443,7 +427,6 @@ const HouseholdDocumentsSchemes: React.FC<
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="forestRightsPatta"
               value="हाँ"
@@ -470,18 +453,17 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               पात्रता नहीं
             </RadioOption>
-
           </div>
         </div>
 
-        {/*15.*/}
+        {/* 12. विवाह प्रमाण-पत्र */}
+
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-3">
             12. विवाह प्रमाण-पत्र है?
           </label>
 
           <div className="flex flex-wrap gap-3">
-
             <RadioOption
               name="marriagecertificate"
               value="हाँ"
@@ -499,39 +481,15 @@ const HouseholdDocumentsSchemes: React.FC<
             >
               नहीं
             </RadioOption>
-
           </div>
         </div>
 
       </div>
-
-      {/* =====================================================
-          BUTTONS
-      ====================================================== */}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          अनुभाग सूची
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          आगे बढ़ें →
-        </button>
-
-      </div>
-
     </div>
   );
-};
+});
+
+HouseholdDocumentsSchemes.displayName =
+  "HouseholdDocumentsSchemes";
 
 export default HouseholdDocumentsSchemes;
