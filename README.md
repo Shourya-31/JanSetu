@@ -152,25 +152,30 @@ Covered across the **Village Baseline Survey** (`frontend/src/components/surveyo
 
 ## 4. API Endpoints Reference
 
-| Method | Endpoint | Description | Auth |
+| Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Authenticate user & issue JWT | No |
-| `GET` | `/api/hierarchy` | Location hierarchy (Block ➔ Panchayat ➔ Village) | No |
-| `GET` | `/api/villages/all` | List all village profiles with completed survey counts | No |
-| `GET` | `/api/villages/profile` | Retrieve single village profile & baseline survey | No |
-| `POST` | `/api/villages/profile` | Create / update village profile & village survey | Yes |
-| `PATCH` | `/api/villages/:id` | Partial update village profile with version lock | Yes |
-| `DELETE` | `/api/villages/:id` | Delete village profile | Yes |
-| `GET` | `/api/households` | Fetch household surveys for a village | No |
-| `POST` | `/api/households` | Submit / upsert household survey data | Yes |
-| `PATCH` | `/api/households/:id` | Update household survey record with version lock | Yes |
-| `DELETE` | `/api/households/:id` | Delete household survey record | Yes |
-| `PATCH` | `/api/households/:id/verify` | Update verification audit status | Yes |
-| `PATCH` | `/api/households/:id/registry` | Update registry status | Yes |
-| `POST` | `/api/households/:id/ticket` | Raise correction ticket | Yes |
-| `POST` | `/api/admin/query` | Dynamic multi-filter & search query (max 500) | Yes |
-| `GET` | `/api/admin/analytics` | Fetch pre-computed district analytics summary | Yes |
-| `GET` | `/api/admin/export` | Stream full household records CSV | Yes |
+| `POST` | `/api/auth/login` | Authenticate user & issue JWT | Public |
+| `POST` | `/api/auth/demo-login` | Issue an eight-hour public demo surveyor JWT | Public |
+| `GET` | `/api/hierarchy` | Location hierarchy (Block ➔ Panchayat ➔ Village) | Surveyor/Admin |
+| `GET` | `/api/villages/all` | List all village profiles with completed survey counts | Surveyor/Admin |
+| `GET` | `/api/villages/profile` | Retrieve a village profile and baseline survey | Surveyor/Admin |
+| `POST` | `/api/villages/profile` | Create / update village profile and village survey | Surveyor/Admin |
+| `PATCH` | `/api/villages/:id` | Partial update village profile with version lock | Surveyor/Admin |
+| `DELETE` | `/api/villages/:id` | Delete village profile | Admin |
+| `GET` | `/api/households` | Fetch household surveys for a village | Surveyor/Admin |
+| `POST` | `/api/households/initialize` | Create household survey slots | Surveyor/Admin |
+| `POST` | `/api/households` | Submit / upsert household survey data | Surveyor/Admin |
+| `PATCH` | `/api/households/:id` | Update household survey record with version lock | Surveyor/Admin |
+| `DELETE` | `/api/households/:id` | Delete household survey record | Admin |
+| `PATCH` | `/api/households/:id/verify` | Update verification audit status | Admin |
+| `PATCH` | `/api/households/:id/registry` | Update registry status | Admin |
+| `POST` | `/api/households/:id/ticket` | Raise correction ticket | Admin |
+| `POST` | `/api/admin/query` | Dynamic multi-filter & search query (max 500) | Admin |
+| `GET` | `/api/admin/analytics` | Fetch pre-computed district analytics summary | Admin |
+| `GET` | `/api/admin/audit-logs` | Fetch audit history | Admin |
+| `GET` | `/api/admin/export` | Stream full household records CSV | Admin |
+
+Demo surveyor access is public and can create or edit survey records. Those changes are marked as `DEMO-SURVEYOR` in audit-log changes, and admin endpoints continue to require an administrator JWT.
 
 ---
 
@@ -223,3 +228,4 @@ npm install
 npm run dev
 ```
 *Frontend app runs at `http://localhost:5173`.*
+*The `/api` proxy targets `http://localhost:3000` by default; set `VITE_API_PROXY_TARGET` to override it for local backend ports.*
