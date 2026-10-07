@@ -59,8 +59,8 @@ function householdSubmission() {
   }, Object.fromEntries(fields.map((field) => [field, arrayFields.has(field) ? [] : ''])));
 }
 
-function authorization(role: 'admin' | 'surveyor') {
-  const token = app.jwt.sign({ id: `${role}-id`, role });
+function authorization(role: 'admin' | 'surveyor', demo = false) {
+  const token = app.jwt.sign({ id: `${role}-id`, role, ...(demo ? { demo: true } : {}) });
   return { authorization: `Bearer ${token}` };
 }
 
@@ -85,6 +85,28 @@ test('login rejects missing credentials before reaching the database', async () 
     payload: { role: 'admin', identifier: 'admin01' }
   });
   assert.equal(response.statusCode, 400);
+});
+
+test('demo login creates a surveyor session without granting admin access', async () => {
+  const response = await app.inject({ method: 'POST', url: '/api/auth/demo-login' });
+  assert.equal(response.statusCode, 200, response.body);
+
+  const session = response.json() as {
+    token: string;
+    user: { userCode: string; role: string };
+  };
+  const claims = app.jwt.verify<{ role: string; demo?: boolean }>(session.token);
+  assert.equal(session.user.userCode, 'DEMO-SURVEYOR');
+  assert.equal(session.user.role, 'surveyor');
+  assert.equal(claims.role, 'surveyor');
+  assert.equal(claims.demo, true);
+
+  const adminResponse = await app.inject({
+    method: 'GET',
+    url: '/api/admin/analytics',
+    headers: authorization('surveyor', true)
+  });
+  assert.equal(adminResponse.statusCode, 403);
 });
 
 test('admin filters reject unsupported categorical values', async () => {

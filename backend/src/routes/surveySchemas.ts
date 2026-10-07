@@ -10,7 +10,7 @@ const countValue = {
 function objectWithFields(
   fields: string[],
   arrayFields: string[] = [],
-  required = true
+  required = false
 ) {
   const properties: Record<string, unknown> = {};
   fields.forEach((field) => {

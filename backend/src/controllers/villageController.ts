@@ -125,7 +125,7 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
 
   try {
     const upserted = await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`
+      await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(hashtext(${villageName}), -1);
       `;
       const existing = await tx.villageProfile.findUnique({ where: { villageName } });

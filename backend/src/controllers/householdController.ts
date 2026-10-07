@@ -82,7 +82,7 @@ export async function createHouseholdSlots(req: FastifyRequest, reply: FastifyRe
   try {
     const data = await prisma.$transaction(async (tx) => {
       const actorId = getActorId(req);
-      await tx.$queryRaw`
+      await tx.$executeRaw`
         SELECT pg_advisory_xact_lock(hashtext(${villageName}), -1);
       `;
       const existingVillage = await tx.villageProfile.findUnique({ where: { villageName } });
@@ -156,6 +156,7 @@ export async function createHouseholdSlots(req: FastifyRequest, reply: FastifyRe
             changedBy: actorId,
             changes: {
               reason: 'Household survey slot initialized',
+              ...(actorId === null ? { actor: 'DEMO-SURVEYOR' } : {}),
               before: null,
               after: toAuditSnapshot(record)
             } as Prisma.InputJsonValue
@@ -192,7 +193,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
 
     const result = await withDbRetry(async () => {
       return await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`
+        await tx.$executeRaw`
           SELECT pg_advisory_xact_lock(hashtext(${villageName}), ${houseNumber});
         `;
         const actorId = getActorId(req);

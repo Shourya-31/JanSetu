@@ -39,3 +39,15 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
     return reply.status(500).send({ error: 'Authentication failed' });
   }
 }
+
+export async function demoSurveyorLogin(_req: FastifyRequest, reply: FastifyReply) {
+  const user = {
+    id: 'demo-surveyor',
+    userCode: 'DEMO-SURVEYOR',
+    role: 'surveyor' as const,
+    fullName: 'Demo Surveyor'
+  };
+  const token = await reply.jwtSign({ ...user, demo: true }, { expiresIn: '8h' });
+
+  return reply.send({ success: true, token, user });
+}

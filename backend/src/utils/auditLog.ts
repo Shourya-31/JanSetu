@@ -1,8 +1,11 @@
 import { FastifyRequest } from 'fastify';
 import { Prisma } from '@prisma/client';
 
-export function getActorId(req: FastifyRequest): string {
-  const claims = req.user as { id?: unknown };
+export function getActorId(req: FastifyRequest): string | null {
+  const claims = req.user as { id?: unknown; demo?: unknown; role?: unknown };
+  if (claims?.demo === true && claims.role === 'surveyor') {
+    return null;
+  }
   if (typeof claims?.id !== 'string') {
     throw new Error('Authenticated token is missing a user id');
   }
@@ -19,14 +22,17 @@ export async function writeAuditLog(
     entityType: string;
     entityId: string;
     action: string;
-    changedBy: string;
+    changedBy: string | null;
     changes: Record<string, unknown>;
   }
 ): Promise<void> {
   await tx.surveyAuditLog.create({
     data: {
       ...entry,
-      changes: entry.changes as Prisma.InputJsonValue
+      changes: {
+        ...entry.changes,
+        ...(entry.changedBy === null ? { actor: 'DEMO-SURVEYOR' } : {})
+      } as Prisma.InputJsonValue
     }
   });
 }

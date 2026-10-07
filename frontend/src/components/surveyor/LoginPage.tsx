@@ -5,13 +5,13 @@ import {
   BarChart3,
   ArrowRight,
   Lock,
+  Loader2,
 } from "lucide-react";
 
 export type SurveyMode = "village" | "household";
 
 interface LoginPageProps {
   onProfileSelect: (mode: SurveyMode) => void;
-
   onAdminLogin: (
     role: "admin",
     identifier: string,
@@ -19,271 +19,435 @@ interface LoginPageProps {
   ) => Promise<void>;
 }
 
+type ActiveTab = "village" | "household" | "admin";
+
 export const LoginPage: React.FC<LoginPageProps> = ({
   onProfileSelect,
   onAdminLogin,
 }) => {
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  // Mobile tab switcher (desktop shows all 3)
+  const [activeTab, setActiveTab] = useState<ActiveTab>("village");
 
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  // ---------- Village section ----------
+  const [vlgId, setVlgId] = useState("");
+  const [vlgPass, setVlgPass] = useState("");
+  const [vlgLoading, setVlgLoading] = useState(false);
+  const [vlgError, setVlgError] = useState("");
 
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // ---------- Household section ----------
+  const [hhdId, setHhdId] = useState("");
+  const [hhdPass, setHhdPass] = useState("");
+  const [hhdLoading, setHhdLoading] = useState(false);
+  const [hhdError, setHhdError] = useState("");
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  // ---------- Admin section ----------
+  const [admId, setAdmId] = useState("");
+  const [admPass, setAdmPass] = useState("");
+  const [admLoading, setAdmLoading] = useState(false);
+  const [admError, setAdmError] = useState("");
+
+  /* ---------------- Village submit ---------------- */
+  const handleVillageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!identifier.trim() || !password) {
-      setErrorMessage("प्रशासनिक आईडी और पासवर्ड दोनों दर्ज करें।");
+    if (!vlgId.trim() || !vlgPass) {
+      setVlgError("ग्राम सर्वेक्षक आईडी और पासवर्ड दोनों दर्ज करें।");
       return;
     }
-
-    setErrorMessage("");
-    setIsSubmitting(true);
-
+    setVlgError("");
+    setVlgLoading(true);
+    // Hand off to parent — parent handles actual auth / routing
     try {
-      await onAdminLogin(
-        "admin",
-        identifier.trim(),
-        password
-      );
+      onProfileSelect("village");
+    } finally {
+      setVlgLoading(false);
+    }
+  };
+
+  /* ---------------- Household submit ---------------- */
+  const handleHouseholdSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hhdId.trim() || !hhdPass) {
+      setHhdError("परिवार सर्वेक्षक आईडी और पासवर्ड दोनों दर्ज करें।");
+      return;
+    }
+    setHhdError("");
+    setHhdLoading(true);
+    try {
+      onProfileSelect("household");
+    } finally {
+      setHhdLoading(false);
+    }
+  };
+
+  /* ---------------- Admin submit ---------------- */
+  const handleAdminSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!admId.trim() || !admPass) {
+      setAdmError("प्रशासनिक आईडी और पासवर्ड दोनों दर्ज करें।");
+      return;
+    }
+    setAdmError("");
+    setAdmLoading(true);
+    try {
+      await onAdminLogin("admin", admId.trim(), admPass);
     } catch (error) {
-      setErrorMessage(
+      setAdmError(
         error instanceof Error
           ? error.message
           : "लॉगिन असफल हुआ। कृपया पुनः प्रयास करें।"
       );
     } finally {
-      setIsSubmitting(false);
+      setAdmLoading(false);
     }
-  };
-
-  const handleBackToHome = () => {
-    setShowAdminLogin(false);
-    setIdentifier("");
-    setPassword("");
-    setErrorMessage("");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
-      <header className="border-b bg-white shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="border-b bg-white shadow-xs sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-slate-900 text-white rounded-md flex items-center justify-center font-bold text-lg">
               भा
             </div>
 
             <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
                 सामाजिक-आर्थिक सर्वेक्षण एवं जनगणना पोर्टल
               </h1>
-
               <p className="text-xs text-slate-500 font-medium">
                 जिला खनिज संस्थान न्यास (DMFT) • ग्रामीण विकास प्रणाली
               </p>
             </div>
           </div>
 
-          <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full hidden sm:inline-block">
             आधिकारिक उपयोग हेतु
           </span>
         </div>
       </header>
 
       {/* Main */}
-      <main className="flex-1 max-w-5xl mx-auto px-4 py-10 w-full">
-        {!showAdminLogin ? (
-          <>
-            {/* Heading */}
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-900">
-                पोर्टल में प्रवेश करें
-              </h2>
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+        {/* Heading */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-slate-900">
+            पोर्टल में प्रवेश करें
+          </h2>
+          <p className="text-sm text-slate-600 mt-2">
+            कृपया अपने कार्य के अनुसार विकल्प चुनें
+          </p>
+        </div>
 
-              <p className="text-sm text-slate-600 mt-2">
-                कृपया अपने कार्य के अनुसार विकल्प चुनें
-              </p>
-            </div>
+        {/* Mobile Tab Switcher */}
+        <div className="flex sm:hidden p-1 bg-slate-200 rounded-xl mb-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab("village")}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "village"
+                ? "bg-white text-emerald-800 shadow-xs"
+                : "text-slate-600"
+            }`}
+          >
+            1. ग्राम सर्वे
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("household")}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "household"
+                ? "bg-white text-blue-800 shadow-xs"
+                : "text-slate-600"
+            }`}
+          >
+            2. परिवार सर्वे
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("admin")}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "admin"
+                ? "bg-white text-amber-900 shadow-xs"
+                : "text-slate-600"
+            }`}
+          >
+            3. एडमिन
+          </button>
+        </div>
 
-            {/* Three Options */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-              {/* ================= ग्राम प्रोफाइल ================= */}
-              <button
-                type="button"
-                onClick={() => onProfileSelect("village")}
-                className="group text-left bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                    <MapPinned className="w-6 h-6 text-emerald-600" />
-                  </div>
-
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
+        {/* 3 Sections Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* ================= 1. VILLAGE ================= */}
+          <div
+            className={`bg-white border-2 rounded-2xl p-6 shadow-xs flex flex-col justify-between transition-all ${
+              activeTab === "village"
+                ? "border-emerald-600 ring-2 ring-emerald-100"
+                : "border-slate-200 hover:border-emerald-400"
+            } ${activeTab !== "village" ? "hidden sm:flex" : "flex"}`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                  <MapPinned className="w-6 h-6 text-emerald-600" />
                 </div>
-
-                <h3 className="text-lg font-bold text-slate-900">
-                  ग्राम प्रोफाइल
-                </h3>
-
-                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                  ग्राम का संपूर्ण सर्वेक्षण एवं ग्राम संबंधी जानकारी दर्ज करें।
-                </p>
-
-                <div className="mt-5 text-xs font-semibold text-emerald-700">
-                  ग्राम सर्वेक्षण शुरू करें →
-                </div>
-              </button>
-
-              {/* ================= परिवार प्रोफाइल ================= */}
-              <button
-                type="button"
-                onClick={() => onProfileSelect("household")}
-                className="group text-left bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600" />
-                  </div>
-
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-900">
-                  परिवार प्रोफाइल
-                </h3>
-
-                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                  ग्राम के परिवारों की संख्या एवं प्रत्येक परिवार का सर्वेक्षण
-                  करें।
-                </p>
-
-                <div className="mt-5 text-xs font-semibold text-blue-700">
-                  परिवार सर्वेक्षण शुरू करें →
-                </div>
-              </button>
-
-              {/* ================= प्रशासन ================= */}
-              <button
-                type="button"
-                onClick={() => setShowAdminLogin(true)}
-                className="group text-left bg-white border border-slate-200 rounded-xl p-6 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <div className="w-12 h-12 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center">
-                    <BarChart3 className="w-6 h-6 text-amber-600" />
-                  </div>
-
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-900">
-                  प्रशासन
-                </h3>
-
-                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                  प्रशासनिक डैशबोर्ड एवं सर्वेक्षण की निगरानी के लिए प्रवेश करें।
-                </p>
-
-                <div className="mt-5 text-xs font-semibold text-amber-700">
-                  प्रशासनिक लॉगिन →
-                </div>
-              </button>
-            </div>
-          </>
-        ) : (
-          /* ================= ADMIN LOGIN ================= */
-          <div className="max-w-md mx-auto">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xs p-6 sm:p-8">
-
-              {/* Back */}
-              <button
-                type="button"
-                onClick={handleBackToHome}
-                className="text-sm text-slate-500 hover:text-slate-800 mb-6"
-              >
-                ← वापस जाएँ
-              </button>
-
-              {/* Login Heading */}
-              <div className="text-center mb-7">
-                <div className="w-14 h-14 mx-auto rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-4">
-                  <Lock className="w-7 h-7 text-amber-600" />
-                </div>
-
-                <h2 className="text-2xl font-bold text-slate-900">
-                  प्रशासनिक लॉगिन
-                </h2>
-
-                <p className="text-sm text-slate-500 mt-1">
-                  प्रशासनिक खाते से प्रवेश करें
-                </p>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  सेक्शन 1 • ग्राम प्रोफ़ाइल
+                </span>
               </div>
 
-              {/* Form */}
-              <form
-                onSubmit={handleAdminLogin}
-                className="space-y-5"
-              >
-                {/* ID */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    प्रशासनिक आईडी
-                  </label>
+              <h3 className="text-lg font-bold text-slate-900">
+                ग्राम सर्वे (Village Survey)
+              </h3>
 
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                ग्राम का संपूर्ण सर्वेक्षण एवं ग्राम संबंधी जानकारी दर्ज करें।
+              </p>
+
+              <form
+                onSubmit={handleVillageSubmit}
+                className="mt-6 space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ग्राम सर्वेक्षक आईडी / कोड
+                  </label>
                   <input
                     type="text"
-                    value={identifier}
-                    onChange={(e) =>
-                      setIdentifier(e.target.value)
-                    }
-                    placeholder="प्रशासनिक आईडी दर्ज करें"
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
+                    value={vlgId}
+                    onChange={(e) => setVlgId(e.target.value)}
+                    placeholder="उदा. SUR-VLG-2026"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
                   />
                 </div>
 
-                {/* Password */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    पासवर्ड
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    सुरक्षा पिन / पासवर्ड
                   </label>
-
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) =>
-                      setPassword(e.target.value)
-                    }
-                    placeholder="पासवर्ड दर्ज करें"
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
-                  />
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      value={vlgPass}
+                      onChange={(e) => setVlgPass(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+                    />
+                  </div>
                 </div>
 
-                {/* Error */}
-                {errorMessage && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-                    {errorMessage}
+                {vlgError && (
+                  <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+                    {vlgError}
                   </div>
                 )}
 
-                {/* Submit */}
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-lg font-semibold transition-colors"
+                  disabled={vlgLoading}
+                  className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-bold text-sm rounded-lg shadow-xs transition-colors"
                 >
-                  {isSubmitting
-                    ? "लॉगिन हो रहा है..."
-                    : "प्रवेश करें"}
+                  {vlgLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <>
+                      ग्राम सर्वे में प्रवेश करें
+                      <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </>
+                  )}
                 </button>
               </form>
             </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>गाँव अवसंरचना व सुविधा स्थिति</span>
+              <span className="font-semibold text-emerald-700">11 बिंदु फॉर्म</span>
+            </div>
           </div>
-        )}
+
+          {/* ================= 2. HOUSEHOLD ================= */}
+          <div
+            className={`bg-white border-2 rounded-2xl p-6 shadow-xs flex flex-col justify-between transition-all ${
+              activeTab === "household"
+                ? "border-blue-600 ring-2 ring-blue-100"
+                : "border-slate-200 hover:border-blue-400"
+            } ${activeTab !== "household" ? "hidden sm:flex" : "flex"}`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                  सेक्शन 2 • परिवार जनगणना
+                </span>
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-900">
+                परिवार सर्वे (Household Survey)
+              </h3>
+
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                ग्राम के परिवारों की संख्या एवं प्रत्येक परिवार का सर्वेक्षण करें।
+              </p>
+
+              <form
+                onSubmit={handleHouseholdSubmit}
+                className="mt-6 space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    परिवार सर्वेक्षक आईडी / कोड
+                  </label>
+                  <input
+                    type="text"
+                    value={hhdId}
+                    onChange={(e) => setHhdId(e.target.value)}
+                    placeholder="उदा. SUR-HHD-2026"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    सुरक्षा पिन / पासवर्ड
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      value={hhdPass}
+                      onChange={(e) => setHhdPass(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {hhdError && (
+                  <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+                    {hhdError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={hhdLoading}
+                  className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-sm rounded-lg shadow-xs transition-colors"
+                >
+                  {hhdLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <>
+                      परिवार सर्वे में प्रवेश करें
+                      <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>परिवारवार लाल/हरा ग्रिड</span>
+              <span className="font-semibold text-blue-700">19 योजना ट्रैकर</span>
+            </div>
+          </div>
+
+          {/* ================= 3. ADMIN ================= */}
+          <div
+            className={`bg-white border-2 rounded-2xl p-6 shadow-xs flex flex-col justify-between transition-all ${
+              activeTab === "admin"
+                ? "border-amber-600 ring-2 ring-amber-100"
+                : "border-slate-200 hover:border-amber-400"
+            } ${activeTab !== "admin" ? "hidden sm:flex" : "flex"}`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-amber-600" />
+                </div>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  सेक्शन 3 • DMFT ऑडिट
+                </span>
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-900">
+                प्रशासन (Admin)
+              </h3>
+
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                प्रशासनिक डैशबोर्ड एवं सर्वेक्षण की निगरानी के लिए प्रवेश करें।
+              </p>
+
+              <form
+                onSubmit={handleAdminSubmit}
+                className="mt-6 space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    प्रशासनिक आईडी
+                  </label>
+                  <input
+                    type="text"
+                    value={admId}
+                    onChange={(e) => setAdmId(e.target.value)}
+                    placeholder="प्रशासनिक आईडी दर्ज करें"
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-600 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    पासवर्ड
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      value={admPass}
+                      onChange={(e) => setAdmPass(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-600 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {admError && (
+                  <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+                    {admError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={admLoading}
+                  className="w-full mt-2 inline-flex items-center justify-center px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-sm rounded-lg shadow-xs transition-colors"
+                >
+                  {admLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <>
+                      प्रशासनिक पोर्टल में प्रवेश करें
+                      <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span>सत्यापन, सुधार टिकट व ऑडिट</span>
+              <span className="font-semibold text-amber-700">जिला रिपोर्टिंग</span>
+            </div>
+          </div>
+        </div>
       </main>
+
+      {/* Footer */}
+      <footer className="text-center py-4 text-xs text-slate-500 border-t bg-white">
+        राष्ट्रीय सूचना विज्ञान केंद्र (NIC) प्रारूप अनुसार विकसित • जिला खनिज संस्थान न्यास (DMFT)
+      </footer>
     </div>
   );
 };
