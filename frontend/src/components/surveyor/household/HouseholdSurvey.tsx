@@ -36,6 +36,8 @@ interface HouseholdSurveyProps {
   onHouseholdCountSubmit: (
     count: number
   ) => Promise<void>;
+
+  onZeroFamilyComplete: () => Promise<void>;
 }
 
 /* =========================================================
@@ -85,6 +87,7 @@ const HouseholdSurvey: React.FC<
   onBack,
   onHouseholdSave,
   onHouseholdCountSubmit,
+  onZeroFamilyComplete,
 }) => {
   // =======================================================
   // ACTIVE HOUSE
@@ -99,6 +102,9 @@ const HouseholdSurvey: React.FC<
 
   const [familyCount, setFamilyCount] =
     useState("");
+
+  const [zeroFamilySurveyStarted, setZeroFamilySurveyStarted] =
+    useState(false);
 
   // =======================================================
   // SEARCH
@@ -173,13 +179,18 @@ const HouseholdSurvey: React.FC<
   // =======================================================
 
   const handleStartSurvey = () => {
+    if (familyCount.trim() === "") return;
+
     const count = Number(familyCount);
 
-    if (!count || count <= 0) {
+    if (Number.isNaN(count) || count < 0) return;
+
+    if (count === 0) {
+      setZeroFamilySurveyStarted(true);
       return;
     }
 
-    onHouseholdCountSubmit(count);
+    void onHouseholdCountSubmit(count);
   };
 
   // =======================================================
@@ -286,7 +297,7 @@ const HouseholdSurvey: React.FC<
             FAMILY COUNT
         ================================================== */}
 
-        {households.length === 0 && (
+        {households.length === 0 && !zeroFamilySurveyStarted && (
 
           <div className="max-w-2xl">
 
@@ -297,7 +308,7 @@ const HouseholdSurvey: React.FC<
               </h3>
 
               <p className="text-xs text-slate-500 mt-1">
-                सर्वे शुरू करने के लिए इस ग्राम में कुल परिवारों की संख्या दर्ज करें।
+                इस ग्राम में कुल परिवारों की संख्या दर्ज करें। यदि कोई परिवार नहीं है तो 0 दर्ज करें।
               </p>
 
               <div className="mt-4">
@@ -310,14 +321,14 @@ const HouseholdSurvey: React.FC<
 
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     value={familyCount}
                     onChange={(e) =>
                       setFamilyCount(
                         e.target.value
                       )
                     }
-                    placeholder="उदाहरण: 25"
+                    placeholder="उदाहरण: 25 (या 0)"
                     className="flex-1 px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
                   />
 
@@ -325,12 +336,14 @@ const HouseholdSurvey: React.FC<
                     type="button"
                     onClick={handleStartSurvey}
                     disabled={
-                      !familyCount ||
-                      Number(familyCount) <= 0
+                      familyCount.trim() === "" ||
+                      Number.isNaN(Number(familyCount)) ||
+                      Number(familyCount) < 0
                     }
                     className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-colors ${
-                      familyCount &&
-                      Number(familyCount) > 0
+                      familyCount.trim() !== "" &&
+                      !Number.isNaN(Number(familyCount)) &&
+                      Number(familyCount) >= 0
                         ? "bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
                     }`}
@@ -344,6 +357,44 @@ const HouseholdSurvey: React.FC<
 
             </div>
 
+          </div>
+        )}
+
+        {/* =================================================
+            ZERO FAMILY - MANUAL COMPLETION
+        ================================================== */}
+
+        {zeroFamilySurveyStarted && households.length === 0 && (
+          <div className="max-w-2xl mt-4">
+            <div className="border border-emerald-200 rounded-xl bg-emerald-50 p-5">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+
+                <div>
+                  <h3 className="text-base font-bold text-emerald-800">
+                    इस ग्राम में कोई परिवार नहीं है
+                  </h3>
+
+                  <p className="text-sm text-emerald-700 mt-1">
+                    0 परिवार दर्ज किया गया है। कोई मकान / परिवार कार्ड नहीं बनाया जाएगा।
+                  </p>
+
+                  <p className="text-xs text-emerald-700 mt-2">
+                    सर्वेक्षण पूरा होने की पुष्टि करने के लिए नीचे दिए गए बटन को मैन्युअली दबाएँ।
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void onZeroFamilyComplete();
+                }}
+                className="mt-4 px-4 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer"
+              >
+                ✓ सर्वे पूर्ण करें
+              </button>
+            </div>
           </div>
         )}
 

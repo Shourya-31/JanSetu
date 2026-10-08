@@ -203,7 +203,13 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
 
 
-  const [dataError, setDataError] = useState("");
+  
+
+  // 0 परिवार वाले गाँव के लिए manual completion state
+  const [zeroFamilySurveyStarted, setZeroFamilySurveyStarted] =
+    useState(false);
+
+const [dataError, setDataError] = useState("");
 
 
 
@@ -335,7 +341,10 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
 
 
-    setSelectedBlockId("");
+    
+    setZeroFamilySurveyStarted(false);
+
+    setSelectedBlockId("");
 
 
 
@@ -620,7 +629,16 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
 
 
-    setDataLoading(true);
+    
+    // 0 परिवार होने पर कोई household card नहीं बनेगा।
+    // HouseholdSurvey में manual completion button दिखेगा।
+    if (count === 0) {
+      setHouseholds([]);
+      setZeroFamilySurveyStarted(true);
+      return;
+    }
+
+    setDataLoading(true);
 
 
 
@@ -1005,6 +1023,24 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
 
   };
+
+  // =========================================================
+  // ZERO FAMILY SURVEY COMPLETE
+  // =========================================================
+
+  const handleZeroFamilyComplete = async () => {
+    if (!selectedVillage) return;
+
+    setDataError("");
+    setZeroFamilySurveyStarted(false);
+    setHouseholds([]);
+
+    // 0 परिवार वाले गाँव में कोई household record/card नहीं बनाया जाता।
+    // Manual confirmation के बाद अगले गाँव की सूची पर जाएँ।
+    resetToSelection();
+  };
+
+
 
   
 
@@ -2631,7 +2667,10 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
 
 
-            />
+                          onZeroFamilyComplete={
+                handleZeroFamilyComplete
+              }
+/>
 
 
 
