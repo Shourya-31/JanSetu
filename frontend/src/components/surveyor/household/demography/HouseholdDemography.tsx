@@ -1,4 +1,18 @@
-import React, { useState } from "react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from "react";
+
+export interface HouseholdDemographyRef {
+  getData: () => {
+    caste: string;
+    isBpl: string;
+    elderly: string;
+    children: string;
+    women: string;
+  };
+}
 
 interface HouseholdDemographyProps {
   houseNumber: number;
@@ -11,7 +25,7 @@ interface HouseholdDemographyProps {
     women?: string;
   };
 
-  onNext: (data: any) => void;
+  //onNext: (data: any) => void;
 }
 
 const inputClass =
@@ -19,11 +33,15 @@ const inputClass =
   "text-sm text-slate-900 focus:outline-none focus:ring-1 " +
   "focus:ring-slate-900 focus:border-slate-900";
 
-const HouseholdDemography: React.FC<HouseholdDemographyProps> = ({
-  houseNumber,
-  existingData,
-  onNext,
-}) => {
+// const HouseholdDemography: React.FC<HouseholdDemographyProps> = ({
+//   houseNumber,
+//   existingData,
+//   onNext,
+// }) => {
+const HouseholdDemography = forwardRef<
+  HouseholdDemographyRef,
+  HouseholdDemographyProps
+>(({ houseNumber, existingData }, ref) => {
   const [caste, setCaste] = useState(existingData?.caste ?? "");
   const [isBpl, setIsBpl] = useState(existingData?.isBpl ?? "");
   const [elderly, setElderly] = useState(existingData?.elderly ?? "");
@@ -35,15 +53,24 @@ const HouseholdDemography: React.FC<HouseholdDemographyProps> = ({
    * click karega tab is section ka current data
    * parent ko onNext ke through milega.
    */
-  const handleNext = () => {
-    onNext({
-      caste,
-      isBpl,
-      elderly,
-      children,
-      women,
-    });
-  };
+  // const handleNext = () => {
+  //   onNext({
+  //     caste,
+  //     isBpl,
+  //     elderly,
+  //     children,
+  //     women,
+  //   });
+  // };
+  useImperativeHandle(ref, () => ({
+  getData: () => ({
+    caste,
+    isBpl,
+    elderly,
+    children,
+    women,
+  }),
+}));
 
   return (
     <div className="space-y-5">
@@ -195,6 +222,6 @@ const HouseholdDemography: React.FC<HouseholdDemographyProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default HouseholdDemography;

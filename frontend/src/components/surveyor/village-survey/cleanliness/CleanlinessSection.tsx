@@ -29,31 +29,37 @@ export default function CleanlinessSection({
 
   const [saved, setSaved] = useState(false);
 
+  //const handleSave = () => {
+  //  if (!cleanlinessData.toiletAvailability) {
+  //    alert(
+  //      "कृपया व्यक्तिगत शौचालय की उपलब्धता की जानकारी भरें।"
+  //    );
+  //    return;
+  //  }
+  
+
+  //  if (!cleanlinessData.solidWasteManagement) {
+  //    alert(
+  //      "कृपया ठोस अपशिष्ट संग्रह/निपटान व्यवस्था की जानकारी भरें।"
+  // //    );
+  //     return;
+  //   }
+
+  //   if (!cleanlinessData.drainageSystem) {
+  //     alert(
+  //       "कृपया नाली/जल निकासी व्यवस्था की जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
+
+  //   setSaved(true);
+  //   onSave(cleanlinessData);
+  // };
   const handleSave = () => {
-    if (!cleanlinessData.toiletAvailability) {
-      alert(
-        "कृपया व्यक्तिगत शौचालय की उपलब्धता की जानकारी भरें।"
-      );
-      return;
-    }
-
-    if (!cleanlinessData.solidWasteManagement) {
-      alert(
-        "कृपया ठोस अपशिष्ट संग्रह/निपटान व्यवस्था की जानकारी भरें।"
-      );
-      return;
-    }
-
-    if (!cleanlinessData.drainageSystem) {
-      alert(
-        "कृपया नाली/जल निकासी व्यवस्था की जानकारी भरें।"
-      );
-      return;
-    }
-
-    setSaved(true);
-    onSave(cleanlinessData);
-  };
+  // All fields are optional
+  setSaved(true);
+  onSave(cleanlinessData);
+};
 
   return (
     <div className="space-y-5">

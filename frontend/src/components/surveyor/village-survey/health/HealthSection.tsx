@@ -47,44 +47,58 @@ export default function HealthSection({
     });
   };
 
+  // const saveHealth = (index: number) => {
+  //   const health = healthFacilities[index];
+
+  //   if (
+  //     !health.healthCenterType ||
+  //     !health.regularOperation ||
+  //     !health.medicinesEquipment ||
+  //     !health.medicalStaff ||
+  //     !health.majorShortcoming.trim()
+  //   ) {
+  //     alert(
+  //       `कृपया स्वास्थ्य केंद्र ${
+  //         index + 1
+  //       } की सभी जानकारी भरें।`
+  //     );
+  //     return;
+  //   }
+
+  //   setCompleted((prev) =>
+  //     prev.includes(index)
+  //       ? prev
+  //       : [...prev, index]
+  //   );
+  // };
+
   const saveHealth = (index: number) => {
-    const health = healthFacilities[index];
+  // All health center fields are optional
+  setCompleted((prev) =>
+    prev.includes(index)
+      ? prev
+      : [...prev, index]
+  );
+};
 
-    if (
-      !health.healthCenterType ||
-      !health.regularOperation ||
-      !health.medicinesEquipment ||
-      !health.medicalStaff ||
-      !health.majorShortcoming.trim()
-    ) {
-      alert(
-        `कृपया स्वास्थ्य केंद्र ${
-          index + 1
-        } की सभी जानकारी भरें।`
-      );
-      return;
-    }
+  // const saveSection = () => {
+  //   if (
+  //     completed.length !==
+  //     totalHealthFacilities
+  //   ) {
+  //     alert(
+  //       "कृपया सभी स्वास्थ्य केंद्रों की जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
 
-    setCompleted((prev) =>
-      prev.includes(index)
-        ? prev
-        : [...prev, index]
-    );
-  };
+  //   onSave(healthFacilities);
+  // };
 
-  const saveSection = () => {
-    if (
-      completed.length !==
-      totalHealthFacilities
-    ) {
-      alert(
-        "कृपया सभी स्वास्थ्य केंद्रों की जानकारी भरें।"
-      );
-      return;
-    }
-
-    onSave(healthFacilities);
-  };
+const saveSection = () => {
+  // Allow saving regardless of individual health center completion
+  onSave(healthFacilities);
+};  
 
   if (totalHealthFacilities <= 0) {
     return (

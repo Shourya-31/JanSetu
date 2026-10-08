@@ -32,56 +32,12 @@ export default function LadiesSection({
 
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    if (!ladiesData.shgOperated) {
-      alert(
-        "कृपया बताएं कि ग्राम में महिला SHG संचालित है या नहीं।"
-      );
-      return;
-    }
-
-    if (!ladiesData.totalSHG) {
-      alert("कृपया कुल SHG संख्या भरें।");
-      return;
-    }
-
-    if (!ladiesData.activeSHG) {
-      alert("कृपया सक्रिय SHG संख्या भरें।");
-      return;
-    }
-
-    if (!ladiesData.majorSHGActivities.trim()) {
-      alert("कृपया प्रमुख SHG गतिविधियाँ भरें।");
-      return;
-    }
-
-    if (!ladiesData.shgSupport) {
-      alert(
-        "कृपया SHG को मिली बैंक ऋण/सरकारी सहायता की जानकारी भरें।"
-      );
-      return;
-    }
-
-    if (!ladiesData.bankingFacility) {
-      alert("कृपया बैंकिंग सुविधा की जानकारी भरें।");
-      return;
-    }
-
-    if (!ladiesData.nearestBankDistance) {
-      alert("कृपया निकटतम बैंक/BC की दूरी भरें।");
-      return;
-    }
-
-    if (!ladiesData.familyBankAccounts) {
-      alert(
-        "कृपया परिवारों के बैंक खातों की जानकारी भरें।"
-      );
-      return;
-    }
-
-    setSaved(true);
-    onSave(ladiesData);
-  };
+ const handleSave = () => {
+  // All Ladies / SHG fields are optional
+  setSaved(true);
+  onSave(ladiesData);
+};
+  
 
   return (
     <div className="space-y-5">

@@ -32,24 +32,30 @@ export default function PensionSection({
 
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    if (
-      !pensionData.disabledEligible ||
-      !pensionData.disabledNotReceiving ||
-      !pensionData.widowEligible ||
-      !pensionData.widowNotReceiving ||
-      !pensionData.elderlyEligible ||
-      !pensionData.elderlyNotReceiving
-    ) {
-      alert(
-        "कृपया पेंशन एवं सामाजिक सुरक्षा की सभी जानकारी भरें।"
-      );
-      return;
-    }
+  // const handleSave = () => {
+  //   if (
+  //     !pensionData.disabledEligible ||
+  //     !pensionData.disabledNotReceiving ||
+  //     !pensionData.widowEligible ||
+  //     !pensionData.widowNotReceiving ||
+  //     !pensionData.elderlyEligible ||
+  //     !pensionData.elderlyNotReceiving
+  //   ) {
+  //     alert(
+  //       "कृपया पेंशन एवं सामाजिक सुरक्षा की सभी जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
 
-    setSaved(true);
-    onSave(pensionData);
-  };
+  //   setSaved(true);
+  //   onSave(pensionData);
+  // };
+
+  const handleSave = () => {
+  // All pension fields are optional
+  setSaved(true);
+  onSave(pensionData);
+};
 
   return (
     <div className="space-y-5">

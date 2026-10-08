@@ -218,6 +218,7 @@ export const VillageSurveyForm: React.FC<{
     //Store selected photos
     const [villagePhotos, setVillagePhotos] = useState<File[]>([]);
 
+
   const [completedSections, setCompletedSections] = useState<string[]>(() => {
     if (!initialData) return [];
     const sectionFields: Record<string, string> = {
@@ -343,23 +344,29 @@ export const VillageSurveyForm: React.FC<{
   /*
    * General Information Save
    */
-  const saveGeneral = () => {
-    if (
-      !formData.totalHouseholds ||
-      Number(formData.totalHouseholds) <= 0
-    ) {
-      alert(
-        "कृपया कुल घर / परिवार संख्या भरें।"
-      );
-      return;
-    }
+  //const saveGeneral = () => {
+  //  if (
+  //    !formData.totalHouseholds ||
+  //    Number(formData.totalHouseholds) <= 0
+  //  ) {
+  //    alert(
+  //      "कृपया कुल घर / परिवार संख्या भरें।"
+  //    );
+  //    return;
+  //  }
 
-    markCompleted("general");
+  //  markCompleted("general");
 
     // वापस section list पर
-    setActiveSection(null);
-  };
+  //  setActiveSection(null);
+  //};
+  const saveGeneral = () => {
+  // Allow saving even when fields are empty
+  markCompleted("general");
 
+  // Return to the section list
+  setActiveSection(null);
+};
   /*
    * Normal Section Save
    *

@@ -41,10 +41,14 @@ const HouseholdGeneralInformation = forwardRef<
     existingData?.mobile ?? ""
   );
 
+  // const [surveyDate, setSurveyDate] = useState(
+  //   existingData?.surveyDate ??
+  //     new Date().toISOString().split("T")[0]
+  // );
+
   const [surveyDate, setSurveyDate] = useState(
-    existingData?.surveyDate ??
-      new Date().toISOString().split("T")[0]
-  );
+  existingData?.surveyDate ?? ""
+);
 
   // Parent HouseholdForm के "सर्वे पूर्ण करें" पर
   // current values प्राप्त करेगा

@@ -28,35 +28,41 @@ export default function WaterSection({
 
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    if (
-      !waterData.tapWaterAvailability ||
-      !waterData.summerWaterCondition ||
-      !waterData.drinkingQuality ||
-      !waterData.waterQualityProblem ||
-      !waterData.waterDistance ||
-      !waterData.pipelineRequirement ||
-      !waterData.waterTankRequirement
-    ) {
-      alert(
-        "कृपया पेयजल अनुभाग की सभी जानकारी भरें।"
-      );
-      return;
-    }
+  // const handleSave = () => {
+  //   if (
+  //     !waterData.tapWaterAvailability ||
+  //     !waterData.summerWaterCondition ||
+  //     !waterData.drinkingQuality ||
+  //     !waterData.waterQualityProblem ||
+  //     !waterData.waterDistance ||
+  //     !waterData.pipelineRequirement ||
+  //     !waterData.waterTankRequirement
+  //   ) {
+  //     alert(
+  //       "कृपया पेयजल अनुभाग की सभी जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
 
-    if (
-      waterData.waterQualityProblem === "अन्य" &&
-      !waterData.otherWaterQualityProblem.trim()
-    ) {
-      alert(
-        "कृपया पानी की गुणवत्ता की अन्य समस्या लिखें।"
-      );
-      return;
-    }
+  //   if (
+  //     waterData.waterQualityProblem === "अन्य" &&
+  //     !waterData.otherWaterQualityProblem.trim()
+  //   ) {
+  //     alert(
+  //       "कृपया पानी की गुणवत्ता की अन्य समस्या लिखें।"
+  //     );
+  //     return;
+  //   }
 
-    setSaved(true);
-    onSave(waterData);
-  };
+  //   setSaved(true);
+  //   onSave(waterData);
+  // };
+
+const handleSave = () => {
+  // All water section fields are optional
+  setSaved(true);
+  onSave(waterData);
+};
 
   return (
     <div className="space-y-5">

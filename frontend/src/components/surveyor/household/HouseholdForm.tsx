@@ -95,14 +95,30 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   // PAGE NAVIGATION
   // =========================================================
 
-  const goToPage = (page: 1 | 2) => {
-    setCurrentPage(page);
+  // const goToPage = (page: 1 | 2) => {
+  //   setCurrentPage(page);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+  //   window.scrollTo({
+  //     top: 0,
+  //     behavior: "smooth",
+  //   });
+  // };
+
+  const goToPage = (page: 1 | 2) => {
+  // Collect data from the currently visible page
+  const currentPageData = collectAllData();
+
+  // Preserve entered values before changing pages
+  setFormData(currentPageData);
+
+  // Navigate to the requested page
+  setCurrentPage(page);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 
   // =========================================================
   // HELPER
@@ -221,7 +237,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
         "headName",
         "mobile",
         "surveyDate",
-        "surveyorName",
+       // "surveyorName",
       ]
     );
 

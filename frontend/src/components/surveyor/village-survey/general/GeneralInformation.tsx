@@ -80,7 +80,7 @@ export const GeneralInformation: React.FC<GeneralInformationProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <Field label="कुल घर / परिवार संख्या" required>
+                  <Field label="कुल घर / परिवार संख्या">
                     <input type="number" min="1" className={inputClass} value={formData.totalHouseholds} onChange={(e) => setValue('totalHouseholds', e.target.value)} placeholder="संख्या" />
                   </Field>
 

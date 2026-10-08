@@ -35,33 +35,48 @@ export default function HostelSection({
     });
   };
 
+  // const saveHostel = (index: number) => {
+  //   const hostel = hostels[index];
+
+  //   if (!hostel.facilityType || !hostel.condition) {
+  //     alert(
+  //       `कृपया आश्रम/छात्रावास ${index + 1} की सभी जानकारी भरें।`
+  //     );
+  //     return;
+  //   }
+
+  //   setCompleted((prev) =>
+  //     prev.includes(index)
+  //       ? prev
+  //       : [...prev, index]
+  //   );
+  // };
+
   const saveHostel = (index: number) => {
-    const hostel = hostels[index];
+  // All hostel fields are optional
+  setCompleted((prev) =>
+    prev.includes(index)
+      ? prev
+      : [...prev, index]
+  );
+};
 
-    if (!hostel.facilityType || !hostel.condition) {
-      alert(
-        `कृपया आश्रम/छात्रावास ${index + 1} की सभी जानकारी भरें।`
-      );
-      return;
-    }
+  // const saveSection = () => {
+  //   if (completed.length !== totalHostels) {
+  //     alert(
+  //       "कृपया सभी आश्रम/छात्रावास की जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
 
-    setCompleted((prev) =>
-      prev.includes(index)
-        ? prev
-        : [...prev, index]
-    );
-  };
+  //   onSave(hostels);
+  // };
 
-  const saveSection = () => {
-    if (completed.length !== totalHostels) {
-      alert(
-        "कृपया सभी आश्रम/छात्रावास की जानकारी भरें।"
-      );
-      return;
-    }
+const saveSection = () => {
+  // Save even if individual hostels are incomplete
+  onSave(hostels);
+};
 
-    onSave(hostels);
-  };
 
   if (totalHostels <= 0) {
     return (

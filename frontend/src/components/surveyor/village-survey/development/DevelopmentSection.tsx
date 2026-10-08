@@ -38,27 +38,33 @@ export default function DevelopmentSection({
 
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    if (
-      !developmentData.handpumpRequirement ||
-      !developmentData.borewellRequirement ||
-      !developmentData.solarPumpRequirement ||
-      !developmentData.solarStreetLightRequirement ||
-      !developmentData.roadRequirement ||
-      !developmentData.otherInfrastructureRequirement.trim() ||
-      !developmentData.priorityWork1.trim() ||
-      !developmentData.priorityWork2.trim() ||
-      !developmentData.priorityWork3.trim()
-    ) {
-      alert(
-        "कृपया ग्राम की विकास आवश्यकताओं की सभी जानकारी भरें।"
-      );
-      return;
-    }
+  // const handleSave = () => {
+  //   if (
+  //     !developmentData.handpumpRequirement ||
+  //     !developmentData.borewellRequirement ||
+  //     !developmentData.solarPumpRequirement ||
+  //     !developmentData.solarStreetLightRequirement ||
+  //     !developmentData.roadRequirement ||
+  //     !developmentData.otherInfrastructureRequirement.trim() ||
+  //     !developmentData.priorityWork1.trim() ||
+  //     !developmentData.priorityWork2.trim() ||
+  //     !developmentData.priorityWork3.trim()
+  //   ) {
+  //     alert(
+  //       "कृपया ग्राम की विकास आवश्यकताओं की सभी जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
 
-    setSaved(true);
-    onSave(developmentData);
-  };
+  //   setSaved(true);
+  //   onSave(developmentData);
+  // };
+
+  const handleSave = () => {
+  // All development fields are optional
+  setSaved(true);
+  onSave(developmentData);
+};
 
   return (
     <div className="space-y-5">
