@@ -2,13 +2,31 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
 
 export async function login(req: FastifyRequest, reply: FastifyReply) {
-  const { role, identifier, password } = req.body as {
+  
+  const body = req.body as {
     role: 'admin' | 'surveyor';
     identifier: string;
     password: string;
   };
+  const role = body.role;
+  const identifier = body.identifier.trim();
+  const password = body.password.trim();
+
 
   try {
+    const envAdminUser = process.env.ADMIN_USERNAME || 'admin';
+    const envAdminPass = process.env.ADMIN_PASSWORD || 'adminpass';
+    const envSurveyUser = process.env.SURVEYOR_USERNAME || 'surveyor';
+    const envSurveyPass = process.env.SURVEYOR_PASSWORD || 'surveyorpass';
+    
+    req.log.info({
+      received: { role, identifier, password },
+      env: { 
+        admin: { u: envAdminUser, p: envAdminPass },
+        surveyor: { u: envSurveyUser, p: envSurveyPass }
+      }
+    }, "DEBUG LOGIN");
+
     let isValid = false;
     let fallbackId = '';
     let fullName = '';

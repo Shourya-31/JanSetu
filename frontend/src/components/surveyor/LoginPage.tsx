@@ -232,7 +232,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       type="text"
                       value={vlgId}
                       onChange={(e) => setVlgId(e.target.value)}
-                      placeholder="उदा. SUR-VLG-2026"
+                      placeholder="उदा. surveyor"
                       className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
                     />
                   </div>
@@ -319,7 +319,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       type="text"
                       value={hhdId}
                       onChange={(e) => setHhdId(e.target.value)}
-                      placeholder="उदा. SUR-HHD-2026"
+                      placeholder="उदा. surveyor"
                       className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
                     />
                   </div>
@@ -406,7 +406,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       type="text"
                       value={admId}
                       onChange={(e) => setAdmId(e.target.value)}
-                      placeholder="प्रशासनिक आईडी दर्ज करें"
+                      placeholder="उदा. admin"
                       className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-600 focus:bg-white"
                     />
                   </div>
