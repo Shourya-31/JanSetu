@@ -24,13 +24,24 @@ export const App: React.FC = () => {
   useEffect(() => onUnauthorized(() => setSession(null)), []);
 
   // Only Admin login is handled here
+  
+  const handleSurveyorLogin = async (
+    mode: SurveyMode,
+    identifier: string,
+    password: string
+  ) => {
+    const nextSession = await login('surveyor', identifier, password);
+    setAuthSession(nextSession);
+    setSession(nextSession);
+    setSurveyMode(mode);
+  };
+
   const handleAdminLogin = async (
     role: "admin",
     identifier: string,
     password: string
   ) => {
     const nextSession = await login(role, identifier, password);
-
     setAuthSession(nextSession);
     setSession(nextSession);
   };
@@ -71,7 +82,7 @@ export const App: React.FC = () => {
    */
   return (
     <LoginPage
-      onProfileSelect={(mode) => setSurveyMode(mode)}
+      onProfileSelect={handleSurveyorLogin}
       onAdminLogin={handleAdminLogin}
     />
   );

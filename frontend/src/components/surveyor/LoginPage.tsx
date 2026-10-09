@@ -11,7 +11,7 @@ import {
 export type SurveyMode = "village" | "household";
 
 interface LoginPageProps {
-  onProfileSelect: (mode: SurveyMode) => void;
+  onProfileSelect: (mode: SurveyMode, identifier: string, password: string) => Promise<void>;
   onAdminLogin: (
     role: "admin",
     identifier: string,
@@ -47,7 +47,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [admError, setAdmError] = useState("");
 
   /* ---------------- Village submit ---------------- */
-  const handleVillageSubmit = (e: React.FormEvent) => {
+  
+  const handleVillageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vlgId.trim() || !vlgPass) {
       setVlgError("ग्राम सर्वेक्षक आईडी और पासवर्ड दोनों दर्ज करें।");
@@ -55,16 +56,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     }
     setVlgError("");
     setVlgLoading(true);
-    // Hand off to parent — parent handles actual auth / routing
     try {
-      onProfileSelect("village");
+      await onProfileSelect("village", vlgId.trim(), vlgPass);
+    } catch (error) {
+      setVlgError(error instanceof Error ? error.message : "लॉगिन असफल हुआ।");
     } finally {
       setVlgLoading(false);
     }
   };
 
+
   /* ---------------- Household submit ---------------- */
-  const handleHouseholdSubmit = (e: React.FormEvent) => {
+  
+  const handleHouseholdSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hhdId.trim() || !hhdPass) {
       setHhdError("परिवार सर्वेक्षक आईडी और पासवर्ड दोनों दर्ज करें।");
@@ -73,11 +77,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setHhdError("");
     setHhdLoading(true);
     try {
-      onProfileSelect("household");
+      await onProfileSelect("household", hhdId.trim(), hhdPass);
+    } catch (error) {
+      setHhdError(error instanceof Error ? error.message : "लॉगिन असफल हुआ।");
     } finally {
       setHhdLoading(false);
     }
   };
+
 
   /* ---------------- Admin submit ---------------- */
   const handleAdminSubmit = async (e: React.FormEvent) => {
