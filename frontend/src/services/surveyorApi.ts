@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient';
+import { apiRequest, getAuthSession } from './apiClient';
 import type { Block } from '../data/narayanpurHierarchy';
 
 export interface HouseholdApiRecord {
@@ -48,6 +48,32 @@ export function initializeHouseholdSlots(input: {
   count: number;
 }): Promise<{ success: boolean; data: HouseholdApiRecord[] }> {
   return apiRequest('/api/households/initialize', { method: 'POST', body: input });
+}
+
+export async function uploadVillagePhoto(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+  const session = getAuthSession();
+  
+  const headers = new Headers();
+  if (session?.token) {
+    headers.set('Authorization', `Bearer ${session.token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error('Image upload failed');
+  }
+
+  const data = await response.json();
+  return data.secure_url;
 }
 
 export function saveVillageSurvey(payload: Record<string, unknown>) {

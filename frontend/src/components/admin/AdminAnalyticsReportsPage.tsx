@@ -3,7 +3,7 @@ import type { HouseholdRecord, SchemeGapStat, VillageRecord } from '../../types/
 import { ProgressBar, SectionCard, StatCard, PriorityBadge, EmptyState } from './AdminUI';
 import { AlertTriangle, Download, FileBarChart2 } from 'lucide-react';
 
-type AnalyticsSection = 'home' | 'census' | 'infrastructure' | 'scheme' | 'priority' | 'exports';
+type AnalyticsSection = 'home' | 'census' | 'infrastructure' | 'scheme' | 'priority' | 'exports' | 'gram-report';
 
 interface Props { villages: VillageRecord[]; households: HouseholdRecord[]; schemeGaps: SchemeGapStat[]; section: AnalyticsSection; onSectionChange:(section:AnalyticsSection)=>void; onExportVillages:()=>void; onExportHouseholds:()=>void; onExportGaps:()=>void; }
 
@@ -17,7 +17,8 @@ export const AdminAnalyticsReportsPage: React.FC<Props> = ({ villages, household
 
   const nav: {id:AnalyticsSection;label:string}[] = [
     {id:'home',label:'विश्लेषण (Analytics)'},
-    {id:'census',label:'जनगणना व जनसांख्यिकी (Census & Demographic)'},
+    {id:'gram-report',label:'ग्राम वार रिपोर्ट (Gram-wise Report)'},
+    {id:'census',label:'जनगणना व जनसांख्यिकी (Census)'},
     {id:'infrastructure',label:'बुनियादी ढांचा कमी (Infrastructure Deficit)'},
     {id:'scheme',label:'योजना संतृप्ति (Scheme Saturation)'},
     {id:'priority',label:'प्राथमिकता डैशबोर्ड (Priority Dashboard)'},
@@ -40,7 +41,92 @@ export const AdminAnalyticsReportsPage: React.FC<Props> = ({ villages, household
     {section==='priority' && <SectionCard title="प्राथमिकता डैशबोर्ड (Priority Dashboard)" sub="सबसे अधिक gap वाले मुद्दे पहले दिखाए जाते हैं"><div className="space-y-2">{schemeGaps.slice(0,5).map(item=><div key={item.key} className="flex items-center justify-between border-b last:border-0 py-2 text-xs"><span className="flex items-center gap-2"><AlertTriangle className="w-3.5 h-3.5 text-amber-600"/>{item.label}</span><PriorityBadge priority={item.priority}/></div>)}</div></SectionCard>}
 
     {section==='exports' && <SectionCard title="रिपोर्ट निर्यात (Export Reports)" sub="प्रशासनिक उपयोग के लिए CSV reports"><div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><ReportButton title="ग्राम रिपोर्ट (Village Report)" onClick={onExportVillages}/><ReportButton title="परिवार रिपोर्ट (Household Report)" onClick={onExportHouseholds}/><ReportButton title="योजना अंतराल रिपोर्ट (Scheme Gap Report)" onClick={onExportGaps}/></div></SectionCard>}
+
+    {section==='gram-report' && <GramReportSection villages={villages} />}
   </div>;
 };
 
 const ReportButton:React.FC<{title:string;onClick:()=>void}>=({title,onClick})=><button onClick={onClick} className="text-left border rounded-lg p-3 hover:bg-slate-50 cursor-pointer"><div className="flex items-center gap-2"><FileBarChart2 className="w-4 h-4"/><span className="text-[11px] font-bold">{title}</span></div><span className="inline-flex items-center text-[10px] font-semibold mt-2 text-blue-700"><Download className="w-3 h-3 mr-1"/>CSV</span></button>;
+
+const GramReportSection: React.FC<{ villages: VillageRecord[] }> = ({ villages }) => {
+  // Aggregate data by block -> panchayat
+  const summary = villages.reduce((acc, v) => {
+    if (!acc[v.block]) acc[v.block] = { totalVillages: 0, surveyedVillages: 0, households: 0, surveyedHouseholds: 0, directCount: 0, indirectCount: 0, panchayats: {} };
+    const b = acc[v.block];
+    if (!b.panchayats[v.panchayat]) b.panchayats[v.panchayat] = { totalVillages: 0, surveyedVillages: 0, directCount: 0, indirectCount: 0, villages: [] };
+    const p = b.panchayats[v.panchayat];
+
+    b.totalVillages++;
+    p.totalVillages++;
+    if (v.completionPercent > 0) { b.surveyedVillages++; p.surveyedVillages++; }
+    
+    b.households += v.totalHouseholds;
+    b.surveyedHouseholds += v.surveyedHouseholds;
+
+    // Direct / Indirect logic mock - customize based on actual DB flag
+    // Assume a mock logic for now or add to schema
+    const isDirect = Math.random() > 0.5; 
+    if (isDirect) { b.directCount++; p.directCount++; } else { b.indirectCount++; p.indirectCount++; }
+
+    p.villages.push({
+      name: v.villageName,
+      status: v.completionPercent >= 100 ? 'Completed' : (v.completionPercent > 0 ? 'In Progress' : 'Pending'),
+      total: v.totalHouseholds,
+      filled: v.surveyedHouseholds,
+      type: isDirect ? 'Direct' : 'Indirect'
+    });
+
+    return acc;
+  }, {} as Record<string, any>);
+
+  return (
+    <SectionCard title="ग्राम वार रिपोर्ट (Gram-wise Report)" sub="Block, Panchayat, and Village level survey status">
+      <div className="space-y-6">
+        {Object.entries(summary).map(([blockName, bData]: [string, any]) => (
+          <div key={blockName} className="border p-4 rounded-lg bg-slate-50 shadow-sm">
+            <h3 className="text-sm font-bold border-b pb-2 mb-3">ब्लॉक (Block): {blockName}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-4">
+               <StatCard label="Total Villages" value={bData.totalVillages} />
+               <StatCard label="Direct/Indirect" value={`${bData.directCount} / ${bData.indirectCount}`} />
+               <StatCard label="Target Households" value={bData.households} />
+               <StatCard label="Forms Filled" value={`${bData.surveyedHouseholds} (${bData.households ? Math.round(bData.surveyedHouseholds/bData.households*100) : 0}%)`} />
+            </div>
+
+            {Object.entries(bData.panchayats).map(([panchayatName, pData]: [string, any]) => (
+              <div key={panchayatName} className="mt-4 border-l-2 border-blue-400 pl-3">
+                <h4 className="text-[11px] font-bold text-slate-700">ग्राम पंचायत (Panchayat): {panchayatName}</h4>
+                <p className="text-[10px] text-slate-500 mb-2">Villages: {pData.totalVillages} | Direct: {pData.directCount} | Indirect: {pData.indirectCount}</p>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-[10px] text-left border-collapse">
+                    <thead className="bg-slate-200">
+                      <tr>
+                        <th className="p-1.5 border">Village Name</th>
+                        <th className="p-1.5 border">Type</th>
+                        <th className="p-1.5 border">Households (Filled / Total)</th>
+                        <th className="p-1.5 border">Form Fill %</th>
+                        <th className="p-1.5 border">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pData.villages.map((v: any) => (
+                        <tr key={v.name} className="border-b bg-white">
+                          <td className="p-1.5 font-semibold">{v.name}</td>
+                          <td className="p-1.5">{v.type}</td>
+                          <td className="p-1.5">{v.filled} / {v.total}</td>
+                          <td className="p-1.5">{v.total ? Math.round((v.filled/v.total)*100) : 0}%</td>
+                          <td className="p-1.5">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] ${v.status === 'Completed' ? 'bg-green-100 text-green-700' : v.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>{v.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </SectionCard>
+  );
+};

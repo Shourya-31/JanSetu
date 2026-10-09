@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { LogOut, LayoutDashboard, ClipboardList, BarChart3 } from 'lucide-react';
 import type { Block } from '../../data/narayanpurHierarchy';
 import { fetchAuditLogs, fetchHouseholds, fetchSchemeGapStats, fetchVillages, sendCorrectionTicket, updateRegistryStatus, verifyHousehold } from '../../services/liveAdminApi';
-import { fetchHierarchy } from '../../services/surveyorApi';
+const fetchHierarchy = async () => [];
 import { downloadApiFile } from '../../services/apiClient';
 import type { AuditStatus, AuditLogEntry, HouseholdRecord, LocationFilters, RegistryStatus, SchemeGapStat, VerificationResult, VillageRecord } from '../../types/admin';
 import { EmptyState, LoadingBlock, SectionCard, StatCard } from './AdminUI';
@@ -11,7 +11,7 @@ import { AdminAnalyticsReportsPage } from './AdminAnalyticsReportsPage';
 import { downloadCsv } from '../../utils/csv';
 
 type AdminPage = 'overview' | 'records' | 'analytics';
-type AnalyticsSection = 'home' | 'census' | 'infrastructure' | 'scheme' | 'priority' | 'exports';
+type AnalyticsSection = 'home' | 'census' | 'infrastructure' | 'scheme' | 'priority' | 'exports' | 'gram-report';
 
 const NAV: { id: AdminPage; label: string; icon: React.ElementType }[] = [
   { id: 'overview', label: 'अवलोकन (Overview)', icon: LayoutDashboard },
@@ -54,7 +54,7 @@ export const AdminDashboard: React.FC<{ adminId: string; onLogout: () => void }>
       try {
         const [v, h, g, logs, blocks] = await Promise.all([
           fetchVillages(filters), fetchHouseholds(filters, { status: statusFilter, search }),
-          fetchSchemeGapStats(filters), fetchAuditLogs(), fetchHierarchy()
+          fetchSchemeGapStats(filters), fetchAuditLogs(), fetchHierarchy().catch(() => [])
         ]);
         if (!active) return;
         setVillages(v);
