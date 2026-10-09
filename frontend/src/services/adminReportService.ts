@@ -1,7 +1,6 @@
+import { getAuthSession } from './apiClient';
 import type { ReportScope, SurveyDataset } from "../types/adminReports";
 
-/** Integration boundary, deliberately disconnected. Replace with a verified,
- * authorized adapter returning ALL pages; never return a partial report. */
 export interface AdminReportService {
   loadSurveys(scope: ReportScope, signal: AbortSignal): Promise<SurveyDataset>;
 }
@@ -16,15 +15,9 @@ export const offlineAdminReportService: AdminReportService = {
   },
 };
 
-
 function getToken(): string {
-  try {
-    const raw = localStorage.getItem('jansetu_auth');
-    if (!raw) return '';
-    return JSON.parse(raw)?.token || '';
-  } catch {
-    return '';
-  }
+  const session = getAuthSession();
+  return session?.token || '';
 }
 
 export const liveAdminReportService: AdminReportService = {
@@ -33,7 +26,6 @@ export const liveAdminReportService: AdminReportService = {
     if (scope.panchayatId) params.set('panchayatId', scope.panchayatId);
     if (scope.villageId) params.set('villageId', scope.villageId);
     
-    // Fallback to empty string for Vite proxy handling locally if no VITE_API_BASE_URL
     const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '';
     
     const res = await fetch(`${API_BASE}/api/admin/surveys?${params.toString()}`, {
@@ -42,7 +34,9 @@ export const liveAdminReportService: AdminReportService = {
     });
     
     if (!res.ok) {
-      throw new Error(`Server error: ${res.status}`);
+      if (res.status === 401) throw new Error("आपकी लॉगिन अवधि समाप्त हो गई है, कृपया दोबारा लॉग इन करें। (Session Expired)");
+      if (res.status === 404) throw new Error("डेटा उपलब्ध नहीं है या सर्वर से संपर्क नहीं हो सका।");
+      throw new Error("सर्वर से डेटा लाने में समस्या हुई।");
     }
     
     return res.json();

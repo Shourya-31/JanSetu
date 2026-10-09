@@ -88,12 +88,21 @@ export async function createHouseholdSlots(req: FastifyRequest, reply: FastifyRe
         SELECT pg_advisory_xact_lock(hashtext(${villageName})::int, -1::int);
       `;
       
+      
       const village = await tx.village.findFirst({ where: { nameHindi: villageName }, include: { gramPanchayat: true } });
       if (!village) throw new Error('Village not found');
 
+      // Edge Case Fix: Prevent Unique Constraint violation if slots are added later
+      const maxHouse = await tx.householdSurvey.aggregate({
+        where: { villageId: village.id },
+        _max: { houseNumber: true }
+      });
+      const startNumber = (maxHouse._max.houseNumber || 0) + 1;
+
       const created = await tx.householdSurvey.createManyAndReturn({
         data: Array.from({ length: count }, (_, index) => {
-          const houseNumber = index + 1;
+          const houseNumber = startNumber + index;
+
           return {
             trackingId: `DMFT-HHD-${randomUUID()}`,
             villageId: village.id,

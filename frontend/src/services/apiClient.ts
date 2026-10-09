@@ -22,21 +22,21 @@ export class ApiError extends Error {
   }
 }
 
+
+let memorySession: AuthSession | null = null;
+
 export function getAuthSession(): AuthSession | null {
-  try {
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    return stored ? JSON.parse(stored) as AuthSession : null;
-  } catch {
-    return null;
-  }
+  return memorySession;
 }
+
 
 export function setAuthSession(session: AuthSession): void {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  memorySession = session;
 }
 
+
 export function clearAuthSession(): void {
-  sessionStorage.removeItem(SESSION_KEY);
+  memorySession = null;
 }
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
