@@ -4,6 +4,7 @@ import { getAllVillageProfiles, getVillageProfile, saveVillageProfile, patchVill
 import { getHouseholdSurveys, createHouseholdSlots, saveHouseholdSurvey, patchHouseholdSurvey, deleteHouseholdSurvey, verifyHouseholdRecord, updateRegistryStatusRecord, createCorrectionTicketRecord } from '../controllers/householdController';
 import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminController';
 import { exportHouseholdsCsv } from '../controllers/exportController';
+import { getAdminSurveys, getAdminGramStats } from '../controllers/adminReportController';
 import { getHierarchy } from '../controllers/hierarchyController';
 import { getSurveyAuditLogs } from '../controllers/auditController';
 import { uploadImage } from '../controllers/uploadController';
@@ -217,6 +218,16 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   }, createCorrectionTicketRecord);
 
   // 4. Admin Dynamic Query & Analytics Routes
+  fastify.get('/api/admin/surveys', {
+    ...adminOnly,
+    schema: { querystring: querySchema({ blockId: text(), panchayatId: text(), villageId: text() }, ['blockId']) }
+  }, getAdminSurveys);
+  
+  fastify.get('/api/admin/gram-stats', {
+    ...adminOnly,
+    schema: { querystring: emptyQuerySchema }
+  }, getAdminGramStats);
+  
   fastify.post('/api/admin/query', {
     ...adminOnly,
     schema: { body: adminFilterSchema, querystring: emptyQuerySchema }
