@@ -1,4 +1,8 @@
-// Prisma Schema for JanSetu DMFT Census Platform
+// ============================================================
+// JanSetu DMFT Census Platform — Prisma Schema
+// District: Narayanpur
+// Hierarchy: Block → GramPanchayat → Village → Household
+// ============================================================
 
 datasource db {
   provider = "postgresql"
@@ -9,138 +13,342 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
 enum Role {
   surveyor
   admin
 }
 
+// ─────────────────────────────────────────────────────────────
+// 1. USERS
+// ─────────────────────────────────────────────────────────────
+
 model User {
-  id           String            @id @default(uuid())
-  userCode     String            @unique @map("user_code")
-  fullName     String            @map("full_name")
-  role         Role              @default(surveyor)
-  passwordHash String            @map("password_hash")
-  createdAt    DateTime          @default(now()) @map("created_at")
-  
-  villageProfiles  VillageProfile[]  @relation("UserVillages")
-  householdSurveys HouseholdSurvey[] @relation("UserHouseholds")
+  id           String   @id @default(uuid())
+  userCode     String   @unique @map("user_code")
+  fullName     String   @map("full_name")
+  role         Role     @default(surveyor)
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  villageSurveys   VillageSurvey[]   @relation("UserVillageSurveys")
+  householdSurveys HouseholdSurvey[] @relation("UserHouseholdSurveys")
   auditLogs        SurveyAuditLog[]  @relation("UserAuditLogs")
 
   @@map("users")
 }
 
-model NarayanpurHierarchy {
-  id                   Int     @id @default(autoincrement())
-  blockName            String  @map("block_name")
-  blockNameEnglish     String? @map("block_name_english")
-  panchayatName        String  @map("panchayat_name")
-  panchayatNameEnglish String? @map("panchayat_name_english")
-  villageName          String  @map("village_name")
-  villageNameEnglish   String? @map("village_name_english")
-  affectedStatus       String? @map("affected_status")
-  population           Int     @default(0)
+// ─────────────────────────────────────────────────────────────
+// 2. LOCATION HIERARCHY  (Block → GramPanchayat → Village)
+//    Seeded from narayanpurHierarchy.ts — read-only at runtime
+// ─────────────────────────────────────────────────────────────
 
-  @@unique([blockName, panchayatName, villageName], name: "uniqueLocationHierarchy")
-  @@map("narayanpur_hierarchy")
+model Block {
+  id               Int            @id @default(autoincrement())
+  nameHindi        String         @map("name_hindi")
+  nameEnglish      String         @map("name_english")
+
+  gramPanchayats   GramPanchayat[]
+
+  @@unique([nameHindi], name: "uq_block_hindi")
+  @@map("blocks")
 }
 
-model VillageProfile {
-  id              String            @id @default(uuid())
-  block           String
-  panchayat       String
-  villageName     String            @unique @map("village_name")
-  totalPopulation Int               @default(0) @map("total_population")
-  totalHouseholds Int               @default(0) @map("total_households")
-  scCount         Int               @default(0) @map("sc_count")
-  stCount         Int               @default(0) @map("st_count")
-  puccaHouses     Int               @default(0) @map("pucca_houses")
-  semiPuccaHouses Int               @default(0) @map("semi_pucca_houses")
-  kacchaHouses    Int               @default(0) @map("kaccha_houses")
-  mineDistanceKm  String            @map("mine_distance_km")
-  hasPuccaRoad    String            @map("has_pucca_road")
-  monsoonCutOff   String            @map("monsoon_cut_off")
-  schoolType      String            @map("school_type")
-  hospitalType    String            @map("hospital_type")
-  electrification String
-  qualityMetrics  Json              @default("{}") @map("quality_metrics")
-  gapMatrix       Json              @default("{}") @map("gap_matrix")
-  villageSurvey   Json              @default("{}") @map("village_survey")
-  isVerified      Boolean           @default(false) @map("is_verified")
-  verifiedAt      DateTime?         @map("verified_at")
-  createdBy       String?           @map("created_by")
-  creator         User?             @relation("UserVillages", fields: [createdBy], references: [id])
-  version         Int               @default(1) // Optimistic Locking Column
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
+model GramPanchayat {
+  id          Int      @id @default(autoincrement())
+  nameHindi   String   @map("name_hindi")
+  nameEnglish String   @map("name_english")
 
+  blockId     Int      @map("block_id")
+  block       Block    @relation(fields: [blockId], references: [id], onDelete: Restrict)
+
+  villages    Village[]
+
+  @@unique([blockId, nameHindi], name: "uq_gp_per_block")
+  @@map("gram_panchayats")
+}
+
+model Village {
+  id              Int           @id @default(autoincrement())
+  nameHindi       String        @map("name_hindi")
+  nameEnglish     String        @map("name_english")
+  affectedStatus  String        @default("Direct Affected") @map("affected_status")
+  population      Int           @default(0)
+
+  gramPanchayatId Int           @map("gram_panchayat_id")
+  gramPanchayat   GramPanchayat @relation(fields: [gramPanchayatId], references: [id], onDelete: Restrict)
+
+  villageSurvey   VillageSurvey?
   households      HouseholdSurvey[]
 
-  @@map("village_profiles")
+  @@unique([gramPanchayatId, nameHindi], name: "uq_village_per_gp")
+  @@map("villages")
 }
 
-model HouseholdSurvey {
-  id               String         @id @default(uuid())
-  trackingId       String         @unique @map("tracking_id")
-  villageName      String         @map("village_name")
-  village          VillageProfile @relation(fields: [villageName], references: [villageName], onDelete: Restrict)
-  houseNumber      Int            @map("house_number")
-  headName         String         @map("head_name")
-  mobile           String
-  caste            String
-  isBPL            String         @map("is_bpl")
-  totalMembers     Int            @default(1) @map("total_members")
-  eldersCount      Int            @default(0) @map("elders_count")
-  childrenCount    Int            @default(0) @map("children_count")
-  unemployedCount  Int            @default(0) @map("unemployed_count")
-  incomeSource     String         @map("income_source")
-  missingAadhaar   Int            @default(0) @map("missing_aadhaar")
-  missingCasteCert Int            @default(0) @map("missing_caste_cert")
-  missingAyushman  Int            @default(0) @map("missing_ayushman")
-  missingVoterId   Int            @default(0) @map("missing_voter_id")
-  isMiningWorker   String         @map("is_mining_worker")
-  houseType        String         @map("house_type")
-  hasToilet        String         @map("has_toilet")
-  hasTapWater      String         @map("has_tap_water")
-  surveyAnswers      Json           @default("{}") @map("survey_answers")
-  auditStatus        String         @default("लंबित") @map("audit_status")
-  verificationResult String?        @map("verification_result")
-  verifiedBy         String?        @map("verified_by")
-  verifiedAt         DateTime?      @map("verified_at")
-  registryStatus     String         @default("लंबित") @map("registry_status")
-  correctionTicketId String?        @map("correction_ticket_id")
-  correctionReason   String?        @map("correction_reason")
-  correctionNote     String?        @map("correction_note")
-  correctionCreatedAt DateTime?      @map("correction_created_at")
-  auditNote          String?        @map("audit_note")
-  createdBy          String?        @map("created_by")
-  creator            User?          @relation("UserHouseholds", fields: [createdBy], references: [id])
-  version            Int            @default(1) // Optimistic Locking Column
-  submittedAt        DateTime       @default(now()) @map("submitted_at")
-  updatedAt          DateTime       @updatedAt @map("updated_at")
+// ─────────────────────────────────────────────────────────────
+// 3. VILLAGE SURVEY  (one per Village — gram-level census form)
+//    All fields map 1-to-1 to frontend GeneralInformation.tsx
+//    and the village-survey sub-section forms.
+// ─────────────────────────────────────────────────────────────
 
-  @@unique([villageName, houseNumber], name: "uniqueHousePerVillage")
-  @@index([villageName], name: "idx_households_village")
-  @@index([villageName, isBPL, caste, isMiningWorker], name: "idx_households_multi_filter")
-  @@index([missingAadhaar, missingAyushman], name: "idx_households_missing_docs")
-  @@index([mobile], name: "idx_households_mobile")
-  @@index([auditStatus], name: "idx_households_audit_status")
-  @@index([registryStatus], name: "idx_households_registry_status")
-  @@index([submittedAt(sort: Desc)], name: "idx_households_submitted_at")
-  @@index([correctionTicketId], name: "idx_households_ticket_id")
-  @@index([unemployedCount], name: "idx_households_unemployed")
-  @@index([headName], name: "idx_households_head_name")
+model VillageSurvey {
+  id        String  @id @default(uuid())
+  villageId Int     @unique @map("village_id")
+  village   Village @relation(fields: [villageId], references: [id], onDelete: Restrict)
+
+  // ── General Information (GeneralInformation.tsx) ──────────
+  totalHouseholds          Int?    @map("total_households")
+  totalPopulation          Int?    @map("total_population")
+  scPopulation             Int?    @map("sc_population")
+  stPopulation             Int?    @map("st_population")
+  totalSchools             Int?    @map("total_schools")
+  totalAnganwadi           Int?    @map("total_anganwadi")
+  totalHealthFacilities    Int?    @map("total_health_facilities")
+  totalHostels             Int?    @map("total_hostels")
+  fairPriceShop            String? @map("fair_price_shop")           // हाँ / नहीं
+  shopDistance             String? @map("shop_distance")             // km if नहीं
+  mobileNetwork            String? @map("mobile_network")            // हाँ / नहीं
+  networkDistance          String? @map("network_distance")          // km if नहीं
+  electricity              String? @map("electricity")               // हाँ / नहीं
+  solarLight               String? @map("solar_light")               // हाँ / नहीं
+  road                     String? @map("road")                      // हाँ / नहीं (pucca road to block)
+  roadConnectivity         Int?    @map("road_connectivity")         // no. of 12-month routes
+  roadReasons              Json    @default("[]") @map("road_reasons")  // array of reasons
+  rainCutoff               String? @map("rain_cutoff")               // हाँ / नहीं
+  tapWater                 String? @map("tap_water")                 // हाँ / नहीं
+  tapWaterExcludedFamilies Int?    @map("tap_water_excluded_families")
+  ponds                    Int?    @map("ponds")
+  puccaHouses              Int?    @map("pucca_houses")
+  rawHouses                Int?    @map("raw_houses")
+  completedHouses          Int?    @map("completed_houses")          // PMAY completed
+  pendingHouses            Int?    @map("pending_houses")            // PMAY sanctioned not built
+  housingNotSanctioned     Int?    @map("housing_not_sanctioned")
+  totalAgriculturalLand    String? @map("total_agricultural_land")   // text: acres/hectares
+  irrigatedLand            String? @map("irrigated_land")
+  odf                      String? @map("odf")                       // ODF / ODF+ / ODF++ / Not ODF
+  banking                  String? @map("banking")                   // branch / BC / both / none
+  vet                      String? @map("vet")                       // हाँ / नहीं
+
+  // ── Water Section (WaterForm.tsx) ─────────────────────────
+  waterSourceType          String? @map("water_source_type")
+  waterAvailabilityMonths  Int?    @map("water_availability_months")
+  waterQualityIssue        String? @map("water_quality_issue")
+  fluorideIssue            String? @map("fluoride_issue")
+  handpumpsTotal           Int?    @map("handpumps_total")
+  handpumpsWorking         Int?    @map("handpumps_working")
+  pipelineWaterScheme      String? @map("pipeline_water_scheme")
+
+  // ── Employment Section (EmploymentForm.tsx) ───────────────
+  mnregaWorkdays           Int?    @map("mnrega_workdays")
+  mnregaDemandPending      Int?    @map("mnrega_demand_pending")
+  miningWorkersCount       Int?    @map("mining_workers_count")
+  migrationCount           Int?    @map("migration_count")
+  migrationDestination     String? @map("migration_destination")
+
+  // ── Health Section (HealthForm.tsx) ───────────────────────
+  subHealthCenterAvailable String? @map("sub_health_center_available")  // हाँ / नहीं
+  healthWorkerVisit        String? @map("health_worker_visit")
+  malariaLastYear          Int?    @map("malaria_last_year")
+  tbCasesCount             Int?    @map("tb_cases_count")
+  sickleCell               String? @map("sickle_cell")
+
+  // ── School Section (SchoolForm.tsx) ───────────────────────
+  primarySchoolAvailable   String? @map("primary_school_available")
+  schoolTeachersCount      Int?    @map("school_teachers_count")
+  midDayMeal               String? @map("mid_day_meal")               // हाँ / नहीं
+  dropoutReason            String? @map("dropout_reason")
+
+  // ── Anganwadi Section (AnganbadiForm.tsx) ─────────────────
+  anganwadiWorkerPresent   String? @map("anganwadi_worker_present")    // हाँ / नहीं
+  nutritionProgramCoverage String? @map("nutrition_program_coverage")
+  anganwadiBuilding        String? @map("anganwadi_building")
+
+  // ── Hostel Section (HostelForm.tsx) ───────────────────────
+  ashramSchoolAvailable    String? @map("ashram_school_available")
+  hostelCapacity           Int?    @map("hostel_capacity")
+  hostelOccupancy          Int?    @map("hostel_occupancy")
+
+  // ── Ladies/Women Section (LadiesForm.tsx) ─────────────────
+  shgCount                 Int?    @map("shg_count")
+  shgActiveMembersCount    Int?    @map("shg_active_members_count")
+  mahtariVandanaCount      Int?    @map("mahtari_vandana_count")
+
+  // ── Pension Section (PensionForm.tsx) ─────────────────────
+  oldAgePensionCount       Int?    @map("old_age_pension_count")
+  widowPensionCount        Int?    @map("widow_pension_count")
+  disabilityPensionCount   Int?    @map("disability_pension_count")
+
+  // ── Cleanliness / ODF Section (CleanlinessForm.tsx) ───────
+  openDefecationFree       String? @map("open_defecation_free")
+  solidWasteManagement     String? @map("solid_waste_management")
+  drainageSystem           String? @map("drainage_system")
+
+  // ── Development Section (DevelopmentForm.tsx) ─────────────
+  electricLineKm           String? @map("electric_line_km")
+  internetAvailable        String? @map("internet_available")
+  gramSabhaLastHeld        String? @map("gram_sabha_last_held")
+
+  // ── Metadata & Status ─────────────────────────────────────
+  isVerified               Boolean  @default(false) @map("is_verified")
+  verifiedAt               DateTime? @map("verified_at")
+  createdBy                String?   @map("created_by")
+  creator                  User?     @relation("UserVillageSurveys", fields: [createdBy], references: [id])
+  version                  Int       @default(1)
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  @@map("village_surveys")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. HOUSEHOLD SURVEY  (one per house per Village)
+//    All fields map 1-to-1 to the 11 household sub-form components.
+//    Linked to Village by villageId (FK) — household count is
+//    gram-wise; house numbers are unique within a village.
+// ─────────────────────────────────────────────────────────────
+
+model HouseholdSurvey {
+  id          String  @id @default(uuid())
+  trackingId  String  @unique @map("tracking_id")       // DMFT-HHD-<uuid>
+  houseNumber Int     @map("house_number")
+
+  villageId   Int     @map("village_id")
+  village     Village @relation(fields: [villageId], references: [id], onDelete: Restrict)
+
+  // ── General Information (HouseholdGeneralInformation.tsx) ─
+  headName    String  @default("") @map("head_name")
+  mobile      String  @default("")
+  surveyDate  String  @default("") @map("survey_date")   // ISO date string yyyy-mm-dd
+  surveyorName String @default("") @map("surveyor_name")
+
+  // ── Demography (HouseholdDemography.tsx) ──────────────────
+  caste       String  @default("")
+  isBpl       String  @default("") @map("is_bpl")        // हाँ / नहीं
+  eldersCount Int     @default(0) @map("elders_count")    // बुजुर्ग
+  childrenCount Int   @default(0) @map("children_count")
+  womenCount  Int     @default(0) @map("women_count")
+
+  // ── Documents & Schemes (HouseholdDocumentsSchemes.tsx) ───
+  rationCard              String? @map("ration_card")              // हाँ / नहीं
+  noAadhaarMembers        Int     @default(0) @map("no_aadhaar_members")
+  aadhaarEkyc             String? @map("aadhaar_ekyc")             // हाँ / नहीं
+  noCasteCertMembers      Int     @default(0) @map("no_caste_cert_members")
+  noAyushmanMembers       Int     @default(0) @map("no_ayushman_members")
+  noVoterIdMembers        Int     @default(0) @map("no_voter_id_members")
+  mnregaJobCard           String? @map("mnrega_job_card")          // हाँ / नहीं
+  noShramikCardMembers    Int     @default(0) @map("no_shramik_card_members")
+  janDhanAccount          String? @map("jan_dhan_account")         // हाँ / नहीं
+  bankName                String? @map("bank_name")
+  kcc                     String? @map("kcc")                      // हाँ / नहीं / पात्रता नहीं
+  forestRightsPatta       String? @map("forest_rights_patta")      // हाँ / नहीं / पात्रता नहीं
+  marriageCertificate     String? @map("marriage_certificate")     // हाँ / नहीं
+
+  // ── Women & Social Security (HouseholdWomenSocialSecurity.tsx)
+  jsy                     String? @map("jsy")                      // हाँ / नहीं / पात्रता नहीं
+  pmmvy                   String? @map("pmmvy")
+  mahtariVandana          String? @map("mahtari_vandana")
+  widowPension            String? @map("widow_pension")
+  disabilityPension       String? @map("disability_pension")
+
+  // ── Disability & Other Documents (HouseholdDisabilityDocuments.tsx)
+  needsAssistiveDevice    String? @map("needs_assistive_device")   // हाँ / नहीं
+  assistanceTypes         Json    @default("[]") @map("assistance_types") // string[]
+  otherAssistance         String? @map("other_assistance")
+  deathInLastYear         String? @map("death_in_last_year")        // हाँ / नहीं
+  deathCertificateReceived String? @map("death_certificate_received")
+  pmGaribKalyanRation     String? @map("pm_garib_kalyan_ration")   // हाँ / नहीं / पात्रता नहीं
+
+  // ── Children Education (HouseholdChildrenEducation.tsx) ───
+  childrenWithoutBirthCert   Int?    @default(0) @map("children_without_birth_cert")
+  vaccinationStatus          String? @map("vaccination_status")    // सभी / आंशिक / नहीं / लागू नहीं
+  anganwadiMeal              String? @map("anganwadi_meal")
+  childrenSchoolStatus       String? @map("children_school_status") // सभी / कुछ / कोई नहीं / लागू नहीं
+  schoolNotGoingReason       Json    @default("[]") @map("school_not_going_reason") // string[]
+  otherSchoolReason          String? @map("other_school_reason")
+
+  // ── Agriculture & Employment (HouseholdAgricultureEmployment.tsx)
+  unemployedMembers          Int?    @default(0) @map("unemployed_members")
+  pmKisan                    String? @map("pm_kisan")              // हाँ / नहीं / पात्रता नहीं
+  miningEmployment           String? @map("mining_employment")     // हाँ / नहीं
+  annualIncome               Int?    @map("annual_income")
+  mainIncomeSource           String? @map("main_income_source")
+  livestockSource            String? @map("livestock_source")      // हाँ / नहीं
+  otherLivestockSource       String? @map("other_livestock_source")
+  animalEmployment           String? @map("animal_employment")     // हाँ / नहीं
+
+  // ── Housing & Facilities (HouseholdHousingFacilities.tsx) ─
+  houseType                  String? @map("house_type")            // कच्चा / पक्का / अर्ध-पक्का
+  housingSchemeBenefit       String? @map("housing_scheme_benefit")
+  toiletStatus               String? @map("toilet_status")         // हाँ उपयोग में / हाँ उपयोग में नहीं / नहीं
+  tapWaterConnection         String? @map("tap_water_connection")  // हाँ / नहीं
+  drinkingWaterSource        String? @map("drinking_water_source") // if no tap water
+  electricityConnection      String? @map("electricity_connection") // हाँ / नहीं
+  solarEnergy                String? @map("solar_energy")          // हाँ / नहीं
+
+  // ── Health (HouseholdHealth.tsx) ──────────────────────────
+  familyDisease              String? @map("family_disease")        // हाँ / नहीं
+  freeMedicines              String? @map("free_medicines")        // हाँ / कभी-कभी / नहीं
+
+  // ── SHG (HouseholdSHG.tsx) ────────────────────────────────
+  shgMember                  String? @map("shg_member")            // हाँ / नहीं
+
+  // ── Other Information (HouseholdOtherInformation.tsx) ─────
+  priorityNeed1              String? @map("priority_need_1")
+  priorityNeed2              String? @map("priority_need_2")
+  priorityNeed3              String? @map("priority_need_3")
+  eligibleSchemeNotReceived  String? @map("eligible_scheme_not_received") // हाँ / नहीं
+  schemeBenefitName          String? @map("scheme_benefit_name")
+
+  // ── Audit / Status ────────────────────────────────────────
+  auditStatus        String   @default("लंबित") @map("audit_status")
+  registryStatus     String   @default("लंबित") @map("registry_status")
+  verificationResult String?  @map("verification_result")
+  verifiedBy         String?  @map("verified_by")
+  verifiedAt         DateTime? @map("verified_at")
+  correctionTicketId String?  @map("correction_ticket_id")
+  correctionReason   String?  @map("correction_reason")
+  correctionNote     String?  @map("correction_note")
+  correctionCreatedAt DateTime? @map("correction_created_at")
+  auditNote          String?  @map("audit_note")
+
+  createdBy  String?  @map("created_by")
+  creator    User?    @relation("UserHouseholdSurveys", fields: [createdBy], references: [id])
+  version    Int      @default(1)
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([villageId, houseNumber], name: "uq_house_per_village")
+  @@index([villageId],                  name: "idx_hh_village")
+  @@index([caste],                      name: "idx_hh_caste")
+  @@index([isBpl],                      name: "idx_hh_bpl")
+  @@index([miningEmployment],           name: "idx_hh_mining")
+  @@index([auditStatus],                name: "idx_hh_audit_status")
+  @@index([registryStatus],             name: "idx_hh_registry_status")
+  @@index([correctionTicketId],         name: "idx_hh_ticket")
+  @@index([submittedAt(sort: Desc)],    name: "idx_hh_submitted_at")
+  @@index([headName],                   name: "idx_hh_head_name")
+  @@index([mobile],                     name: "idx_hh_mobile")
   @@map("household_surveys")
 }
 
+// ─────────────────────────────────────────────────────────────
+// 5. AUDIT LOG  (immutable change trail for all entities)
+// ─────────────────────────────────────────────────────────────
+
 model SurveyAuditLog {
   id         String   @id @default(uuid())
-  entityType String   @map("entity_type")
+  entityType String   @map("entity_type")   // "village_survey" | "household"
   entityId   String   @map("entity_id")
-  action     String
+  action     String                          // created | updated | verified | deleted …
   changedBy  String?  @map("changed_by")
   user       User?    @relation("UserAuditLogs", fields: [changedBy], references: [id])
   changes    Json
   timestamp  DateTime @default(now())
 
+  @@index([entityType, entityId], name: "idx_audit_entity")
+  @@index([timestamp(sort: Desc)], name: "idx_audit_ts")
   @@map("survey_audit_logs")
 }

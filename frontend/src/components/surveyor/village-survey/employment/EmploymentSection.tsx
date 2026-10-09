@@ -39,47 +39,53 @@ export default function EmploymentSection({
 
   const [saved, setSaved] = useState(false);
 
+  // const handleSave = () => {
+  //   if (
+  //     !employmentData.unemployedYouth ||
+  //     employmentData.livelihoodActivities.length ===
+  //       0 ||
+  //     !employmentData.migration ||
+  //     !employmentData.nearestITICollegeDistance ||
+  //     !employmentData.skillTraining ||
+  //     !employmentData.employmentAfterTraining ||
+  //     !employmentData.requiredTraining1 ||
+  //     !employmentData.requiredTraining2
+  //   ) {
+  //     alert(
+  //       "कृपया रोजगार एवं आजीविका अनुभाग की सभी जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
+
+  //   if (
+  //     employmentData.migration !== "नहीं" &&
+  //     !employmentData.migrantPersons
+  //   ) {
+  //     alert(
+  //       "कृपया अनुमानित प्रवासी व्यक्तियों की संख्या भरें।"
+  //     );
+  //     return;
+  //   }
+
+  //   if (
+  //     employmentData.skillTraining === "हाँ" &&
+  //     !employmentData.majorTraining
+  //   ) {
+  //     alert(
+  //       "कृपया प्रमुख प्रशिक्षण की जानकारी भरें।"
+  //     );
+  //     return;
+  //   }
+
+  //   setSaved(true);
+  //   onSave(employmentData);
+  // };
+
   const handleSave = () => {
-    if (
-      !employmentData.unemployedYouth ||
-      employmentData.livelihoodActivities.length ===
-        0 ||
-      !employmentData.migration ||
-      !employmentData.nearestITICollegeDistance ||
-      !employmentData.skillTraining ||
-      !employmentData.employmentAfterTraining ||
-      !employmentData.requiredTraining1 ||
-      !employmentData.requiredTraining2
-    ) {
-      alert(
-        "कृपया रोजगार एवं आजीविका अनुभाग की सभी जानकारी भरें।"
-      );
-      return;
-    }
-
-    if (
-      employmentData.migration !== "नहीं" &&
-      !employmentData.migrantPersons
-    ) {
-      alert(
-        "कृपया अनुमानित प्रवासी व्यक्तियों की संख्या भरें।"
-      );
-      return;
-    }
-
-    if (
-      employmentData.skillTraining === "हाँ" &&
-      !employmentData.majorTraining
-    ) {
-      alert(
-        "कृपया प्रमुख प्रशिक्षण की जानकारी भरें।"
-      );
-      return;
-    }
-
-    setSaved(true);
-    onSave(employmentData);
-  };
+  // All employment fields are optional
+  setSaved(true);
+  onSave(employmentData);
+};
 
   return (
     <div className="space-y-5">

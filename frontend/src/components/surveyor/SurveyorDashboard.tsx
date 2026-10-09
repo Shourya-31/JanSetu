@@ -622,6 +622,12 @@ const [dataError, setDataError] = useState("");
 
 
   ) => {
+  console.log("HANDLE VILLAGE COMPLETE CALLED");
+
+const photos = data.villagePhotos as File[] | undefined;
+
+console.log("Village photos received:", photos);
+console.log("Number of photos:", photos?.length ?? 0);
 
 
 
@@ -632,11 +638,11 @@ const [dataError, setDataError] = useState("");
     
     // 0 परिवार होने पर कोई household card नहीं बनेगा।
     // HouseholdSurvey में manual completion button दिखेगा।
-    if (count === 0) {
-      setHouseholds([]);
-      setZeroFamilySurveyStarted(true);
-      return;
-    }
+    //if (count === 0) {
+    //  setHouseholds([]);
+    //  setZeroFamilySurveyStarted(true);
+    //  return;
+    //}
 
     setDataLoading(true);
 
@@ -720,7 +726,15 @@ const [dataError, setDataError] = useState("");
 
       // Local state में save
 
+      // Verify selected village photos
+const photos = data.villagePhotos as File[] | undefined;
 
+console.log("Village photos received:", photos);
+
+console.log(
+  "Number of photos:",
+  photos?.length ?? 0
+);
 
       setVillageData(finalData);
 

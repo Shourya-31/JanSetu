@@ -11,68 +11,46 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
   }
 
   try {
-    const records = await prisma.narayanpurHierarchy.findMany({
-      orderBy: [{ blockName: 'asc' }, { panchayatName: 'asc' }, { villageName: 'asc' }]
+    // Query the clean relational hierarchy: Block → GramPanchayat → Village
+    const blocks = await prisma.block.findMany({
+      orderBy: { nameHindi: 'asc' },
+      include: {
+        gramPanchayats: {
+          orderBy: { nameHindi: 'asc' },
+          include: {
+            villages: {
+              orderBy: { nameHindi: 'asc' }
+            }
+          }
+        }
+      }
     });
 
-    if (records.length === 0) {
+    if (blocks.length === 0) {
       return reply.status(503).send({ error: 'Village hierarchy has not been seeded.' });
     }
 
-    const blockMap = new Map<string, {
-      id: string;
-      blockName: string;
-      blockNameEnglish: string;
-      panchayats: Map<string, {
-        id: string;
-        name: string;
-        nameEnglish: string;
-        villages: Array<{ id: string; nameEnglish: string; nameHindi: string; action: string; population: number }>;
-      }>;
-    }>();
-    records.forEach((row) => {
-      let block = blockMap.get(row.blockName);
-      if (!block) {
-        const englishName = row.blockNameEnglish || row.blockName;
-        block = {
-          id: englishName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-          blockName: row.blockName,
-          blockNameEnglish: englishName,
-          panchayats: new Map()
-        };
-        blockMap.set(row.blockName, block);
-      }
-
-      let panchayat = block.panchayats.get(row.panchayatName);
-      if (!panchayat) {
-        const englishName = row.panchayatNameEnglish || row.panchayatName;
-        panchayat = {
-          id: `${block.id}-${englishName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
-          name: row.panchayatName,
-          nameEnglish: englishName,
-          villages: []
-        };
-        block.panchayats.set(row.panchayatName, panchayat);
-      }
-
-      panchayat.villages.push({
-        id: String(row.id),
-        nameEnglish: row.villageNameEnglish || row.villageName,
-        nameHindi: row.villageName,
-        action: row.affectedStatus || 'Direct Affected',
-        population: row.population
-      });
-    });
-
-    const hierarchy = Array.from(blockMap.values()).map((block) => ({
-      id: block.id,
-      blockName: block.blockName,
-      blockNameEnglish: block.blockNameEnglish,
-      panchayats: Array.from(block.panchayats.values())
+    // Shape response to match the frontend Block[] type from narayanpurHierarchy.ts
+    const hierarchy = blocks.map((block) => ({
+      id: block.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      blockName: block.nameHindi,
+      blockNameEnglish: block.nameEnglish,
+      panchayats: block.gramPanchayats.map((gp) => ({
+        id: `${block.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${gp.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        name: gp.nameHindi,
+        nameEnglish: gp.nameEnglish,
+        villages: gp.villages.map((v) => ({
+          id: v.id,
+          nameHindi: v.nameHindi,
+          nameEnglish: v.nameEnglish,
+          action: v.affectedStatus,
+          population: v.population
+        }))
+      }))
     }));
 
     cachedHierarchy = hierarchy;
-    hierarchyExpiry = now + 300000;
+    hierarchyExpiry = now + 300000; // 5 min cache
     return reply.send(hierarchy);
   } catch (error) {
     req.log.error({ err: error }, 'Village hierarchy query failed');

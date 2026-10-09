@@ -26,31 +26,70 @@ const { CENSUS_HIERARCHY } = require('../../../frontend/src/data/narayanpurHiera
   CENSUS_HIERARCHY: SourceBlock[];
 };
 
-async function seedHierarchy() {
-  const data = CENSUS_HIERARCHY.flatMap((block) =>
-    block.panchayats.flatMap((panchayat) =>
-      panchayat.villages.map((village) => ({
-        blockName: block.blockName,
-        blockNameEnglish: block.blockNameEnglish,
-        panchayatName: panchayat.name,
-        panchayatNameEnglish: panchayat.nameEnglish,
-        villageName: village.nameHindi,
-        villageNameEnglish: village.nameEnglish,
-        affectedStatus: village.action,
-        population: village.population
-      }))
-    )
-  );
+async function getOrCreate<T extends { id: number }>(
+  findFn: () => Promise<T | null>,
+  createFn: () => Promise<T>
+): Promise<T> {
+  const existing = await findFn();
+  return existing ?? createFn();
+}
 
-  if (data.length !== 290) {
-    throw new Error(`Expected exactly 290 affected villages; source contains ${data.length}`);
+async function seedHierarchy() {
+  let totalVillages = 0;
+
+  for (const sourceBlock of CENSUS_HIERARCHY) {
+    // 1. Get or create Block
+    const block = await getOrCreate(
+      () => prisma.block.findFirst({ where: { nameHindi: sourceBlock.blockName } }),
+      () => prisma.block.create({
+        data: { nameHindi: sourceBlock.blockName, nameEnglish: sourceBlock.blockNameEnglish }
+      })
+    );
+
+    for (const sourcePanchayat of sourceBlock.panchayats) {
+      // 2. Get or create GramPanchayat
+      const gp = await getOrCreate(
+        () => prisma.gramPanchayat.findFirst({
+          where: { blockId: block.id, nameHindi: sourcePanchayat.name }
+        }),
+        () => prisma.gramPanchayat.create({
+          data: {
+            nameHindi: sourcePanchayat.name,
+            nameEnglish: sourcePanchayat.nameEnglish,
+            blockId: block.id
+          }
+        })
+      );
+
+      for (const sourceVillage of sourcePanchayat.villages) {
+        // 3. Get or create Village
+        await getOrCreate(
+          () => prisma.village.findFirst({
+            where: { gramPanchayatId: gp.id, nameHindi: sourceVillage.nameHindi }
+          }),
+          () => prisma.village.create({
+            data: {
+              nameHindi: sourceVillage.nameHindi,
+              nameEnglish: sourceVillage.nameEnglish,
+              affectedStatus: sourceVillage.action,
+              population: sourceVillage.population,
+              gramPanchayatId: gp.id
+            }
+          })
+        );
+        totalVillages++;
+      }
+    }
   }
 
-  const result = await prisma.narayanpurHierarchy.createMany({
-    data,
-    skipDuplicates: true
-  });
-  console.log(`Inserted ${result.count} hierarchy rows from the ${data.length}-village source dataset.`);
+  const blockCount = await prisma.block.count();
+  const gpCount = await prisma.gramPanchayat.count();
+  const villageCount = await prisma.village.count();
+
+  console.log(`✅ Hierarchy seeded:`);
+  console.log(`   Blocks:          ${blockCount}`);
+  console.log(`   GramPanchayats:  ${gpCount}`);
+  console.log(`   Villages:        ${villageCount} (processed ${totalVillages})`);
 }
 
 seedHierarchy()

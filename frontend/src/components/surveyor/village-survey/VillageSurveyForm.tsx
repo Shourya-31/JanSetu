@@ -215,6 +215,10 @@ export const VillageSurveyForm: React.FC<{
   const [activeSection, setActiveSection] =
     useState<string | null>(null);
 
+    //Store selected photos
+    const [villagePhotos, setVillagePhotos] = useState<File[]>([]);
+
+
   const [completedSections, setCompletedSections] = useState<string[]>(() => {
     if (!initialData) return [];
     const sectionFields: Record<string, string> = {
@@ -269,6 +273,54 @@ export const VillageSurveyForm: React.FC<{
     ...initialData,
   });
 
+  const handlePhotoUpload = (
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+  const selectedFiles = Array.from(event.target.files || []);
+  console.log("Selected photos:", selectedFiles);
+  console.log("New photos selected:", selectedFiles.length);
+
+  const MAX_PHOTOS = 5;
+  const MAX_SIZE = 100 * 1024; // 100 KB
+
+  // Check total number of photos
+  if (villagePhotos.length + selectedFiles.length > MAX_PHOTOS) {
+    alert("You can upload a maximum of 5 photos.");
+    event.target.value = "";
+    return;
+  }
+
+  // Check file types
+  const invalidType = selectedFiles.find(
+    (file) => !file.type.startsWith("image/")
+  );
+
+  if (invalidType) {
+    alert("Only image files are allowed.");
+    event.target.value = "";
+    return;
+  }
+
+  // Check photo size
+  const oversizedFile = selectedFiles.find(
+    (file) => file.size >= MAX_SIZE
+  );
+
+  if (oversizedFile) {
+    alert(
+      `${oversizedFile.name} is too large. Each photo must be less than 100 KB.`
+    );
+    event.target.value = "";
+    return;
+  }
+
+  // Store valid photos
+  setVillagePhotos((prev) => [...prev, ...selectedFiles]);
+
+  // Reset input so the same file can be selected again
+  event.target.value = "";
+};
+
   const setValue = <K extends keyof GeneralInformationFormData>(
     key: K,
     value: GeneralInformationFormData[K]
@@ -292,23 +344,29 @@ export const VillageSurveyForm: React.FC<{
   /*
    * General Information Save
    */
-  const saveGeneral = () => {
-    if (
-      !formData.totalHouseholds ||
-      Number(formData.totalHouseholds) <= 0
-    ) {
-      alert(
-        "कृपया कुल घर / परिवार संख्या भरें।"
-      );
-      return;
-    }
+  //const saveGeneral = () => {
+  //  if (
+  //    !formData.totalHouseholds ||
+  //    Number(formData.totalHouseholds) <= 0
+  //  ) {
+  //    alert(
+  //      "कृपया कुल घर / परिवार संख्या भरें।"
+  //    );
+  //    return;
+  //  }
 
-    markCompleted("general");
+  //  markCompleted("general");
 
     // वापस section list पर
-    setActiveSection(null);
-  };
+  //  setActiveSection(null);
+  //};
+  const saveGeneral = () => {
+  // Allow saving even when fields are empty
+  markCompleted("general");
 
+  // Return to the section list
+  setActiveSection(null);
+};
   /*
    * Normal Section Save
    *
@@ -449,6 +507,98 @@ if (id === "health") {
                 />
               ))}
             </div>
+            {/* ============== VILLAGE PHOTO UPLOAD ============== */}
+
+<div className="mt-6 p-5 bg-blue-50 border border-blue-200 rounded-xl">
+
+  <h3 className="text-base font-bold text-slate-900 mb-2">
+    ग्राम की तस्वीरें अपलोड करें
+  </h3>
+
+  <p className="text-xs text-slate-600 mb-4">
+    अधिकतम 5 फोटो अपलोड करें। प्रत्येक फोटो का आकार 100 KB से कम होना चाहिए।
+  </p>
+
+<label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 cursor-pointer">
+
+  <span>फोटो चुनें</span>
+
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    onChange={handlePhotoUpload}
+    disabled={villagePhotos.length >= 5}
+    className="hidden"
+  />
+
+</label>
+
+  <p className="text-xs text-slate-500 mt-2">
+    {villagePhotos.length} / 5 फोटो चयनित
+  </p>
+
+  {/* Photo Preview */}
+  {villagePhotos.length > 0 && (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
+
+      {villagePhotos.map((photo, index) => (
+        <div
+          key={`${photo.name}-${index}`}
+          className="relative border rounded-lg overflow-hidden bg-white"
+        >
+
+          <img
+            src={URL.createObjectURL(photo)}
+            alt={`Village photo ${index + 1}`}
+            className="w-full h-24 object-cover"
+            onLoad={(e) => {
+              URL.revokeObjectURL(e.currentTarget.src);
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              setVillagePhotos((prev) =>
+                prev.filter((_, i) => i !== index)
+              );
+            }}
+            className="absolute top-1 right-1 bg-red-600 text-white
+              text-xs px-2 py-1 rounded cursor-pointer"
+          >
+            ✕
+          </button>
+
+          <p className="text-[10px] text-center p-1 truncate">
+            {photo.name}
+          </p>
+
+        </div>
+      ))}
+
+    </div>
+  )}
+{/* Submit Photos Button */}
+<div className="mt-5 flex justify-end">
+  <button
+    type="button"
+    disabled={villagePhotos.length === 0}
+    onClick={() => {
+      alert(
+        `${villagePhotos.length} फोटो सफलतापूर्वक सबमिट की गईं।`
+      );
+    }}
+    className="px-5 py-2.5 bg-emerald-600 text-white
+      text-sm font-semibold rounded-lg
+      hover:bg-emerald-700 transition-all
+      disabled:bg-slate-300 disabled:cursor-not-allowed
+      cursor-pointer"
+  >
+    फोटो सबमिट करें
+  </button>
+</div>
+</div>
           </>
         )}
 
@@ -645,6 +795,7 @@ if (id === "health") {
           const finalData = {
             ...formData,
             developmentData,
+            villagePhotos,
             villageName: village.nameHindi,
             block: blockName,
             panchayat: panchayatName,
