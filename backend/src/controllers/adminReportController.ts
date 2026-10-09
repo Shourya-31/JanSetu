@@ -159,7 +159,6 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
           caste: h.caste,
           isBPL: h.isBpl,
           rationCard: h.rationCard,
-          totalMembers: h.totalMembers,
           eldersCount: h.eldersCount,
           childrenCount: h.childrenCount,
           womenCount: h.womenCount,

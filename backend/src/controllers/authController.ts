@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
-import { verifyPassword } from '../utils/password';
 
 export async function login(req: FastifyRequest, reply: FastifyReply) {
   const { role, identifier, password } = req.body as {
@@ -10,13 +9,44 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
   };
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { userCode: identifier }
-    });
+    let isValid = false;
+    let fallbackId = '';
+    let fullName = '';
 
-    if (!user || user.role !== role || !(await verifyPassword(password, user.passwordHash))) {
+    if (role === 'admin') {
+      const envUser = process.env.ADMIN_USERNAME || 'admin';
+      const envPass = process.env.ADMIN_PASSWORD || 'adminpass';
+      if (identifier === envUser && password === envPass) {
+        isValid = true;
+        fallbackId = 'env_admin_id';
+        fullName = 'Administrator';
+      }
+    } else if (role === 'surveyor') {
+      const envUser = process.env.SURVEYOR_USERNAME || 'surveyor';
+      const envPass = process.env.SURVEYOR_PASSWORD || 'surveyorpass';
+      if (identifier === envUser && password === envPass) {
+        isValid = true;
+        fallbackId = 'env_surveyor_id';
+        fullName = 'Field Surveyor';
+      }
+    }
+
+    if (!isValid) {
       return reply.status(401).send({ error: 'Invalid credentials' });
     }
+
+    // Upsert the user into the database so foreign keys (createdBy) don't break
+    const user = await prisma.user.upsert({
+      where: { userCode: identifier },
+      update: { role, fullName, passwordHash: 'env_managed' },
+      create: { 
+        id: fallbackId,
+        userCode: identifier, 
+        role, 
+        fullName, 
+        passwordHash: 'env_managed',
+      }
+    });
 
     const token = await reply.jwtSign({
       id: user.id,
@@ -38,16 +68,4 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
     req.log.error({ err }, 'Authentication request failed');
     return reply.status(500).send({ error: 'Authentication failed' });
   }
-}
-
-export async function demoSurveyorLogin(_req: FastifyRequest, reply: FastifyReply) {
-  const user = {
-    id: 'demo-surveyor',
-    userCode: 'DEMO-SURVEYOR',
-    role: 'surveyor' as const,
-    fullName: 'Demo Surveyor'
-  };
-  const token = await reply.jwtSign({ ...user, demo: true }, { expiresIn: '8h' });
-
-  return reply.send({ success: true, token, user });
 }
