@@ -1,14 +1,15 @@
-import type { AppRole, AuthSession } from './apiClient';
+import { apiRequest, type AppRole, type AuthSession, setAuthSession } from './apiClient';
 
 export async function login(role: AppRole, identifier: string, password: string): Promise<AuthSession> {
-  // Completely disconnected from backend - Mocking all logins
-  return {
-    token: `mock-${role}-token`,
-    user: {
-      id: `${role}-mock-123`,
-      userCode: identifier || `${role}01`,
-      fullName: `${role === 'admin' ? 'Admin' : 'Surveyor'} Test User`,
-      role: role
-    }
+  const response = await apiRequest<{ success: boolean; token: string; user: AuthSession['user'] }>('/api/auth/login', {
+    method: 'POST',
+    body: { role, identifier, password }
+  });
+
+  const session: AuthSession = {
+    token: response.token,
+    user: response.user
   };
+  
+  return session;
 }

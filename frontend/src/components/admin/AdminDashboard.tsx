@@ -2,13 +2,13 @@
 import { BarChart3, FileText, LogOut } from "lucide-react";
 import { AdminSurveyWorkspace } from "./AdminSurveyWorkspace";
 import {
-  offlineAdminReportService,
+  offlineAdminReportService, liveAdminReportService,
   type AdminReportService,
 } from "../../services/adminReportService";
 export function AdminDashboard({
   adminId,
   onLogout,
-  service = offlineAdminReportService,
+  service = liveAdminReportService,
 }: {
   adminId: string;
   onLogout: () => void;

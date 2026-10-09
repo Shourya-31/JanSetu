@@ -348,7 +348,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : (
                       <>
-                        परिवार सर्वे में प्रवेश करें
+                        <span>परिवार सर्वे में प्रवेश करें</span>
                         <ArrowRight className="w-4 h-4 ml-1.5" />
                       </>
                     )}
@@ -435,7 +435,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : (
                       <>
-                        प्रशासनिक पोर्टल में प्रवेश करें
+                        <span>प्रशासनिक पोर्टल में प्रवेश करें</span>
                         <ArrowRight className="w-4 h-4 ml-1.5" />
                       </>
                     )}

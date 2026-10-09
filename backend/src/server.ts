@@ -28,9 +28,6 @@ const server = Fastify({
   }
 });
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-const REFRESH_RETRY_DELAYS_MS = [5000, 15000, 30000];
-let refreshTimer: NodeJS.Timeout | undefined;
 let shuttingDown = false;
 
 function delay(milliseconds: number): Promise<void> {
@@ -40,43 +37,7 @@ function delay(milliseconds: number): Promise<void> {
   });
 }
 
-async function refreshAnalyticsView(): Promise<void> {
-  for (let attempt = 0; attempt <= REFRESH_RETRY_DELAYS_MS.length; attempt += 1) {
-    try {
-      const refreshed = await prisma.$transaction(async (tx) => {
-        const locks = await tx.$queryRaw<Array<{ acquired: boolean }>>`
-          SELECT pg_try_advisory_xact_lock(hashtext('jansetu-analytics'), hashtext('mv_district_cluster_analytics')) AS acquired;
-        `;
-        if (!locks[0]?.acquired) return false;
 
-        await tx.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY mv_district_cluster_analytics`;
-        return true;
-      });
-      if (refreshed) {
-        server.log.info('Background refresh of mv_district_cluster_analytics completed.');
-      }
-      return;
-    } catch (error) {
-      if (attempt === REFRESH_RETRY_DELAYS_MS.length) {
-        server.log.error({ err: error }, 'Materialized view refresh failed after retries.');
-        return;
-      }
-
-      const retryDelay = REFRESH_RETRY_DELAYS_MS[attempt];
-      server.log.warn({ err: error, retryInMs: retryDelay }, 'Materialized view refresh failed; retry scheduled.');
-      await delay(retryDelay);
-    }
-  }
-}
-
-function scheduleAnalyticsRefresh(waitMs = REFRESH_INTERVAL_MS): void {
-  if (shuttingDown) return;
-  refreshTimer = setTimeout(async () => {
-    await refreshAnalyticsView();
-    scheduleAnalyticsRefresh();
-  }, waitMs);
-  refreshTimer.unref();
-}
 
 async function start() {
   try {
@@ -197,7 +158,7 @@ async function start() {
     console.log(`🚀 JanSetu Fastify Backend Engine (TypeScript) running on http://${HOST}:${PORT}`);
 
     // Schedule only after the previous refresh and its retries have completed.
-    scheduleAnalyticsRefresh();
+    
 
   } catch (err) {
     server.log.error(err);
@@ -209,7 +170,7 @@ async function start() {
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
   shuttingDown = true;
-  if (refreshTimer) clearTimeout(refreshTimer);
+  
   try {
     await server.close();
     await prisma.$disconnect();
