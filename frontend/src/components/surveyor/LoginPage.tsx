@@ -268,7 +268,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     ) : (
                       <>
-                        ग्राम सर्वे में प्रवेश करें
+                        <span>ग्राम सर्वे में प्रवेश करें</span>
                         <ArrowRight className="w-4 h-4 ml-1.5" />
                       </>
                     )}
