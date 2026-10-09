@@ -183,6 +183,44 @@ async function simulateFrontend() {
   console.log(`Surveyor A Result: ${res1.status}, Surveyor B Result: ${res2.status}`);
   console.log('✅ Postgres `pg_advisory_xact_lock` successfully queued the transactions instead of crashing or duplicating data!');
 
+  // 6. Test GET Hierarchy
+  console.log(`\n📂 6. Fetching Hierarchy...`);
+  const hierRes = await fetch(`${API_BASE}/hierarchy`, { headers: authHeaders });
+  if (!hierRes.ok) throw new Error(await hierRes.text());
+  console.log(`✅ Hierarchy fetched. Items: ${(await hierRes.json()).length}`);
+
+  // 7. Test GET Villages All
+  console.log(`\n🌍 7. Fetching All Villages...`);
+  const villAllRes = await fetch(`${API_BASE}/villages/all`, { headers: authHeaders });
+  if (!villAllRes.ok) throw new Error(await villAllRes.text());
+  console.log(`✅ All villages fetched. Items: ${(await villAllRes.json()).length}`);
+
+  // 8. Test GET Village Profile
+  console.log(`\n🏘️ 8. Fetching Village Profile for ${villageName}...`);
+  const villProfRes = await fetch(`${API_BASE}/villages/profile?villageName=${encodeURIComponent(villageName)}`, { headers: authHeaders });
+  if (!villProfRes.ok) throw new Error(await villProfRes.text());
+  console.log(`✅ Village profile fetched. Status: ${villProfRes.status}`);
+
+  // 9. Test GET Households
+  console.log(`\n📋 9. Fetching Households for ${villageName}...`);
+  const hhGetRes = await fetch(`${API_BASE}/households?villageName=${encodeURIComponent(villageName)}`, { headers: authHeaders });
+  if (!hhGetRes.ok) throw new Error(await hhGetRes.text());
+  const households = await hhGetRes.json();
+  console.log(`✅ Households fetched. Count: ${Object.keys(households).length}`);
+  
+  // 10. Test Create Ticket
+  const firstHhId = households['1']?.id;
+  if (firstHhId) {
+    console.log(`\n🎫 10. Creating Ticket for Household ID ${firstHhId}...`);
+    const tRes = await fetch(`${API_BASE}/households/${firstHhId}/ticket`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ reason: 'Name mismatch', note: 'Aadhaar name is different' })
+    });
+    if (!tRes.ok) throw new Error(await tRes.text());
+    console.log(`✅ Ticket created.`);
+  }
+
   console.log('\n🎉 All backend tests passed! The exact JSON your frontend generates was securely saved into the SQL relational columns.');
 }
 

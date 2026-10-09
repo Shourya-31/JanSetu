@@ -27,6 +27,6 @@ export async function uploadImage(req: FastifyRequest, reply: FastifyReply) {
     return reply.status(200).send({ secure_url: result.secure_url });
   } catch (err) {
     console.error("Cloudinary upload error:", err);
-    return sendInternalError(reply, err);
+    return sendInternalError(req, reply, err, 'Cloudinary upload failed');
   }
 }
