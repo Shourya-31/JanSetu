@@ -39,6 +39,7 @@ function formatVillageRecord(v: any, surveyedHouseholds: number = 0) {
     electrification: vs.electricity || 'Not reported',
     hasAnganwadi: vs.anganwadiWorkerPresent || 'Not reported',
     odfStatus: vs.odf || 'Not reported',
+    villagePhotos: vs.villagePhotos || [],
     villageSurvey: vs,
     surveyedHouseholds,
     completionPercent,
@@ -123,7 +124,7 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
   try {
     const upserted = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`
-        SELECT pg_advisory_xact_lock(hashtext(${villageName}), -1);
+        SELECT pg_advisory_xact_lock(hashtext(${villageName})::int, -1::int);
       `;
       
       const village = await tx.village.findFirst({
@@ -147,6 +148,7 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         electricity: body.electrification || villageSurvey?.electricity || '',
         anganwadiWorkerPresent: body.hasAnganwadi || villageSurvey?.anganwadiWorkerPresent || '',
         odf: body.odfStatus || villageSurvey?.odf || '',
+        villagePhotos: body.villagePhotos || villageSurvey?.villagePhotos || [],
         version: { increment: 1 }
       };
 

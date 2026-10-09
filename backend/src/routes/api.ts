@@ -6,6 +6,7 @@ import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminC
 import { exportHouseholdsCsv } from '../controllers/exportController';
 import { getHierarchy } from '../controllers/hierarchyController';
 import { getSurveyAuditLogs } from '../controllers/auditController';
+import { uploadImage } from '../controllers/uploadController';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import {
   boundedSurveyObjectSchema,
@@ -102,6 +103,10 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
     ...authenticated,
     schema: { querystring: emptyQuerySchema }
   }, getHierarchy);
+  
+  fastify.post('/api/upload/image', {
+    ...authenticated
+  }, uploadImage);
 
   // 2. Village Profile Routes
   fastify.get('/api/villages/all', {

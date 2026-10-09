@@ -6,6 +6,7 @@ import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 import fastifyPostgres from '@fastify/postgres';
 import fastifyJwt from '@fastify/jwt';
 import prisma from './config/prisma';
@@ -86,6 +87,12 @@ async function start() {
     // 1. Security Headers Plugin
     await server.register(helmet, {
       contentSecurityPolicy: false
+    });
+
+    await server.register(multipart, {
+      limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+      }
     });
 
     // 2. High-Speed Compression (Brotli + Gzip)

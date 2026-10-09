@@ -191,6 +191,9 @@ model VillageSurvey {
   internetAvailable        String? @map("internet_available")
   gramSabhaLastHeld        String? @map("gram_sabha_last_held")
 
+  // ── Photos ────────────────────────────────────────────────
+  villagePhotos            Json    @default("[]") @map("village_photos")
+
   // ── Metadata & Status ─────────────────────────────────────
   isVerified               Boolean  @default(false) @map("is_verified")
   verifiedAt               DateTime? @map("verified_at")

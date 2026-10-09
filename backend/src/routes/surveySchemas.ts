@@ -144,6 +144,7 @@ export const villageProfileBodySchema = {
     electrification: { type: 'string', minLength: 1, maxLength: 200 },
     hasAnganwadi: { type: 'string', minLength: 1, maxLength: 100 },
     odfStatus: { type: 'string', minLength: 1, maxLength: 100 },
+    villagePhotos: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 1000 } },
     quality: boundedSurveyObjectSchema,
     gapMatrix: boundedSurveyObjectSchema,
     villageSurvey: villageSurveySchema

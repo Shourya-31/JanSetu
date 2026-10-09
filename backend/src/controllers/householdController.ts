@@ -85,7 +85,7 @@ export async function createHouseholdSlots(req: FastifyRequest, reply: FastifyRe
     const data = await prisma.$transaction(async (tx) => {
       const actorId = getActorId(req);
       await tx.$executeRaw`
-        SELECT pg_advisory_xact_lock(hashtext(${villageName}), -1);
+        SELECT pg_advisory_xact_lock(hashtext(${villageName})::int, -1::int);
       `;
       
       const village = await tx.village.findFirst({ where: { nameHindi: villageName } });
@@ -163,7 +163,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
     const result = await withDbRetry(async () => {
       return await prisma.$transaction(async (tx) => {
         await tx.$executeRaw`
-          SELECT pg_advisory_xact_lock(hashtext(${villageName}), ${houseNumber});
+          SELECT pg_advisory_xact_lock(hashtext(${villageName})::int, ${houseNumber}::int);
         `;
         const actorId = getActorId(req);
         
