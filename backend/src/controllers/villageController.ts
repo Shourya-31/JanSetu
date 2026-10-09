@@ -149,7 +149,8 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         anganwadiWorkerPresent: body.hasAnganwadi || villageSurvey?.anganwadiWorkerPresent || '',
         odf: body.odfStatus || villageSurvey?.odf || '',
         villagePhotos: body.villagePhotos || villageSurvey?.villagePhotos || [],
-        version: { increment: 1 }
+        version: { increment: 1 },
+        isCompleted: body.isCompleted || villageSurvey?.isCompleted || false
       };
 
       const record = await tx.villageSurvey.upsert({
@@ -171,6 +172,55 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
           after: toAuditSnapshot(record)
         }
       });
+
+      // === OPTIMIZATION: UPDATE COUNTERS ===
+      const wasCompleted = village.villageSurvey?.isCompleted || false;
+      const isNowCompleted = body.isCompleted || villageSurvey?.isCompleted || false;
+      
+      const prevHouseholds = village.villageSurvey?.totalHouseholds || 0;
+      const newHouseholds = Number(body.totalHouseholds || villageSurvey?.totalHouseholds || 0);
+      const householdDiff = newHouseholds - prevHouseholds;
+
+      await tx.village.update({
+        where: { id: village.id },
+        data: {
+          isSurveyFilled: isNowCompleted,
+          totalHouseholds: newHouseholds
+        }
+      });
+
+      if (householdDiff !== 0) {
+        await tx.gramPanchayat.update({
+          where: { id: village.gramPanchayatId },
+          data: { totalHouseholds: { increment: householdDiff } }
+        });
+        await tx.block.update({
+          where: { id: village.gramPanchayat.blockId },
+          data: { totalHouseholds: { increment: householdDiff } }
+        });
+      }
+
+      if (!wasCompleted && isNowCompleted) {
+        await tx.gramPanchayat.update({
+          where: { id: village.gramPanchayatId },
+          data: { villageSurveysFilled: { increment: 1 } }
+        });
+        await tx.block.update({
+          where: { id: village.gramPanchayat.blockId },
+          data: { villageSurveysFilled: { increment: 1 } }
+        });
+      } else if (wasCompleted && !isNowCompleted) {
+        await tx.gramPanchayat.update({
+          where: { id: village.gramPanchayatId },
+          data: { villageSurveysFilled: { decrement: 1 } }
+        });
+        await tx.block.update({
+          where: { id: village.gramPanchayat.blockId },
+          data: { villageSurveysFilled: { decrement: 1 } }
+        });
+      }
+      // ======================================
+
       return record;
     });
 

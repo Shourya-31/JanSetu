@@ -88,7 +88,7 @@ export async function createHouseholdSlots(req: FastifyRequest, reply: FastifyRe
         SELECT pg_advisory_xact_lock(hashtext(${villageName})::int, -1::int);
       `;
       
-      const village = await tx.village.findFirst({ where: { nameHindi: villageName } });
+      const village = await tx.village.findFirst({ where: { nameHindi: villageName }, include: { gramPanchayat: true } });
       if (!village) throw new Error('Village not found');
 
       const created = await tx.householdSurvey.createManyAndReturn({
@@ -183,6 +183,8 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
           },
           update: {
             headName: payloadData.headName || '',
+            isCompleted: payloadData.isCompleted || false,
+            completedSections: payloadData.completedSections || 0,
             mobile: payloadData.mobile || '',
             caste: payloadData.caste || '',
             isBpl: payloadData.isBpl || payloadData.isBPL || '',
@@ -247,6 +249,8 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             villageId: village.id,
             houseNumber,
             createdBy: actorId,
+            isCompleted: payloadData.isCompleted || false,
+            completedSections: payloadData.completedSections || 0,
             headName: payloadData.headName || '',
             mobile: payloadData.mobile || '',
             caste: payloadData.caste || '',

@@ -50,6 +50,12 @@ model Block {
   id               Int            @id @default(autoincrement())
   nameHindi        String         @map("name_hindi")
   nameEnglish      String         @map("name_english")
+  totalVillages            Int            @default(0) @map("total_villages")
+  directAffectedVillages   Int            @default(0) @map("direct_affected_villages")
+  indirectAffectedVillages Int            @default(0) @map("indirect_affected_villages")
+  villageSurveysFilled     Int            @default(0) @map("village_surveys_filled")
+  totalHouseholds          Int            @default(0) @map("total_households")
+  householdsFilled         Int            @default(0) @map("households_filled")
 
   gramPanchayats   GramPanchayat[]
 
@@ -61,6 +67,12 @@ model GramPanchayat {
   id          Int      @id @default(autoincrement())
   nameHindi   String   @map("name_hindi")
   nameEnglish String   @map("name_english")
+  totalVillages            Int            @default(0) @map("total_villages")
+  directAffectedVillages   Int            @default(0) @map("direct_affected_villages")
+  indirectAffectedVillages Int            @default(0) @map("indirect_affected_villages")
+  villageSurveysFilled     Int            @default(0) @map("village_surveys_filled")
+  totalHouseholds          Int            @default(0) @map("total_households")
+  householdsFilled         Int            @default(0) @map("households_filled")
 
   blockId     Int      @map("block_id")
   block       Block    @relation(fields: [blockId], references: [id], onDelete: Restrict)
@@ -76,6 +88,9 @@ model Village {
   nameHindi       String        @map("name_hindi")
   nameEnglish     String        @map("name_english")
   affectedStatus  String        @default("Direct Affected") @map("affected_status")
+  isSurveyFilled  Boolean       @default(false) @map("is_survey_filled")
+  totalHouseholds Int           @default(0) @map("total_households")
+  householdsFilled Int          @default(0) @map("households_filled")
   population      Int           @default(0)
 
   gramPanchayatId Int           @map("gram_panchayat_id")
@@ -97,6 +112,7 @@ model Village {
 model VillageSurvey {
   id        String  @id @default(uuid())
   villageId Int     @unique @map("village_id")
+  isCompleted Boolean @default(false) @map("is_completed")
   village   Village @relation(fields: [villageId], references: [id], onDelete: Restrict)
 
   // ── General Information (GeneralInformation.tsx) ──────────
@@ -215,7 +231,9 @@ model VillageSurvey {
 
 model HouseholdSurvey {
   id          String  @id @default(uuid())
-  trackingId  String  @unique @map("tracking_id")       // DMFT-HHD-<uuid>
+  trackingId  String  @unique @map("tracking_id")
+  isCompleted Boolean @default(false) @map("is_completed")
+  completedSections Int @default(0) @map("completed_sections")       // DMFT-HHD-<uuid>
   houseNumber Int     @map("house_number")
 
   villageId   Int     @map("village_id")
