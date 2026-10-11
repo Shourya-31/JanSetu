@@ -1,6 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
 
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) {
   try {
     const query = req.query as { blockId: string; panchayatId?: string; villageId?: string };
@@ -21,26 +25,7 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
       }
     };
 
-    if (panchayatId) {
-      whereClause.gramPanchayat.nameEnglish = {
-        contains: panchayatId.replace(/-/g, ' '),
-        mode: 'insensitive'
-      };
-    }
-
-    if (villageId) {
-      const parsedId = parseInt(villageId, 10);
-      if (!isNaN(parsedId)) {
-        whereClause.id = parsedId;
-      } else {
-        whereClause.nameEnglish = {
-          contains: villageId.replace(/-/g, ' '),
-          mode: 'insensitive'
-        };
-      }
-    }
-
-    const villages = await prisma.village.findMany({
+    const blockVillages = await prisma.village.findMany({
       where: whereClause,
       include: {
         villageSurvey: true,
@@ -50,6 +35,21 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
           }
         }
       }
+    });
+    const villages = blockVillages.filter((v) => {
+      const blockSlug = slugify(v.gramPanchayat.block.nameEnglish);
+      const panchayatSlug = slugify(v.gramPanchayat.nameEnglish);
+      const villageSlug = slugify(v.nameEnglish);
+      const panchayatMatches =
+        !panchayatId ||
+        panchayatId === panchayatSlug ||
+        panchayatId === `${blockSlug}-${panchayatSlug}`;
+      const villageMatches =
+        !villageId ||
+        villageId === v.id.toString() ||
+        villageId === villageSlug ||
+        villageId === `${blockSlug}-${panchayatSlug}-${villageSlug}`;
+      return panchayatMatches && villageMatches;
     });
 
     const villageSurveys = villages.map(v => {
@@ -63,11 +63,16 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
         id: vs.id,
         blockId: blockSlug,
         panchayatId: panchayatSlug,
+        panchayatKey: `${blockSlug}-${panchayatSlug}`,
         villageId: v.id.toString(),
+        villageKey: `${blockSlug}-${panchayatSlug}-${slugify(v.nameEnglish)}`,
         villageName: v.nameHindi,
-        submittedAt: new Date().toISOString(),
+        submittedAt: vs.updatedAt.toISOString(),
         completed: vs.isCompleted,
+        progress: vs.isCompleted ? 100 : Number(vs.progress || 0),
+        completedSections: Array.isArray(vs.completedSections) ? vs.completedSections : [],
         answers: {
+          ...(vs.surveyData && typeof vs.surveyData === 'object' ? vs.surveyData as Record<string, unknown> : {}),
           totalHouseholds: vs.totalHouseholds,
           totalPopulation: vs.totalPopulation,
           scPopulation: vs.scPopulation,
@@ -146,7 +151,9 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
         id: h.id,
         blockId: blockSlug,
         panchayatId: panchayatSlug,
+        panchayatKey: `${blockSlug}-${panchayatSlug}`,
         villageId: h.villageId.toString(),
+        villageKey: `${blockSlug}-${panchayatSlug}-${slugify(h.village.nameEnglish)}`,
         villageName: h.village.nameHindi,
         householdId: h.houseNumber.toString(),
         submittedAt: h.submittedAt.toISOString(),

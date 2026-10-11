@@ -161,8 +161,17 @@ async function start() {
     
 
   } catch (err) {
+    const startupError = err as NodeJS.ErrnoException;
+    if (startupError.code === 'EADDRINUSE') {
+      server.log.error(
+        `Backend could not start because port ${process.env.PORT || 3000} is already in use. ` +
+        'The existing JanSetu backend was left untouched; stop the old process or use another PORT.'
+      );
+      process.exitCode = 1;
+      return;
+    }
     server.log.error(err);
-    process.exit(1);
+    process.exitCode = 1;
   }
 }
 

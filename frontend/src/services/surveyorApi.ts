@@ -16,11 +16,16 @@ export interface HouseholdApiRecord {
 
 export interface VillageApiProfile {
   id: string;
+  villageId?: number;
   block: string;
   panchayat: string;
   villageName: string;
   version: number;
   villageSurvey: Record<string, unknown>;
+  completedSections?: string[];
+  progress?: number;
+  isCompleted?: boolean;
+  status?: string;
   [key: string]: unknown;
 }
 
@@ -28,11 +33,17 @@ export function fetchHierarchy(): Promise<Block[]> {
   return apiRequest<Block[]>('/api/hierarchy');
 }
 
-export async function fetchVillageProfile(villageName: string): Promise<VillageApiProfile | null> {
+export function fetchAllVillageProfiles(): Promise<Record<string, VillageApiProfile>> {
+  return apiRequest<Record<string, VillageApiProfile>>('/api/villages/all');
+}
+
+export async function fetchVillageProfile(villageName: string, block?: string, panchayat?: string): Promise<VillageApiProfile | null> {
   if (!villageName) return null;
   try {
-    const res = await apiRequest<{ data: VillageApiProfile }>(`/api/villages/profile?villageName=${encodeURIComponent(villageName)}`);
-    return res.data;
+    const query = new URLSearchParams({ villageName });
+    if (block) query.set('block', block);
+    if (panchayat) query.set('panchayat', panchayat);
+    return await apiRequest<VillageApiProfile>(`/api/villages/profile?${query.toString()}`);
   } catch {
     return null;
   }
@@ -41,8 +52,17 @@ export async function fetchVillageProfile(villageName: string): Promise<VillageA
 export async function fetchHouseholdSurveys(villageName: string): Promise<Record<string, HouseholdApiRecord>> {
   if (!villageName) return {};
   try {
-    const res = await apiRequest<{ data: Record<string, HouseholdApiRecord> }>(`/api/households?villageName=${encodeURIComponent(villageName)}`);
-    return res.data;
+    const res = await apiRequest<
+      Record<string, HouseholdApiRecord> | { data?: Record<string, HouseholdApiRecord> }
+    >(`/api/households?villageName=${encodeURIComponent(villageName)}`);
+    if (!res || typeof res !== "object" || Array.isArray(res)) return {};
+    const payload = res as Record<string, unknown>;
+    if ("data" in payload) {
+      return payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
+        ? payload.data as Record<string, HouseholdApiRecord>
+        : {};
+    }
+    return res as Record<string, HouseholdApiRecord>;
   } catch {
     return {};
   }
@@ -84,6 +104,13 @@ export function saveVillageSurvey(payload: Record<string, unknown>) {
   return apiRequest<{ success: boolean; data: VillageApiProfile }>('/api/villages/profile', {
     method: 'POST',
     body: payload
+  });
+}
+
+export function finalizeVillageSurvey(villageId: number, version: number) {
+  return apiRequest<{ success: boolean; data: Record<string, unknown> }>(`/api/villages/${villageId}/finalize`, {
+    method: 'POST',
+    body: { version }
   });
 }
 

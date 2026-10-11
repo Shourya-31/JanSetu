@@ -113,6 +113,9 @@ model VillageSurvey {
   id        String  @id @default(uuid())
   villageId Int     @unique @map("village_id")
   isCompleted Boolean @default(false) @map("is_completed")
+  progress Int @default(0)
+  completedSections Json @default("[]") @map("completed_sections")
+  surveyData Json @default("{}") @map("survey_data")
   village   Village @relation(fields: [villageId], references: [id], onDelete: Restrict)
 
   // ── General Information (GeneralInformation.tsx) ──────────

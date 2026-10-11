@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { login } from '../controllers/authController';
-import { getAllVillageProfiles, getVillageProfile, saveVillageProfile, patchVillageProfile, deleteVillageProfile } from '../controllers/villageController';
+import { getAllVillageProfiles, getVillageProfile, saveVillageProfile, finalizeVillageProfile, patchVillageProfile, deleteVillageProfile } from '../controllers/villageController';
 import { getHouseholdSurveys, createHouseholdSlots, saveHouseholdSurvey, patchHouseholdSurvey, deleteHouseholdSurvey, verifyHouseholdRecord, updateRegistryStatusRecord, createCorrectionTicketRecord } from '../controllers/householdController';
 import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminController';
 import { exportHouseholdsCsv } from '../controllers/exportController';
@@ -112,12 +112,25 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   }, getAllVillageProfiles);
   fastify.get('/api/villages/profile', {
     ...authenticated,
-    schema: { querystring: querySchema({ villageName: text() }, ['villageName']) }
+    schema: { querystring: querySchema({ villageId: { type: 'integer', minimum: 1 }, villageName: text(), block: text(), panchayat: text() }) }
   }, getVillageProfile);
   fastify.post('/api/villages/profile', {
     ...authenticated,
     schema: { body: villageProfileBodySchema, querystring: emptyQuerySchema }
   }, saveVillageProfile);
+  fastify.post('/api/villages/:id/finalize', {
+    ...authenticated,
+    schema: {
+      params: idParamsSchema,
+      querystring: emptyQuerySchema,
+      body: {
+        type: 'object',
+        required: ['version'],
+        additionalProperties: false,
+        properties: { version: { type: 'integer', minimum: 1 } }
+      }
+    }
+  }, finalizeVillageProfile);
   fastify.patch('/api/villages/:id', {
     ...authenticated,
     schema: {

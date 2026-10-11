@@ -203,17 +203,26 @@ export const VillageSurveyForm: React.FC<{
   panchayatName: string;
   initialData?: Record<string, unknown>;
   onBack: () => void;
-  onComplete: (data: Record<string, unknown>) => void;
+  onSectionSave: (data: Record<string, unknown>, sectionId: string) => Promise<void>;
+  onFinalize: () => Promise<void>;
+  saveState?: "idle" | "saving" | "saved" | "error";
+  saveError?: string;
 }> = ({
   village,
   blockName,
   panchayatName,
   initialData,
   onBack,
-  onComplete,
+  onSectionSave,
+  onFinalize,
+  saveState = "idle",
+  saveError = "",
 }) => {
   const [activeSection, setActiveSection] =
     useState<string | null>(null);
+  const [retryPayload, setRetryPayload] = useState<{ data: Record<string, unknown>; sectionId: string } | null>(null);
+  const [localSaveState, setLocalSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [localSaveError, setLocalSaveError] = useState("");
 
     //Store selected photos
     const [villagePhotos, setVillagePhotos] = useState<File[]>([]);
@@ -226,7 +235,9 @@ export const VillageSurveyForm: React.FC<{
       water: "waterData", livelihood: "employmentData", ladies: "ladiesData",
       cleanliness: "cleanlinessData", pension: "pensionData", development: "developmentData"
     };
+    const persisted = Array.isArray(initialData.completedSections) ? initialData.completedSections.filter((value): value is string => typeof value === "string") : [];
     return [
+      ...persisted,
       ...(initialData.totalHouseholds ? ["general"] : []),
       ...Object.entries(sectionFields)
         .filter(([, field]) => Object.prototype.hasOwnProperty.call(initialData, field))
@@ -360,13 +371,23 @@ export const VillageSurveyForm: React.FC<{
     // वापस section list पर
   //  setActiveSection(null);
   //};
-  const saveGeneral = () => {
-  // Allow saving even when fields are empty
-  markCompleted("general");
+  const persistSection = async (data: Record<string, unknown>, sectionId: string) => {
+    setRetryPayload({ data, sectionId });
+    setLocalSaveState("saving");
+    setLocalSaveError("");
+    try {
+      await onSectionSave(data, sectionId);
+      setLocalSaveState("saved");
+      setRetryPayload(null);
+      markCompleted(sectionId);
+      setActiveSection(null);
+    } catch (error) {
+      setLocalSaveState("error");
+      setLocalSaveError(error instanceof Error ? error.message : "सहेजना विफल हुआ।");
+    }
+  };
 
-  // Return to the section list
-  setActiveSection(null);
-};
+  const saveGeneral = () => persistSection(formData, "general");
   /*
    * Normal Section Save
    *
@@ -376,11 +397,10 @@ export const VillageSurveyForm: React.FC<{
    * इससे अगर अगला section locked है
    * (जैसे totalSchools = 0) तो problem नहीं होगी।
    */
-  const saveSection = (id: string) => {
-    markCompleted(id);
-
-    // Section save होने के बाद list पर वापस
-    setActiveSection(null);
+  const saveSection = (id: string, patch: Record<string, unknown> = {}) => {
+    const nextData = { ...formData, ...patch };
+    setFormData(nextData);
+    return persistSection(nextData, id);
   };
 
   /*
@@ -461,6 +481,20 @@ if (id === "health") {
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />
             ग्राम मेनू
           </button>
+          <div className="text-right text-xs" role="status" aria-live="polite">
+            {(saveState === "saving" || localSaveState === "saving") && <span className="text-blue-700">सहेजा जा रहा है...</span>}
+            {(saveState === "saved" || localSaveState === "saved") && <span className="text-emerald-700">सहेजा गया</span>}
+            {(saveState === "error" || localSaveState === "error") && (
+              <span className="text-rose-700">
+                {saveError || localSaveError || "सहेजना विफल हुआ।"}
+                {retryPayload && (
+                  <button type="button" className="ml-2 font-bold underline" onClick={() => void persistSection(retryPayload.data, retryPayload.sectionId)}>
+                    पुनः प्रयास
+                  </button>
+                )}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -486,6 +520,15 @@ if (id === "health") {
                 पहले सामान्य जानकारी पूरी करें। उसके बाद
                 उपलब्ध अनुभाग खुलेंगे।
               </p>
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>{Math.round((completedSections.length / sections.length) * 100)}% पूर्ण</span>
+                  <span>{completedSections.length} / {sections.length} अनुभाग सहेजे गए</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, Math.round((completedSections.length / sections.length) * 100))}%` }} />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -506,6 +549,21 @@ if (id === "health") {
                   }
                 />
               ))}
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+              <span className="text-xs text-slate-500">
+                {initialData?.isCompleted ? "सर्वेक्षण पूर्ण है" : "सभी 11 अनुभाग सहेजने के बाद अंतिम सबमिट करें"}
+              </span>
+              {!initialData?.isCompleted && (
+                <button
+                  type="button"
+                  disabled={completedSections.length !== sections.length}
+                  onClick={() => void onFinalize()}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  सर्वेक्षण अंतिम रूप से जमा करें
+                </button>
+              )}
             </div>
             {/* ============== VILLAGE PHOTO UPLOAD ============== */}
 
@@ -654,12 +712,7 @@ if (id === "health") {
                   ) || 0
                 }
                 onSave={(anganbadiData) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    anganbadiData,
-                  }));
-
-                  saveSection("education");
+                  void saveSection("education", { anganbadiData });
                 }}
               />
             )}
@@ -673,12 +726,7 @@ if (id === "health") {
                   ) || 0
                 }
                 onSave={(schoolData) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    schoolData,
-                  }));
-
-                  saveSection("school");
+                  void saveSection("school", { schoolData });
                 }}
               />
             )}
@@ -692,12 +740,7 @@ if (id === "health") {
                   ) || 0
                 }
                 onSave={(hostelData) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    hostelData,
-                  }));
-
-                  saveSection("hostel");
+                  void saveSection("hostel", { hostelData });
                 }}
               />
             )}
@@ -709,12 +752,7 @@ if (id === "health") {
       Number(formData.totalHealthFacilities) || 0
     }
     onSave={(healthData) => {
-      setFormData((prev) => ({
-        ...prev,
-        healthData,
-      }));
-
-      saveSection("health");
+      void saveSection("health", { healthData });
     }}
   />
 )}
@@ -723,12 +761,7 @@ if (id === "health") {
  {activeSection === "water" && (
   <WaterSection
     onSave={(waterData) => {
-      setFormData((prev) => ({
-        ...prev,
-        waterData,
-      }));
-
-      saveSection("water");
+      void saveSection("water", { waterData });
     }}
   />
 )}
@@ -736,12 +769,7 @@ if (id === "health") {
                         {activeSection === "livelihood" && (
   <EmploymentSection
     onSave={(employmentData) => {
-      setFormData((prev) => ({
-        ...prev,
-        employmentData,
-      }));
-
-      saveSection("livelihood");
+      void saveSection("livelihood", { employmentData });
     }}
   />
 )}
@@ -749,12 +777,7 @@ if (id === "health") {
 {activeSection === "ladies" && (
   <LadiesSection
     onSave={(ladiesData) => {
-      setFormData((prev) => ({
-        ...prev,
-        ladiesData,
-      }));
-
-      saveSection("ladies");
+      void saveSection("ladies", { ladiesData });
     }}
   />
 )}
@@ -764,12 +787,7 @@ if (id === "health") {
 {activeSection === "cleanliness" && (
   <CleanlinessSection
     onSave={(cleanlinessData) => {
-      setFormData((prev) => ({
-        ...prev,
-        cleanlinessData,
-      }));
-
-      saveSection("cleanliness");
+      void saveSection("cleanliness", { cleanlinessData });
     }}
   />
 )}
@@ -778,12 +796,7 @@ if (id === "health") {
     {activeSection === "pension" && (
   <PensionSection
     onSave={(pensionData) => {
-      setFormData((prev) => ({
-        ...prev,
-        pensionData,
-      }));
-
-      saveSection("pension");
+      void saveSection("pension", { pensionData });
     }}
   />
 )}
@@ -792,18 +805,7 @@ if (id === "health") {
     {activeSection === "development" && (
       <DevelopmentSection
         onSave={(developmentData) => {
-          const finalData = {
-            ...formData,
-            developmentData,
-            villagePhotos,
-            villageName: village.nameHindi,
-            block: blockName,
-            panchayat: panchayatName,
-          };
-
-          setFormData(finalData);
-          markCompleted("development");
-          onComplete(finalData);
+          void saveSection("development", { developmentData, villagePhotos });
         }}
       />
     )}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 
 
@@ -37,10 +37,12 @@ import {
 import { VillageSurveyForm } from "./village-survey/VillageSurveyForm";
 import {
   fetchHouseholdSurveys,
+  fetchAllVillageProfiles,
   fetchVillageProfile,
   initializeHouseholdSlots,
   saveHouseholdSurvey,
   saveVillageSurvey,
+  finalizeVillageSurvey,
 } from "../../services/surveyorApi";
 
 import HouseholdSurvey from "./household/HouseholdSurvey";
@@ -217,6 +219,25 @@ const [dataError, setDataError] = useState("");
 
 
   const [dataLoading, setDataLoading] = useState(false);
+const [villageSaveState, setVillageSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+const [villageSaveError, setVillageSaveError] = useState("");
+const [villageStatuses, setVillageStatuses] = useState<Record<string, { isCompleted: boolean; progress: number }>>({});
+
+useEffect(() => {
+  if (surveyMode !== "village") return;
+  void fetchAllVillageProfiles().then((profiles) => {
+    const next: Record<string, { isCompleted: boolean; progress: number }> = {};
+    Object.values(profiles).forEach((profile) => {
+      next[`${profile.block}|${profile.panchayat}|${profile.villageName}`] = {
+        isCompleted: Boolean(profile.isCompleted),
+        progress: Number(profile.progress ?? 0),
+      };
+    });
+    setVillageStatuses(next);
+  }).catch(() => {
+    // Selection remains usable; the selected village fetch reports any actionable error.
+  });
+}, [surveyMode]);
 
 
 
@@ -508,8 +529,19 @@ const [dataError, setDataError] = useState("");
 
      try {
        if (surveyMode === "village") {
-         const profile = await fetchVillageProfile(village.nameHindi);
-         setVillageData(profile?.villageSurvey ?? null);
+         const profile = await fetchVillageProfile(village.nameHindi, selectedBlock?.blockName, selectedPanchayat?.name);
+         const saved = profile?.villageSurvey ?? {};
+         setVillageData({
+           ...saved,
+           ...(typeof saved.surveyData === "object" && saved.surveyData ? saved.surveyData : {}),
+           completedSections: profile?.completedSections ?? saved.completedSections ?? [],
+           progress: profile?.progress ?? saved.progress ?? 0,
+           isCompleted: profile?.isCompleted ?? saved.isCompleted ?? false,
+           villageId: profile?.villageId ?? profile?.id,
+           version: profile?.version ?? saved.version ?? 1,
+         });
+         setVillageSaveState("idle");
+         setVillageSaveError("");
          setViewMode("village_survey");
        } else {
          const householdMap = await fetchHouseholdSurveys(village.nameHindi);
@@ -546,28 +578,71 @@ const [dataError, setDataError] = useState("");
 
 
   // VILLAGE SURVEY SAVE
-  const handleVillageComplete = async (data: Record<string, unknown>) => {
+  const handleVillageSectionSave = async (data: Record<string, unknown>, sectionId: string) => {
+    if (!selectedVillage) return;
     setDataError("");
+    setVillageSaveState("saving");
+    setVillageSaveError("");
     setDataLoading(true);
 
     try {
-       const finalData = {
-         ...data,
-         district: "नारायणपुर",
-         villageName: selectedVillage?.nameHindi ?? "",
+        const surveyAnswers = { ...data };
+        for (const key of ["completedSections", "progress", "isCompleted", "villageId", "version", "surveyData"]) {
+          delete surveyAnswers[key];
+        }
+        const result = await saveVillageSurvey({
+          villageId: Number(villageData?.villageId),
+          villageName: selectedVillage.nameHindi,
          block: selectedBlock?.blockName ?? "",
          panchayat: selectedPanchayat?.name ?? "",
          surveyorName: surveyorId,
-         isCompleted: true,
-       };
+          villageSurvey: surveyAnswers,
+          completedSections: [...new Set([...(Array.isArray(villageData?.completedSections) ? villageData.completedSections : []), sectionId])],
+        });
+        const profile = result.data;
+        const saved = profile.villageSurvey ?? {};
+        setVillageData({
+          ...saved,
+          ...(typeof saved.surveyData === "object" && saved.surveyData ? saved.surveyData : {}),
+          completedSections: profile.completedSections ?? [],
+          progress: profile.progress ?? 0,
+          isCompleted: profile.isCompleted ?? false,
+          villageId: profile.villageId ?? profile.id,
+          version: profile.version ?? saved.version ?? 1,
+        });
+        setVillageStatuses((previous) => ({
+          ...previous,
+          [`${selectedBlock?.blockName}|${selectedPanchayat?.name}|${selectedVillage.nameHindi}`]: {
+            isCompleted: Boolean(profile.isCompleted),
+            progress: Number(profile.progress ?? 0),
+          },
+        }));
+        setVillageSaveState("saved");
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "ग्राम सर्वे सहेजा नहीं जा सका।";
+        setDataError(message);
+        setVillageSaveError(message);
+        setVillageSaveState("error");
+        throw error;
+    } finally {
+       setDataLoading(false);
+    }
+  };
 
-       await saveVillageSurvey(finalData);
-
-       setVillageData(finalData);
-       setSelectedVillage((prev) => (prev ? { ...prev, surveyCompleted: true } : prev));
+  const handleVillageFinalize = async () => {
+    if (!selectedVillage || !villageData?.villageId) return;
+    setDataError("");
+    setDataLoading(true);
+    try {
+       await finalizeVillageSurvey(Number(villageData.villageId), Number(villageData.version ?? 1));
+       setVillageData((previous) => previous ? { ...previous, isCompleted: true, progress: 100 } : previous);
+       setVillageStatuses((previous) => ({
+         ...previous,
+         [`${selectedBlock?.blockName}|${selectedPanchayat?.name}|${selectedVillage.nameHindi}`]: { isCompleted: true, progress: 100 },
+       }));
        setViewMode("selection");
     } catch (error) {
-       setDataError(error instanceof Error ? error.message : "ग्राम सर्वे सहेजा नहीं जा सका।");
+       setDataError(error instanceof Error ? error.message : "सर्वेक्षण अंतिम रूप से जमा नहीं हो सका।");
     } finally {
        setDataLoading(false);
     }
@@ -1453,6 +1528,7 @@ const [dataError, setDataError] = useState("");
             {villageOptions.map((village) => {
 
               const isSelected = selectedVillage?.id === village.id;
+              const villageStatus = villageStatuses[`${selectedBlock?.blockName}|${selectedPanchayat.name}|${village.nameHindi}`];
 
               return (
                 <button
@@ -1490,17 +1566,19 @@ const [dataError, setDataError] = useState("");
 
                   </div>
 
-                  <div className="mt-4 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
-                    {village.action === "Direct Affected"
+                  <div className={`mt-4 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${villageStatus?.isCompleted ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                    {villageStatus?.isCompleted ? "Completed" : villageStatus && villageStatus.progress > 0 ? `In Progress • ${villageStatus.progress}%` : (
+                    village.action === "Direct Affected"
                       ? "प्रत्यक्ष प्रभावित"
                       : village.action === "Indirect Affected"
                       ? "अप्रत्यक्ष प्रभावित"
-                      : "प्रत्यक्ष एवं अप्रत्यक्ष प्रभावित"}
+                      : "प्रत्यक्ष एवं अप्रत्यक्ष प्रभावित"
+                    )}
                   </div>
 
                   <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
-                    <span className="text-[10px] font-medium text-slate-400">
-                      सर्वेक्षण शुरू करें
+                    <span className={`text-[10px] font-medium ${villageStatus?.isCompleted ? "text-emerald-700" : "text-slate-400"}`}>
+                      {villageStatus?.isCompleted ? "Completed" : "सर्वेक्षण शुरू करें"}
                     </span>
                     <span className="text-xs font-bold text-emerald-600 transition-transform group-hover:translate-x-1">
                       →
@@ -1963,15 +2041,10 @@ const [dataError, setDataError] = useState("");
 
 
 
-              onComplete={
-
-
-
-                handleVillageComplete
-
-
-
-              }
+              onSectionSave={handleVillageSectionSave}
+              onFinalize={handleVillageFinalize}
+              saveState={villageSaveState}
+              saveError={villageSaveError}
 
 
 

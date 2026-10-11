@@ -55,6 +55,8 @@ export interface SurveyRecord<T> {
   blockId: string;
   panchayatId: string;
   villageId: string;
+  panchayatKey?: string;
+  villageKey?: string;
   villageName: string;
   householdId?: string;
   submittedAt?: string;

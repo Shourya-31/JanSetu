@@ -110,6 +110,8 @@ export function compileReport(
       blockId: string;
       panchayatId: string;
       villageId: string;
+      panchayatKey?: string;
+      villageKey?: string;
     },
   >(rows: T[]): T[] {
     const seen = new Map<string, T>();
@@ -118,8 +120,12 @@ export function compileReport(
         throw new Error("Survey record is missing its stable identifier.");
       if (
         row.blockId !== scope.blockId ||
-        (scope.panchayatId && row.panchayatId !== scope.panchayatId) ||
-        (scope.villageId && row.villageId !== scope.villageId)
+        (scope.panchayatId &&
+          row.panchayatId !== scope.panchayatId &&
+          row.panchayatKey !== scope.panchayatId) ||
+        (scope.villageId &&
+          row.villageId !== scope.villageId &&
+          row.villageKey !== scope.villageId)
       )
         continue;
       const previous = seen.get(row.id);
