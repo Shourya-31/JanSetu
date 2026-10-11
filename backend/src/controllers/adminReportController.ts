@@ -73,6 +73,7 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
         completedSections: Array.isArray(vs.completedSections) ? vs.completedSections : [],
         answers: {
           ...(vs.surveyData && typeof vs.surveyData === 'object' ? vs.surveyData as Record<string, unknown> : {}),
+          villagePhotos: Array.isArray(vs.villagePhotos) ? vs.villagePhotos : [],
           totalHouseholds: vs.totalHouseholds,
           totalPopulation: vs.totalPopulation,
           scPopulation: vs.scPopulation,

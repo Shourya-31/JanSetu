@@ -93,11 +93,20 @@ export async function uploadVillagePhoto(file: File): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error('Image upload failed');
+    let message = 'Image upload failed';
+    try {
+      const payload = await response.json() as { error?: string };
+      if (payload.error) message = payload.error;
+    } catch {
+      // Keep the generic upload error when the server response is not JSON.
+    }
+    throw new Error(message);
   }
 
-  const result = await response.json();
-  return result.url;
+  const result = await response.json() as { secure_url?: string; url?: string };
+  const url = result.secure_url || result.url;
+  if (!url) throw new Error('Image upload returned no URL');
+  return url;
 }
 
 export function saveVillageSurvey(payload: Record<string, unknown>) {

@@ -21,6 +21,7 @@ import type { HouseholdSHGRef } from "../components/surveyor/household/shg/House
 import type { HouseholdOtherInformationRef } from "../components/surveyor/household/other/HouseholdOtherInformation";
 type SchoolData = Record<string, string>;
 export type VillageAnswers = Partial<GeneralInformationFormData> & {
+  villagePhotos?: string[];
   anganbadiData?: Partial<AnganbadiData>[];
   schoolData?: Partial<SchoolData>[];
   hostelData?: Partial<HostelData>[];

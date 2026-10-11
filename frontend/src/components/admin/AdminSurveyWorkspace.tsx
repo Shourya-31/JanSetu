@@ -402,7 +402,11 @@ export function AdminSurveyWorkspace({
         !report.integrationPending &&
         report.answers.length > 0 && (
           <>
-            <Summary report={report} analytics={mode === "analytics"} />
+            <Summary
+              report={report}
+              analytics={mode === "analytics"}
+            />
+            {activeVillageId && <VillagePhotoGallery report={report} />}
             {mode === "reports" && (
               <>
                 <ConsolidatedTables
@@ -482,6 +486,52 @@ function Summary({
           use village answers only.
         </p>
       )}
+    </section>
+  );
+}
+
+function VillagePhotoGallery({ report }: { report: CompiledReport }) {
+  const photos = report.villageSurveys.flatMap((survey) =>
+    Array.isArray(survey.answers.villagePhotos)
+      ? survey.answers.villagePhotos.filter(
+          (photo): photo is string =>
+            typeof photo === "string" && photo.trim().length > 0,
+        )
+      : [],
+  );
+
+  if (!photos.length) {
+    return (
+      <section className={card}>
+        <h3 className="font-bold">Village photos</h3>
+        <p className="mt-2 text-sm text-slate-500">
+          No photos were uploaded for this village.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className={card}>
+      <h3 className="font-bold">Village photos</h3>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {photos.map((photo, index) => (
+          <a
+            key={`${photo}-${index}`}
+            href={photo}
+            target="_blank"
+            rel="noreferrer"
+            className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+          >
+            <img
+              src={photo}
+              alt={`Village photo ${index + 1}`}
+              loading="lazy"
+              className="h-32 w-full object-cover transition-transform hover:scale-105"
+            />
+          </a>
+        ))}
+      </div>
     </section>
   );
 }

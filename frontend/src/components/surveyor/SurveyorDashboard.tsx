@@ -43,6 +43,7 @@ import {
   saveHouseholdSurvey,
   saveVillageSurvey,
   finalizeVillageSurvey,
+  uploadVillagePhoto,
 } from "../../services/surveyorApi";
 
 import HouseholdSurvey from "./household/HouseholdSurvey";
@@ -627,6 +628,20 @@ useEffect(() => {
     } finally {
        setDataLoading(false);
     }
+  };
+
+  const handleVillagePhotosSave = async (photoUrls: string[]) => {
+    if (!selectedVillage) return;
+    await saveVillageSurvey({
+      villageId: Number(villageData?.villageId),
+      villageName: selectedVillage.nameHindi,
+      block: selectedBlock?.blockName ?? "",
+      panchayat: selectedPanchayat?.name ?? "",
+      surveyorName: surveyorId,
+      villageSurvey: { villagePhotos: photoUrls },
+      completedSections: Array.isArray(villageData?.completedSections) ? villageData.completedSections : [],
+    });
+    setVillageData((previous) => previous ? { ...previous, villagePhotos: photoUrls } : previous);
   };
 
   const handleVillageFinalize = async () => {
@@ -2042,6 +2057,7 @@ useEffect(() => {
 
 
               onSectionSave={handleVillageSectionSave}
+              onPhotosSave={handleVillagePhotosSave}
               onFinalize={handleVillageFinalize}
               saveState={villageSaveState}
               saveError={villageSaveError}

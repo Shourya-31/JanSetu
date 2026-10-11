@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { uploadVillagePhoto } from "../../../services/surveyorApi";
 import type { Village } from "../../../data/narayanpurHierarchy";
 import {
   ArrowLeft,
@@ -204,6 +205,7 @@ export const VillageSurveyForm: React.FC<{
   initialData?: Record<string, unknown>;
   onBack: () => void;
   onSectionSave: (data: Record<string, unknown>, sectionId: string) => Promise<void>;
+  onPhotosSave: (photoUrls: string[]) => Promise<void>;
   onFinalize: () => Promise<void>;
   saveState?: "idle" | "saving" | "saved" | "error";
   saveError?: string;
@@ -214,6 +216,7 @@ export const VillageSurveyForm: React.FC<{
   initialData,
   onBack,
   onSectionSave,
+  onPhotosSave,
   onFinalize,
   saveState = "idle",
   saveError = "",
@@ -226,6 +229,7 @@ export const VillageSurveyForm: React.FC<{
 
     //Store selected photos
     const [villagePhotos, setVillagePhotos] = useState<File[]>([]);
+    const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
 
   const [completedSections, setCompletedSections] = useState<string[]>(() => {
@@ -641,11 +645,34 @@ if (id === "health") {
 <div className="mt-5 flex justify-end">
   <button
     type="button"
-    disabled={villagePhotos.length === 0}
-    onClick={() => {
-      alert(
-        `${villagePhotos.length} फोटो सफलतापूर्वक सबमिट की गईं।`
-      );
+    disabled={villagePhotos.length === 0 || uploadingPhotos}
+    onClick={async () => {
+      setUploadingPhotos(true);
+      try {
+        const results = await Promise.allSettled(villagePhotos.map(uploadVillagePhoto));
+        const uploadedUrls = results
+          .filter((result): result is PromiseFulfilledResult<string> => result.status === "fulfilled")
+          .map((result) => result.value);
+        if (uploadedUrls.length > 0) {
+          await onPhotosSave(uploadedUrls);
+        }
+        const failedCount = results.length - uploadedUrls.length;
+        setVillagePhotos([]);
+        if (failedCount > 0) {
+          alert(
+            uploadedUrls.length > 0
+              ? `${uploadedUrls.length} फोटो सफलतापूर्वक सहेजी गईं। ${failedCount} फोटो अपलोड नहीं हो सकीं; उन्हें हटा दिया गया है।`
+              : "फोटो सेवा अभी उपलब्ध नहीं है या Cloudinary सीमा पूरी हो गई है। फोटो सहेजी नहीं गईं; सर्वेक्षण जारी रख सकते हैं।"
+          );
+        } else {
+          alert(`${uploadedUrls.length} फोटो सफलतापूर्वक सहेजी गईं।`);
+        }
+      } catch {
+        setVillagePhotos([]);
+        alert("फोटो सहेजी नहीं जा सकीं। सर्वेक्षण जारी रख सकते हैं।");
+      } finally {
+        setUploadingPhotos(false);
+      }
     }}
     className="px-5 py-2.5 bg-emerald-600 text-white
       text-sm font-semibold rounded-lg
@@ -653,7 +680,7 @@ if (id === "health") {
       disabled:bg-slate-300 disabled:cursor-not-allowed
       cursor-pointer"
   >
-    फोटो सबमिट करें
+    {uploadingPhotos ? "फोटो अपलोड हो रही हैं..." : "फोटो सबमिट करें"}
   </button>
 </div>
 </div>

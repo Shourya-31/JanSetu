@@ -108,6 +108,7 @@ export const villageSurveySchema = {
   properties: {
     villageName: formText(200), block: formText(200), panchayat: formText(200), district: formText(200),
     ...villageGeneralProperties,
+    villagePhotos: { type: 'array', maxItems: 10, items: { type: 'string', maxLength: 1000 } },
     anganbadiData: { type: 'array', maxItems: 500, items: anganbadiSchema },
     schoolData: { type: 'array', maxItems: 500, items: schoolSchema },
     hostelData: { type: 'array', maxItems: 500, items: hostelSchema },

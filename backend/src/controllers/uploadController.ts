@@ -16,17 +16,35 @@ export async function uploadImage(req: FastifyRequest, reply: FastifyReply) {
     }
 
     const buffer = await data.toBuffer();
-    
-    // Convert buffer to base64
-    const base64Image = `data:${data.mimetype};base64,${buffer.toString('base64')}`;
-    
-    const result = await cloudinary.uploader.upload(base64Image, {
-      folder: 'jansetu_village_photos',
+    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      const upload = cloudinary.uploader.upload_stream(
+        { folder: 'jansetu_village_photos', resource_type: 'image' },
+        (error, uploaded) => {
+          if (error) return reject(error);
+          if (!uploaded?.secure_url) {
+            return reject(new Error('Cloudinary returned no secure URL'));
+          }
+          resolve({ secure_url: uploaded.secure_url });
+        },
+      );
+      upload.end(buffer);
     });
 
     return reply.status(200).send({ secure_url: result.secure_url });
   } catch (err) {
-    console.error("Cloudinary upload error:", err);
+    const cloudinaryStatus =
+      typeof err === 'object' && err !== null && 'http_code' in err
+        ? Number((err as { http_code?: unknown }).http_code)
+        : undefined;
+
+    if (cloudinaryStatus === 403 || cloudinaryStatus === 420 || cloudinaryStatus === 429) {
+      req.log.warn({ cloudinaryStatus }, 'Cloudinary rejected village photo upload');
+      return reply.status(503).send({
+        error: 'Photo upload service is temporarily unavailable. Continue the survey without photos.',
+        code: 'PHOTO_UPLOAD_UNAVAILABLE',
+      });
+    }
+
     return sendInternalError(req, reply, err, 'Cloudinary upload failed');
   }
 }
