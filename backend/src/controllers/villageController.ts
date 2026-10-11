@@ -115,7 +115,9 @@ export async function getVillageProfile(req: FastifyRequest, reply: FastifyReply
 
 export async function saveVillageProfile(req: FastifyRequest, reply: FastifyReply) {
   const body = (req.body || {}) as any;
-  const { villageName, villageSurvey } = body;
+  const rawVillageName = body.villageName || body.nameHindi || body.village?.nameHindi || body.villageNameHindi;
+  const villageSurvey = body.villageSurvey ?? body.data ?? {};
+  const villageName = typeof rawVillageName === 'string' ? rawVillageName.trim() : '';
 
   if (!villageName) {
     return reply.status(400).send({ error: 'villageName is required' });
@@ -134,23 +136,24 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
       if (!village) throw new Error('Village not found in hierarchy');
 
       const actorId = getActorId(req);
+      const normalizedVillageSurvey = typeof villageSurvey === 'object' && villageSurvey ? villageSurvey : {};
       const dataToSave = {
-        totalHouseholds: Number(body.totalHouseholds || villageSurvey?.totalHouseholds || 0),
-        totalPopulation: Number(body.totalPopulation || villageSurvey?.totalPopulation || 0),
-        scPopulation: Number(body.scCount || villageSurvey?.scPopulation || 0),
-        stPopulation: Number(body.stCount || villageSurvey?.stPopulation || 0),
-        puccaHouses: Number(body.puccaHouses || villageSurvey?.puccaHouses || 0),
-        rawHouses: Number(body.kacchaHouses || villageSurvey?.rawHouses || 0),
-        road: body.hasPuccaRoad || villageSurvey?.road || '',
-        rainCutoff: body.monsoonCutOff || villageSurvey?.rainCutoff || '',
-        primarySchoolAvailable: body.schoolType || villageSurvey?.primarySchoolAvailable || '',
-        subHealthCenterAvailable: body.hospitalType || villageSurvey?.subHealthCenterAvailable || '',
-        electricity: body.electrification || villageSurvey?.electricity || '',
-        anganwadiWorkerPresent: body.hasAnganwadi || villageSurvey?.anganwadiWorkerPresent || '',
-        odf: body.odfStatus || villageSurvey?.odf || '',
-        villagePhotos: body.villagePhotos || villageSurvey?.villagePhotos || [],
+        totalHouseholds: Number(body.totalHouseholds ?? normalizedVillageSurvey.totalHouseholds ?? 0),
+        totalPopulation: Number(body.totalPopulation ?? normalizedVillageSurvey.totalPopulation ?? 0),
+        scPopulation: Number(body.scCount ?? normalizedVillageSurvey.scPopulation ?? 0),
+        stPopulation: Number(body.stCount ?? normalizedVillageSurvey.stPopulation ?? 0),
+        puccaHouses: Number(body.puccaHouses ?? normalizedVillageSurvey.puccaHouses ?? 0),
+        rawHouses: Number(body.kacchaHouses ?? normalizedVillageSurvey.rawHouses ?? 0),
+        road: body.hasPuccaRoad ?? normalizedVillageSurvey.road ?? '',
+        rainCutoff: body.monsoonCutOff ?? normalizedVillageSurvey.rainCutoff ?? '',
+        primarySchoolAvailable: body.schoolType ?? normalizedVillageSurvey.primarySchoolAvailable ?? '',
+        subHealthCenterAvailable: body.hospitalType ?? normalizedVillageSurvey.subHealthCenterAvailable ?? '',
+        electricity: body.electrification ?? normalizedVillageSurvey.electricity ?? '',
+        anganwadiWorkerPresent: body.hasAnganwadi ?? normalizedVillageSurvey.anganwadiWorkerPresent ?? '',
+        odf: body.odfStatus ?? normalizedVillageSurvey.odf ?? '',
+        villagePhotos: body.villagePhotos ?? normalizedVillageSurvey.villagePhotos ?? [],
         version: { increment: 1 },
-        isCompleted: body.isCompleted || villageSurvey?.isCompleted || false
+        isCompleted: Boolean(body.isCompleted ?? normalizedVillageSurvey.isCompleted ?? false)
       };
 
       const record = await tx.villageSurvey.upsert({
@@ -174,11 +177,11 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
       });
 
       // === OPTIMIZATION: UPDATE COUNTERS ===
-      const wasCompleted = village.villageSurvey?.isCompleted || false;
-      const isNowCompleted = body.isCompleted || villageSurvey?.isCompleted || false;
+      const wasCompleted = Boolean(village.villageSurvey?.isCompleted || false);
+      const isNowCompleted = Boolean(body.isCompleted ?? normalizedVillageSurvey.isCompleted ?? false);
       
-      const prevHouseholds = village.villageSurvey?.totalHouseholds || 0;
-      const newHouseholds = Number(body.totalHouseholds || villageSurvey?.totalHouseholds || 0);
+      const prevHouseholds = Number(village.villageSurvey?.totalHouseholds || 0);
+      const newHouseholds = Number(body.totalHouseholds ?? normalizedVillageSurvey.totalHouseholds ?? 0);
       const householdDiff = newHouseholds - prevHouseholds;
 
       await tx.village.update({

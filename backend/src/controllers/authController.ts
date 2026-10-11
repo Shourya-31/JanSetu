@@ -14,19 +14,6 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
 
 
   try {
-    const envAdminUser = process.env.ADMIN_USERNAME || 'admin';
-    const envAdminPass = process.env.ADMIN_PASSWORD || 'adminpass';
-    const envSurveyUser = process.env.SURVEYOR_USERNAME || 'surveyor';
-    const envSurveyPass = process.env.SURVEYOR_PASSWORD || 'surveyorpass';
-    
-    req.log.info({
-      received: { role, identifier, password },
-      env: { 
-        admin: { u: envAdminUser, p: envAdminPass },
-        surveyor: { u: envSurveyUser, p: envSurveyPass }
-      }
-    }, "DEBUG LOGIN");
-
     let isValid = false;
     let fallbackId = '';
     let fullName = '';

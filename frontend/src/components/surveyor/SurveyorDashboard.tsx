@@ -35,19 +35,18 @@ import {
 
 
 import { VillageSurveyForm } from "./village-survey/VillageSurveyForm";
-
-
-
-
-
-
+import {
+  fetchHouseholdSurveys,
+  fetchVillageProfile,
+  initializeHouseholdSlots,
+  saveHouseholdSurvey,
+  saveVillageSurvey,
+} from "../../services/surveyorApi";
 
 import HouseholdSurvey from "./household/HouseholdSurvey";
 
 
-
 import type { HouseholdItem } from "./household/HouseholdSurvey";
-
 
 
 
@@ -498,321 +497,81 @@ const [dataError, setDataError] = useState("");
 
 
 
-  // VILLAGE SELECT
-
-
-
-  // Backend API नहीं
-
-
-
-
-
-
-
-  const handleVillageSelect = (
-
-
-
-    village: Village
-
-
-
-  ) => {
-
-
-
-    setSelectedVillage(village);
-
-
-
-
-
-
-
-    setDataError("");
-
-
-
-    setVillageData(null);
-
-
-
-
-
-
-
-    /*
-
-
-
-     * अभी frontend-only development है।
-
-
-
-     *
-
-
-
-     * इसलिए village select करते समय कोई API call नहीं होगा।
-
-
-
-     */
-
-
-
-
-
-
-
-    if (surveyMode === "village") {
-
-
-
-      // ग्राम प्रोफाइल
-
-
-
-      setViewMode("village_survey");
-
-
-
-    } else {
-
-
-
-      // परिवार प्रोफाइल
-
-
-
-      setViewMode("household_survey");
-
-
-
-    }
-
-
-
-  };
-
-
-
-
-
-
-  // VILLAGE SURVEY SAVE
-
-
-
-  // Local state only
-
-
-
-
-
-
-
-  const handleVillageComplete = async (
-
-
-
-    data: Record<string, unknown>
-
-
-
-  ) => {
-  console.log("HANDLE VILLAGE COMPLETE CALLED");
-
-const photos = data.villagePhotos as File[] | undefined;
-
-console.log("Village photos received:", photos);
-console.log("Number of photos:", photos?.length ?? 0);
-
-
-
-    setDataError("");
-
-
-
-    
-    // 0 परिवार होने पर कोई household card नहीं बनेगा।
-    // HouseholdSurvey में manual completion button दिखेगा।
-    //if (count === 0) {
-    //  setHouseholds([]);
-    //  setZeroFamilySurveyStarted(true);
-    //  return;
-    //}
-
+  // VILLAGE SELECT
+
+  const handleVillageSelect = async (village: Village) => {
+     setSelectedVillage(village);
+     setDataError("");
+     setVillageData(null);
+     setHouseholds([]);
+     setDataLoading(true);
+
+     try {
+       if (surveyMode === "village") {
+         const profile = await fetchVillageProfile(village.nameHindi);
+         setVillageData(profile?.villageSurvey ?? null);
+         setViewMode("village_survey");
+       } else {
+         const householdMap = await fetchHouseholdSurveys(village.nameHindi);
+         const nextHouseholds = Object.entries(householdMap).map(([key, value]) => ({
+           id: String(value.id ?? `local-${village.id}-${key}`),
+           version: Number(value.version ?? 1),
+           houseNumber: Number(key),
+           headName: typeof value.headName === "string" ? value.headName : "",
+           isCompleted: Boolean(value.isCompleted ?? value.auditStatus === "Verified"),
+           data: {
+             ...(typeof value.surveyAnswers === "object" && value.surveyAnswers ? value.surveyAnswers : {}),
+             villageName: village.nameHindi,
+             block: selectedBlock?.blockName ?? "",
+             panchayat: selectedPanchayat?.name ?? "",
+             houseNumber: Number(key),
+             surveyorName: surveyorId,
+           },
+         }));
+
+         setHouseholds(nextHouseholds.sort((a, b) => a.houseNumber - b.houseNumber));
+         setViewMode("household_survey");
+       }
+     } catch (error) {
+       setDataError(
+         error instanceof Error ? error.message : "सर्वे डेटा लोड नहीं हो सका।"
+       );
+     } finally {
+       setDataLoading(false);
+     }
+  };
+
+
+
+
+
+  // VILLAGE SURVEY SAVE
+  const handleVillageComplete = async (data: Record<string, unknown>) => {
+    setDataError("");
     setDataLoading(true);
 
-
-
-
-
-
-
-    try {
-
-
-
-      const finalData = {
-
-
-
-        ...data,
-
-
-
-
-
-
-
-        district: "नारायणपुर",
-
-
-
-
-
-
-
-        villageName:
-
-
-
-          selectedVillage?.nameHindi ?? "",
-
-
-
-
-
-
-
-        block:
-
-
-
-          selectedBlock?.blockName ?? "",
-
-
-
-
-
-
-
-        panchayat:
-
-
-
-          selectedPanchayat?.name ?? "",
-
-
-
-
-
-
-
-        surveyorName: surveyorId,
-
-
-
-      };
-
-
-
-
-
-
-
-      // Local state में save
-
-      // Verify selected village photos
-const photos = data.villagePhotos as File[] | undefined;
-
-console.log("Village photos received:", photos);
-
-console.log(
-  "Number of photos:",
-  photos?.length ?? 0
-);
-
-      setVillageData(finalData);
-
-
-
-
-
-
-
-      /*
-
-
-
-       * Backend बाद में integrate करेंगे।
-
-
-
-       *
-
-
-
-       * अभी सिर्फ frontend testing के लिए
-
-
-
-       * data browser memory में रहेगा।
-
-
-
-       */
-
-
-
-
-
-
-
-      setViewMode("selection");
-
-
-
-    } catch (error) {
-
-
-
-      setDataError(
-
-
-
-        error instanceof Error
-
-
-
-          ? error.message
-
-
-
-          : "ग्राम सर्वे सहेजा नहीं जा सका।"
-
-
-
-      );
-
-
-
-    } finally {
-
-
-
-      setDataLoading(false);
-
-
-
-    }
-
-
-
-  };
+    try {
+       const finalData = {
+         ...data,
+         district: "नारायणपुर",
+         villageName: selectedVillage?.nameHindi ?? "",
+         block: selectedBlock?.blockName ?? "",
+         panchayat: selectedPanchayat?.name ?? "",
+         surveyorName: surveyorId,
+         isCompleted: true,
+       };
+
+       await saveVillageSurvey(finalData);
+
+       setVillageData(finalData);
+       setSelectedVillage((prev) => (prev ? { ...prev, surveyCompleted: true } : prev));
+       setViewMode("selection");
+    } catch (error) {
+       setDataError(error instanceof Error ? error.message : "ग्राम सर्वे सहेजा नहीं जा सका।");
+    } finally {
+       setDataLoading(false);
+    }
+  };
 
 
 
@@ -1070,395 +829,70 @@ console.log(
 
 
 
-  const handleSaveHousehold = async (
-
-
-
-    houseNumber: number,
-
-
-
-    formData: Record<string, unknown>
-
-
-
-  ) => {
-
-
-
-    if (!selectedVillage) return;
-
-
-
-
-
-
-
-    setDataError("");
-
-
-
-
-
-
-
-    const requiredSections = [
-
-
-
-      "generalCompleted",
-
-
-
-      "demographyCompleted",
-
-
-
-      "documentsCompleted",
-
-
-
-      "womenCompleted",
-
-
-
-      "disabilityCompleted",
-
-
-
-      "educationCompleted",
-
-
-
-      "employmentCompleted",
-
-
-
-      "housingCompleted",
-
-
-
-      "healthCompleted",
-
-
-
-      "shgCompleted",
-
-
-
-      "otherCompleted",
-
-
-
-    ];
-
-
-
-
-
-
-
-    const isFullyCompleted =
-
-
-
-      requiredSections.every(
-
-
-
-        (key) => formData?.[key] === true
-
-
-
-      );
-
-
-
-
-
-
-
-    const surveyAnswers = {
-
-
-
-      ...formData,
-
-
-
-
-
-
-
-      villageName:
-
-
-
-        selectedVillage.nameHindi,
-
-
-
-
-
-
-
-      houseNumber,
-
-
-
-
-
-
-
-      block:
-
-
-
-        selectedBlock?.blockName ?? "",
-
-
-
-
-
-
-
-      blockName:
-
-
-
-        selectedBlock?.blockName ?? "",
-
-
-
-
-
-
-
-      panchayat:
-
-
-
-        selectedPanchayat?.name ?? "",
-
-
-
-
-
-
-
-      panchayatName:
-
-
-
-        selectedPanchayat?.name ?? "",
-
-
-
-
-
-
-
-      surveyorName:
-
-
-
-        formData.surveyorName ||
-
-
-
-        surveyorId,
-
-
-
-    };
-
-
-
-
-
-
-
-    const existingHousehold =
-
-
-
-      households.find(
-
-
-
-        (household) =>
-
-
-
-          household.houseNumber === houseNumber
-
-
-
-      );
-
-
-
-
-
-
-
-    const updatedHousehold: HouseholdItem = {
-
-
-
-      id:
-
-
-
-        existingHousehold?.id ??
-
-
-
-        `local-${selectedVillage.id}-${houseNumber}`,
-
-
-
-
-
-
-
-      version:
-
-
-
-        (existingHousehold?.version ?? 0) + 1,
-
-
-
-
-
-
-
-      houseNumber,
-
-
-
-
-
-
-
-      headName:
-
-
-
-        typeof formData.headName === "string"
-
-
-
-          ? formData.headName
-
-
-
-          : existingHousehold?.headName ?? "",
-
-
-
-
-
-
-
-      isCompleted: isFullyCompleted,
-
-
-
-
-
-
-
-      data: surveyAnswers,
-
-
-
-    };
-
-
-
-
-
-
-
-    setHouseholds((previous) => {
-
-
-
-      const exists = previous.some(
-
-
-
-        (item) =>
-
-
-
-          item.houseNumber === houseNumber
-
-
-
-      );
-
-
-
-
-
-
-
-      if (exists) {
-
-
-
-        return previous.map((item) =>
-
-
-
-          item.houseNumber === houseNumber
-
-
-
-            ? updatedHousehold
-
-
-
-            : item
-
-
-
-        );
-
-
-
-      }
-
-
-
-
-
-
-
-      return [...previous, updatedHousehold].sort(
-
-
-
-        (a, b) =>
-
-
-
-          a.houseNumber - b.houseNumber
-
-
-
-      );
-
-
-
-    });
-
-
-
-  };
+  const handleSaveHousehold = async (
+    houseNumber: number,
+    formData: Record<string, unknown>
+  ) => {
+    if (!selectedVillage) return;
+
+    setDataError("");
+    setDataLoading(true);
+
+    try {
+      const requiredSections = [
+        "generalCompleted",
+        "demographyCompleted",
+        "documentsCompleted",
+        "womenCompleted",
+        "disabilityCompleted",
+        "educationCompleted",
+        "employmentCompleted",
+        "housingCompleted",
+        "healthCompleted",
+        "shgCompleted",
+        "otherCompleted",
+      ];
+
+      const isFullyCompleted = requiredSections.every((key) => formData?.[key] === true);
+      const surveyAnswers = {
+        ...formData,
+        villageName: selectedVillage.nameHindi,
+        houseNumber,
+        block: selectedBlock?.blockName ?? "",
+        blockName: selectedBlock?.blockName ?? "",
+        panchayat: selectedPanchayat?.name ?? "",
+        panchayatName: selectedPanchayat?.name ?? "",
+        surveyorName: formData.surveyorName || surveyorId,
+      };
+
+      await saveHouseholdSurvey(selectedVillage.nameHindi, houseNumber, {
+        ...surveyAnswers,
+        isCompleted: isFullyCompleted,
+      });
+
+      const existingHousehold = households.find((household) => household.houseNumber === houseNumber);
+      const updatedHousehold: HouseholdItem = {
+        id: existingHousehold?.id ?? `local-${selectedVillage.id}-${houseNumber}`,
+        version: (existingHousehold?.version ?? 0) + 1,
+        houseNumber,
+        headName: typeof formData.headName === "string" ? formData.headName : existingHousehold?.headName ?? "",
+        isCompleted: isFullyCompleted,
+        data: surveyAnswers,
+      };
+
+      setHouseholds((previous) => {
+        const exists = previous.some((item) => item.houseNumber === houseNumber);
+        if (exists) {
+            return previous.map((item) => (item.houseNumber === houseNumber ? updatedHousehold : item));
+        }
+        return [...previous, updatedHousehold].sort((a, b) => a.houseNumber - b.houseNumber);
+      });
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "परिवार सर्वे सहेजा नहीं जा सका।");
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
 
 
