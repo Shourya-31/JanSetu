@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
+import { AppError, ERROR_CODES } from '../utils/errors';
 
 export async function login(req: FastifyRequest, reply: FastifyReply) {
   
@@ -19,16 +20,22 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
     let fullName = '';
 
     if (role === 'admin') {
-      const envUser = process.env.ADMIN_USERNAME || 'admin';
-      const envPass = process.env.ADMIN_PASSWORD || 'adminpass';
+      const envUser = process.env.ADMIN_USERNAME;
+      const envPass = process.env.ADMIN_PASSWORD;
+      if (!envUser || !envPass) {
+        throw new AppError(ERROR_CODES.INTERNAL_ERROR, 'Login is temporarily unavailable.', 503, { operation: 'auth.login.configuration' }, { retryable: true });
+      }
       if (identifier === envUser && password === envPass) {
         isValid = true;
         fallbackId = 'env_admin_id';
         fullName = 'Administrator';
       }
     } else if (role === 'surveyor') {
-      const envUser = process.env.SURVEYOR_USERNAME || 'surveyor';
-      const envPass = process.env.SURVEYOR_PASSWORD || 'surveyorpass';
+      const envUser = process.env.SURVEYOR_USERNAME;
+      const envPass = process.env.SURVEYOR_PASSWORD;
+      if (!envUser || !envPass) {
+        throw new AppError(ERROR_CODES.INTERNAL_ERROR, 'Login is temporarily unavailable.', 503, { operation: 'auth.login.configuration' }, { retryable: true });
+      }
       if (identifier === envUser && password === envPass) {
         isValid = true;
         fallbackId = 'env_surveyor_id';
@@ -37,7 +44,7 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
     }
 
     if (!isValid) {
-      return reply.status(401).send({ error: 'Invalid credentials' });
+      throw new AppError(ERROR_CODES.AUTHENTICATION_ERROR, 'Invalid credentials.', 401, undefined, { retryable: false });
     }
 
     // Upsert the user into the database so foreign keys (createdBy) don't break
@@ -69,8 +76,8 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
         fullName: user.fullName
       }
     });
-  } catch (err: any) {
-    req.log.error({ err }, 'Authentication request failed');
-    return reply.status(500).send({ error: 'Authentication failed' });
+  } catch (err) {
+    req.log.error({ requestId: req.id, operation: 'auth.login', error: err instanceof AppError ? err.code : 'UNCLASSIFIED' }, 'Authentication stage failed');
+    throw err;
   }
 }

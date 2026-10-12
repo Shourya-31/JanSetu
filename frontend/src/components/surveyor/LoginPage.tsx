@@ -7,6 +7,7 @@ import {
   Lock,
   Loader2,
 } from "lucide-react";
+import { ApiError } from "../../services/apiClient";
 
 export type SurveyMode = "village" | "household";
 
@@ -20,6 +21,13 @@ interface LoginPageProps {
 }
 
 type ActiveTab = "village" | "household" | "admin";
+
+function loginErrorMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof ApiError)) return error instanceof Error ? error.message : fallback;
+  if (error.code === "AUTHENTICATION_ERROR") return "आईडी या पासवर्ड गलत है।";
+  if (error.requestId) return `${error.message} (Request ID: ${error.requestId})`;
+  return error.message || fallback;
+}
 
 export const LoginPage: React.FC<LoginPageProps> = ({
   onProfileSelect,
@@ -59,7 +67,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     try {
       await onProfileSelect("village", vlgId.trim(), vlgPass);
     } catch (error) {
-      setVlgError(error instanceof Error ? error.message : "लॉगिन असफल हुआ।");
+      setVlgError(loginErrorMessage(error, "लॉगिन असफल हुआ।"));
     } finally {
       setVlgLoading(false);
     }
@@ -79,7 +87,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     try {
       await onProfileSelect("household", hhdId.trim(), hhdPass);
     } catch (error) {
-      setHhdError(error instanceof Error ? error.message : "लॉगिन असफल हुआ।");
+      setHhdError(loginErrorMessage(error, "लॉगिन असफल हुआ।"));
     } finally {
       setHhdLoading(false);
     }
@@ -98,11 +106,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     try {
       await onAdminLogin("admin", admId.trim(), admPass);
     } catch (error) {
-      setAdmError(
-        error instanceof Error
-          ? error.message
-          : "लॉगिन असफल हुआ। कृपया पुनः प्रयास करें।"
-      );
+      setAdmError(loginErrorMessage(error, "लॉगिन असफल हुआ। कृपया पुनः प्रयास करें।"));
     } finally {
       setAdmLoading(false);
     }

@@ -10,7 +10,7 @@
     "start:dev": "tsx watch src/server.ts",
     "start:cluster": "pm2 start ecosystem.config.js --env production",
     "dev": "tsx watch src/server.ts",
-    "test": "tsx --test test/apiValidation.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "db:generate": "prisma generate",
     "db:init": "tsx src/scripts/deployInitDb.ts",
     "db:install-audit-protection": "tsx src/scripts/installAuditProtection.ts",

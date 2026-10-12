@@ -16,12 +16,13 @@ import {
   villageProfileBodySchema,
   villageSurveySchema
 } from './surveySchemas';
+import { AppError, ERROR_CODES } from '../utils/errors';
 
 async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   try {
     await req.jwtVerify();
-  } catch {
-    return reply.status(401).send({ error: 'Authentication required' });
+  } catch (error) {
+    throw new AppError(ERROR_CODES.AUTHENTICATION_ERROR, 'Authentication is required.', 401, undefined, { cause: error, retryable: false });
   }
 }
 
@@ -30,7 +31,7 @@ async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
   if (reply.sent) return;
   const claims = req.user as { role?: string };
   if (claims.role !== 'admin') {
-    return reply.status(403).send({ error: 'Administrator access required' });
+    throw new AppError(ERROR_CODES.AUTHORIZATION_ERROR, 'Administrator access is required.', 403, undefined, { retryable: false });
   }
 }
 

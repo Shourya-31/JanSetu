@@ -244,7 +244,8 @@ The recommended way to run the complete application is Docker Compose.
 
 ### 1. Configure private variables
 
-Create or update the root `.env` file with:
+Create the root `.env` file from [`.env.example`](.env.example). This file is read by
+Docker Compose for the PostgreSQL container:
 
 ```dotenv
 POSTGRES_USER=your_local_postgres_user
@@ -252,7 +253,8 @@ POSTGRES_PASSWORD=use_a_strong_local_password
 POSTGRES_DB=jansetu
 ```
 
-Configure the backend secrets and service settings in `backend/.env`:
+Create `backend/.env` from [`backend/.env.example`](backend/.env.example) for the
+backend secrets and service settings:
 
 ```dotenv
 NODE_ENV=production
@@ -274,11 +276,20 @@ CLOUDINARY_API_SECRET=your-api-secret
 
 The Compose service overrides `DATABASE_URL` inside the backend container so that it uses the `postgres` service name rather than `localhost`. Do not commit real credentials, JWT secrets, Cloudinary secrets, or production connection strings.
 
-### 2. Build and start
+The Compose deployment also runs a one-shot `db-init` service after PostgreSQL is
+healthy. It applies the Prisma schema, PostgreSQL extensions/indexes, and analytics
+view, then seeds the Narayanpur Block → Gram Panchayat → Village hierarchy. The
+backend starts only after that initialization succeeds. Environment-managed login
+credentials are provisioned on the first successful login; no separate user seed
+command is required for the normal Compose flow.
 
-From the repository root:
+### 2. Build and start from the repository root
+
+Run these commands after changing into the cloned repository. Running `docker compose`
+from `/home/ubuntu` or another directory will not find this project's `compose.yaml`.
 
 ```powershell
+cd /home/ubuntu/JanSetu
 docker compose up -d --build
 docker compose ps
 ```
@@ -555,18 +566,18 @@ Use PM2 only for a non-container deployment where process supervision is require
 
 ### Database tables or hierarchy are missing
 
-Run the initialization and hierarchy scripts from `backend/`:
+The normal Compose startup runs both initialization steps automatically. To rerun
+them manually after changing the schema or hierarchy, use:
+
+```powershell
+docker compose run --rm db-init
+```
+
+For local development without Docker, run the scripts from `backend/`:
 
 ```powershell
 npm run db:init
 npm run db:seed-hierarchy
-```
-
-For Docker, run the equivalent commands inside the backend container after the database is healthy:
-
-```powershell
-docker compose exec backend npm run db:init
-docker compose exec backend npm run db:seed-hierarchy
 ```
 
 ### Image upload fails
