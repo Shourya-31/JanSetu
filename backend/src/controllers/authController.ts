@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
-import { AppError, ERROR_CODES } from '../utils/errors';
+import { AppError, ERROR_CODES, withErrorContext } from '../utils/errors';
 
 export async function login(req: FastifyRequest, reply: FastifyReply) {
   
@@ -15,6 +15,7 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
 
 
   try {
+    req.log.info({ event: 'auth.stage', requestId: req.id, operation: 'auth.request_validation', stage: 'request_validation' }, 'Authentication request accepted');
     let isValid = false;
     let fallbackId = '';
     let fullName = '';
@@ -46,26 +47,40 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
     if (!isValid) {
       throw new AppError(ERROR_CODES.AUTHENTICATION_ERROR, 'Invalid credentials.', 401, undefined, { retryable: false });
     }
+    req.log.info({ event: 'auth.stage', requestId: req.id, operation: 'auth.credentials_check', stage: 'credentials_check' }, 'Authentication credentials accepted');
 
     // Upsert the user into the database so foreign keys (createdBy) don't break
-    const user = await prisma.user.upsert({
-      where: { userCode: identifier },
-      update: { role, fullName, passwordHash: 'env_managed' },
-      create: { 
-        id: fallbackId,
-        userCode: identifier, 
-        role, 
-        fullName, 
-        passwordHash: 'env_managed',
-      }
-    });
+    req.log.info({ event: 'auth.stage', requestId: req.id, operation: 'auth.user_upsert', stage: 'user_upsert' }, 'Provisioning authenticated user');
+    let user;
+    try {
+      user = await prisma.user.upsert({
+        where: { userCode: identifier },
+        update: { role, fullName, passwordHash: 'env_managed' },
+        create: {
+          id: fallbackId,
+          userCode: identifier,
+          role,
+          fullName,
+          passwordHash: 'env_managed',
+        }
+      });
+    } catch (err) {
+      throw withErrorContext(err, { operation: 'auth.user_upsert', stage: 'user_upsert' });
+    }
 
-    const token = await reply.jwtSign({
-      id: user.id,
-      userCode: user.userCode,
-      role: user.role
-    }, { expiresIn: '8h' });
+    req.log.info({ event: 'auth.stage', requestId: req.id, operation: 'auth.jwt_sign', stage: 'jwt_sign' }, 'Signing authentication token');
+    let token: string;
+    try {
+      token = await reply.jwtSign({
+        id: user.id,
+        userCode: user.userCode,
+        role: user.role
+      }, { expiresIn: '8h' });
+    } catch (err) {
+      throw withErrorContext(err, { operation: 'auth.jwt_sign', stage: 'jwt_sign' });
+    }
 
+    req.log.info({ event: 'auth.stage', requestId: req.id, operation: 'auth.response', stage: 'response' }, 'Authentication response ready');
     return reply.send({
       success: true,
       token,
@@ -77,7 +92,9 @@ export async function login(req: FastifyRequest, reply: FastifyReply) {
       }
     });
   } catch (err) {
-    req.log.error({ requestId: req.id, operation: 'auth.login', error: err instanceof AppError ? err.code : 'UNCLASSIFIED' }, 'Authentication stage failed');
-    throw err;
+    throw withErrorContext(err, {
+      operation: err instanceof AppError && err.metadata?.operation ? String(err.metadata.operation) : 'auth.login',
+      stage: err instanceof AppError && err.metadata?.stage ? String(err.metadata.stage) : 'auth.failure'
+    });
   }
 }

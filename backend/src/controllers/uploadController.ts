@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { v2 as cloudinary } from 'cloudinary';
 import { sendInternalError } from '../utils/httpErrors';
+import { AppError, ERROR_CODES } from '../utils/errors';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -39,10 +40,13 @@ export async function uploadImage(req: FastifyRequest, reply: FastifyReply) {
 
     if (cloudinaryStatus === 403 || cloudinaryStatus === 420 || cloudinaryStatus === 429) {
       req.log.warn({ cloudinaryStatus }, 'Cloudinary rejected village photo upload');
-      return reply.status(503).send({
-        error: 'Photo upload service is temporarily unavailable. Continue the survey without photos.',
-        code: 'PHOTO_UPLOAD_UNAVAILABLE',
-      });
+      throw new AppError(
+        ERROR_CODES.EXTERNAL_SERVICE_ERROR,
+        'Photo upload service is temporarily unavailable. Continue the survey without photos.',
+        503,
+        { operation: 'photo.upload', stage: 'external_service' },
+        { cause: err }
+      );
     }
 
     return sendInternalError(req, reply, err, 'Cloudinary upload failed');

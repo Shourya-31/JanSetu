@@ -6,8 +6,8 @@
 
 export async function withDbRetry<T>(
   fn: () => Promise<T>,
-  retries = 3,
-  delayMs = 100
+  retries = Number(process.env.DB_RETRY_COUNT || 2),
+  delayMs = Number(process.env.DB_RETRY_DELAY_MS || 75)
 ): Promise<T> {
   let attempt = 0;
   while (attempt < retries) {
@@ -27,7 +27,13 @@ export async function withDbRetry<T>(
         throw err;
       }
 
-      console.warn(`⚠️ Transient DB error detected (Attempt ${attempt}/${retries}). Retrying in ${delayMs}ms... Code: ${err.code}`);
+      console.warn(JSON.stringify({
+        operation: 'database.retry',
+        attempt,
+        maxAttempts: retries,
+        delayMs: delayMs * Math.pow(2, attempt - 1),
+        errorCode: err.code || 'UNKNOWN'
+      }));
       await new Promise((resolve) => setTimeout(resolve, delayMs * Math.pow(2, attempt - 1)));
     }
   }

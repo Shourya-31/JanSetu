@@ -22,7 +22,7 @@ type SourceBlock = {
   panchayats: SourcePanchayat[];
 };
 
-const { CENSUS_HIERARCHY } = require('../../../frontend/src/data/narayanpurHierarchy') as {
+const { CENSUS_HIERARCHY } = require('../data/narayanpurHierarchy') as {
   CENSUS_HIERARCHY: SourceBlock[];
 };
 

@@ -1,8 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../config/prisma';
+import { withErrorContext } from '../utils/errors';
 
 let cachedHierarchy: any = null;
 let hierarchyExpiry = 0;
+let hierarchyRefresh: Promise<any> | null = null;
 
 export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
   const now = Date.now();
@@ -11,6 +13,8 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
   }
 
   try {
+    if (hierarchyRefresh) return reply.send(await hierarchyRefresh);
+    hierarchyRefresh = (async () => {
     // Query the clean relational hierarchy: Block → GramPanchayat → Village
     const blocks = await prisma.block.findMany({
       orderBy: { nameHindi: 'asc' },
@@ -26,9 +30,7 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
       }
     });
 
-    if (blocks.length === 0) {
-      return reply.status(503).send({ error: 'Village hierarchy has not been seeded.' });
-    }
+    if (blocks.length === 0) throw new Error('Village hierarchy has not been seeded.');
 
     // Shape response to match the frontend Block[] type from narayanpurHierarchy.ts
     const hierarchy = blocks.map((block) => ({
@@ -51,9 +53,13 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
 
     cachedHierarchy = hierarchy;
     hierarchyExpiry = now + 300000; // 5 min cache
-    return reply.send(hierarchy);
+    return hierarchy;
+    })();
+    return reply.send(await hierarchyRefresh);
   } catch (error) {
-    req.log.error({ err: error }, 'Village hierarchy query failed');
-    return reply.status(503).send({ error: 'Village hierarchy is temporarily unavailable.' });
+    hierarchyRefresh = null;
+    throw withErrorContext(error, { operation: 'hierarchy.query', stage: 'database_query' });
+  } finally {
+    hierarchyRefresh = null;
   }
 }

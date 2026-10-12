@@ -36,13 +36,11 @@ async function runProductionDbSetup() {
     console.log('Ensuring pgcrypto & pg_trgm Extensions & High-Performance GIN Trigram/B-Tree Indexes...');
     await client.query("CREATE EXTENSION IF NOT EXISTS pgcrypto;");
     await client.query("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
-    await client.query("CREATE INDEX IF NOT EXISTS idx_households_survey_answers_gin ON household_surveys USING GIN (survey_answers jsonb_path_ops);");
-    await client.query("CREATE INDEX IF NOT EXISTS idx_households_multi_filter ON household_surveys (village_name, is_bpl, caste, is_mining_worker);");
-    await client.query("CREATE INDEX IF NOT EXISTS idx_households_missing_docs ON household_surveys (missing_aadhaar, missing_ayushman, missing_caste_cert, missing_voter_id);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_multi_filter ON household_surveys (village_id, is_bpl, caste, mining_employment);");
+    await client.query("CREATE INDEX IF NOT EXISTS idx_households_missing_docs ON household_surveys (no_aadhaar_members, no_ayushman_members, no_caste_cert_members, no_voter_id_members);");
     await client.query("CREATE INDEX IF NOT EXISTS idx_households_head_name_trgm ON household_surveys USING GIN (head_name gin_trgm_ops);");
     await client.query("CREATE INDEX IF NOT EXISTS idx_households_mobile_trgm ON household_surveys USING GIN (mobile gin_trgm_ops);");
     await client.query("CREATE INDEX IF NOT EXISTS idx_households_tracking_id_trgm ON household_surveys USING GIN (tracking_id gin_trgm_ops);");
-    await client.query("CREATE INDEX IF NOT EXISTS idx_households_village_name_trgm ON household_surveys USING GIN (village_name gin_trgm_ops);");
     console.log('GIN Trigram & Composite B-Tree indexes created.');
 
     console.log('Creating Materialized View (mv_district_cluster_analytics)...');
@@ -50,22 +48,22 @@ async function runProductionDbSetup() {
       DROP MATERIALIZED VIEW IF EXISTS mv_district_cluster_analytics CASCADE;
       CREATE MATERIALIZED VIEW mv_district_cluster_analytics AS
       SELECT 
-        village_name AS "villageName",
+        village_id AS "villageId",
         COUNT(*)::int AS "totalHouseholds",
-        SUM(total_members)::int AS "totalPopulation",
+        SUM(elders_count + children_count + women_count)::int AS "totalPopulation",
         SUM(CASE WHEN is_bpl = 'Yes' OR is_bpl = 'हां' THEN 1 ELSE 0 END)::int AS "bplCount",
         SUM(CASE WHEN caste = 'Scheduled Tribe (ST)' THEN 1 ELSE 0 END)::int AS "stCount",
         SUM(CASE WHEN caste = 'Scheduled Caste (SC)' THEN 1 ELSE 0 END)::int AS "scCount",
-        SUM(missing_aadhaar)::int AS "missingAadhaarTotal",
-        SUM(missing_ayushman)::int AS "missingAyushmanTotal",
-        SUM(unemployed_count)::int AS "unemployedYouthTotal",
-        SUM(CASE WHEN missing_aadhaar > 0 OR missing_ayushman > 0 THEN 1 ELSE 0 END)::int AS "missingDocsCount",
-        SUM(CASE WHEN is_mining_worker = 'Yes' OR is_mining_worker = 'हां' THEN 1 ELSE 0 END)::int AS "miningAffectedCount",
-        SUM(CASE WHEN has_tap_water = 'No' OR has_tap_water = 'नहीं' THEN 1 ELSE 0 END)::int AS "noTapWaterCount"
+        SUM(no_aadhaar_members)::int AS "missingAadhaarTotal",
+        SUM(no_ayushman_members)::int AS "missingAyushmanTotal",
+        SUM(unemployed_members)::int AS "unemployedYouthTotal",
+        SUM(CASE WHEN no_aadhaar_members > 0 OR no_ayushman_members > 0 OR no_caste_cert_members > 0 OR no_voter_id_members > 0 THEN 1 ELSE 0 END)::int AS "missingDocsCount",
+        SUM(CASE WHEN mining_employment = 'Yes' OR mining_employment = 'हां' THEN 1 ELSE 0 END)::int AS "miningAffectedCount",
+        SUM(CASE WHEN tap_water_connection = 'No' OR tap_water_connection = 'नहीं' THEN 1 ELSE 0 END)::int AS "noTapWaterCount"
       FROM household_surveys
-      GROUP BY village_name;
+      GROUP BY village_id;
 
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_village_name ON mv_district_cluster_analytics ("villageName");
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_village_id ON mv_district_cluster_analytics ("villageId");
     `);
     console.log('Materialized View & Unique Index configured.');
 

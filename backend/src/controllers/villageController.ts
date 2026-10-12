@@ -11,6 +11,7 @@ import {
 
 let cachedVillages: any = null;
 let villageExpiry = 0;
+let villageRefresh: Promise<any> | null = null;
 
 export function invalidateVillageCache() {
   cachedVillages = null;
@@ -60,6 +61,8 @@ export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyR
   const now = Date.now();
   if (cachedVillages && now < villageExpiry) return reply.send(cachedVillages);
   try {
+    if (villageRefresh) return reply.send(await villageRefresh);
+    villageRefresh = (async () => {
     const [villages, householdCounts] = await Promise.all([
       prisma.village.findMany({ orderBy: { nameHindi: 'asc' }, include: villageInclude }),
       prisma.householdSurvey.groupBy({ by: ['villageId'], _count: { id: true } })
@@ -70,9 +73,13 @@ export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyR
     villages.forEach((v) => { result[String(v.id)] = formatVillageRecord(v, countMap[v.id] ?? 0); });
     cachedVillages = result;
     villageExpiry = now + 60000;
-    return reply.send(result);
+    return result;
+    })();
+    return reply.send(await villageRefresh);
   } catch (err: any) {
     return sendInternalError(req, reply, err, 'Village profile query failed');
+  } finally {
+    villageRefresh = null;
   }
 }
 

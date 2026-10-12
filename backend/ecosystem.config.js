@@ -9,12 +9,12 @@ module.exports = {
       max_memory_restart: '500M',
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 8080,
         HOST: '0.0.0.0'
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 3000,
+        PORT: 8080,
         HOST: '127.0.0.1'
       },
       error_file: '/dev/null',

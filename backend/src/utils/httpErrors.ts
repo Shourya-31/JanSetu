@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { withErrorContext } from './errors';
 
 export function sendInternalError(
   req: FastifyRequest,
@@ -6,6 +7,7 @@ export function sendInternalError(
   error: unknown,
   operation: string
 ): FastifyReply {
-  req.log.error({ err: error }, operation);
-  return reply.status(500).send({ error: 'Internal Server Error' });
+  void req;
+  void reply;
+  throw withErrorContext(error, { operation, stage: 'controller' });
 }

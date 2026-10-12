@@ -7,7 +7,6 @@ import compress from '@fastify/compress';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
-import fastifyPostgres from '@fastify/postgres';
 import fastifyJwt from '@fastify/jwt';
 import prisma from './config/prisma';
 import apiRoutes from './routes/api';
@@ -19,6 +18,7 @@ const server = Fastify({
   genReqId: (req) => createRequestId(req.headers['x-request-id']),
   connectionTimeout: Number(process.env.CONNECTION_TIMEOUT || 10000),
   keepAliveTimeout: Number(process.env.KEEP_ALIVE_TIMEOUT || 5000),
+  requestTimeout: Number(process.env.REQUEST_TIMEOUT || 30000),
   bodyLimit: 10 * 1024 * 1024, // 10 MB payload limit
   pluginTimeout: 30000,
   ajv: {
@@ -75,8 +75,14 @@ async function start() {
 
     // 3. Environment-Driven Rate Limiter
     await server.register(rateLimit, {
-      max: Number(process.env.RATE_LIMIT_MAX || 10000),
-      timeWindow: (process.env.RATE_LIMIT_WINDOW as string) || '1 minute'
+      max: Number(process.env.RATE_LIMIT_MAX || 1000),
+      timeWindow: (process.env.RATE_LIMIT_WINDOW as string) || '1 minute',
+      addHeaders: {
+        'x-ratelimit-limit': true,
+        'x-ratelimit-remaining': true,
+        'x-ratelimit-reset': true,
+        'retry-after': true
+      }
     });
 
     // 4. Dynamic CORS Plugin
@@ -92,20 +98,10 @@ async function start() {
       secret: process.env.JWT_SECRET
     });
 
-    // 6. PostgreSQL Plugin
-    try {
-      await server.register(fastifyPostgres, {
-        connectionString: process.env.DATABASE_URL
-      });
-      server.log.info('✅ PostgreSQL Pool Connected!');
-    } catch (dbErr: any) {
-      server.log.warn('⚠️ PostgreSQL pool connection notice: ' + dbErr.message);
-    }
-
-    // 7. Register Core API Routes
+    // 6. Register Core API Routes. Prisma owns the single bounded database pool.
     await server.register(apiRoutes);
 
-    // 8. Health Check Route
+    // 7. Health Check Route
     server.get('/health', async (req, reply) => {
       return { 
         status: 'ok', 
@@ -116,7 +112,7 @@ async function start() {
       };
     });
 
-    // 9. Centralized request completion logging and error handling.
+    // 8. Centralized request completion logging and error handling.
     server.addHook('onRequest', async (request, reply) => {
       requestStartedAt.set(request, Date.now());
       reply.header('X-Request-ID', request.id);
@@ -153,8 +149,8 @@ async function start() {
     });
     installErrorHandler(server);
 
-    // 10. Start Listening
-    const PORT = process.env.PORT || 3000;
+    // 9. Start Listening
+    const PORT = process.env.PORT || 8080;
     const HOST = process.env.HOST || '0.0.0.0';
 
     await server.listen({ port: Number(PORT), host: HOST });
@@ -167,7 +163,7 @@ async function start() {
     const startupError = err as NodeJS.ErrnoException;
     if (startupError.code === 'EADDRINUSE') {
       server.log.error(
-        `Backend could not start because port ${process.env.PORT || 3000} is already in use. ` +
+        `Backend could not start because port ${process.env.PORT || 8080} is already in use. ` +
         'The existing JanSetu backend was left untouched; stop the old process or use another PORT.'
       );
       process.exitCode = 1;

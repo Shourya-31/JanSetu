@@ -126,7 +126,7 @@ Browser
   │                                                  │
   └── Docker deployment: Nginx :8080 ── /api proxy ──┤
                                                      ▼
-                                           Fastify API :3000
+                                           Fastify API :8080
                                                      │
                           ┌──────────────────────────┴──────────────────────────┐
                           ▼                                                     ▼
@@ -141,7 +141,7 @@ Browser
 | Service | Image/build | Internal port | Host port | Purpose |
 |---|---|---:|---:|---|
 | `postgres` | `postgres:17-alpine` | 5432 | Not published | Persistent survey database |
-| `backend` | `backend/Dockerfile` | 3000 | Not published | Fastify API and authentication |
+| `backend` | `backend/Dockerfile` | 8080 | Not published | Fastify API and authentication |
 | `frontend` | `frontend/Dockerfile` + Nginx | 80 | 8080 | React application and API reverse proxy |
 
 The PostgreSQL data is stored in the named `postgres_data` volume. The repository `backups` directory is mounted read-only into the database container at `/backups`.
@@ -259,7 +259,7 @@ backend secrets and service settings:
 ```dotenv
 NODE_ENV=production
 HOST=0.0.0.0
-PORT=3000
+PORT=8080
 DATABASE_URL=postgresql://user:password@localhost:5432/jansetu?schema=public
 JWT_SECRET=at_least_32_random_characters
 CORS_ORIGIN=http://localhost:8080
@@ -349,7 +349,7 @@ Start the backend in watch mode:
 npm run dev
 ```
 
-The API listens on <http://localhost:3000>.
+The API listens on <http://localhost:8080>.
 
 ### 3. Install and start the frontend
 
@@ -361,7 +361,7 @@ npm install
 npm run dev
 ```
 
-The Vite application listens on <http://localhost:5173>. Vite proxies `/api` requests to `http://localhost:3000`, so no frontend API URL is required for the standard local setup.
+The Vite application listens on <http://localhost:5173>. Vite proxies `/api` requests to `http://localhost:8080`, so no frontend API URL is required for the standard local setup.
 
 For a frontend build preview:
 
@@ -378,7 +378,7 @@ npm run preview
 |---|---|---|
 | `NODE_ENV` | No | Runtime mode; development enables more verbose logging |
 | `HOST` | No | Listen host; defaults to `0.0.0.0` |
-| `PORT` | No | API port; defaults to `3000` |
+| `PORT` | No | API port; defaults to `8080` |
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | JWT signing secret; startup rejects values shorter than 32 characters |
 | `CORS_ORIGIN` | Recommended | Comma-separated allowed origins; development defaults to Vite |
@@ -545,16 +545,16 @@ Use PM2 only for a non-container deployment where process supervision is require
 
 ### The frontend cannot reach the API
 
-1. Confirm the backend is listening on port 3000.
+1. Confirm the backend is listening on port 8080.
 2. In Docker, confirm `docker compose ps` reports `backend` as healthy.
-3. In local development, confirm Vite is running on port 5173 and the backend is running on port 3000.
+3. In local development, confirm Vite is running on port 5173 and the backend is running on port 8080.
 4. For a separate frontend/API deployment, set `VITE_API_BASE_URL` and configure backend `CORS_ORIGIN`.
 
 ### The backend exits during startup
 
 - Verify `DATABASE_URL` is present and points to a reachable PostgreSQL instance.
 - Verify `JWT_SECRET` is at least 32 characters.
-- Check whether port 3000 is already in use.
+- Check whether port 8080 is already in use.
 - Review `docker compose logs backend` or the local terminal output.
 
 ### Docker reports an unhealthy backend
