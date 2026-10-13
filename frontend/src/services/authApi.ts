@@ -1,4 +1,4 @@
-import { apiRequest, type AppRole, type AuthSession, setAuthSession } from './apiClient';
+import { apiRequest, getAuthSession, type AppRole, type AuthSession, setAuthSession } from './apiClient';
 
 export async function login(role: AppRole, identifier: string, password: string): Promise<AuthSession> {
   const response = await apiRequest<{ success: boolean; token: string; user: AuthSession['user'] }>('/api/auth/login', {
@@ -12,4 +12,18 @@ export async function login(role: AppRole, identifier: string, password: string)
   };
   
   return session;
+}
+
+export async function restoreAuthSession(): Promise<AuthSession> {
+  const response = await apiRequest<{ success: boolean; user: AuthSession['user'] }>('/api/auth/me');
+  const session: AuthSession = {
+    token: getAuthSession()?.token || '',
+    user: response.user
+  };
+  setAuthSession(session);
+  return session;
+}
+
+export async function logout(): Promise<void> {
+  await apiRequest('/api/auth/logout', { method: 'POST' });
 }

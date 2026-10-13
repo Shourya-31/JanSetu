@@ -28,6 +28,7 @@ export type ApiErrorCode =
 export type ApiFailureType = 'http' | 'network' | 'timeout' | 'cancelled' | 'malformed';
 
 const UNAUTHORIZED_EVENT = 'jansetu:unauthorized';
+export const SESSION_KEY = 'jansetu.auth.session';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 type ApiRequestOptions = Omit<RequestInit, 'body' | 'signal'> & {
   body?: unknown;
@@ -53,16 +54,83 @@ export class ApiError extends Error {
 
 let memorySession: AuthSession | null = null;
 
+function isAuthSession(value: unknown): value is AuthSession {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  const user = candidate.user;
+  if (typeof candidate.token !== 'string' || !user || typeof user !== 'object') return false;
+
+  const candidateUser = user as Record<string, unknown>;
+  return (
+    typeof candidateUser.id === 'string' &&
+    candidateUser.id.length > 0 &&
+    typeof candidateUser.userCode === 'string' &&
+    candidateUser.userCode.length > 0 &&
+    (candidateUser.role === 'admin' || candidateUser.role === 'surveyor') &&
+    typeof candidateUser.fullName === 'string'
+  );
+}
+
+function isTokenExpired(token: string): boolean {
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+
+  try {
+    const encodedPayload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(encodedPayload.padEnd(Math.ceil(encodedPayload.length / 4) * 4, '='))) as { exp?: unknown };
+    return typeof payload.exp === 'number' && payload.exp <= Math.floor(Date.now() / 1000);
+  } catch {
+    return false;
+  }
+}
+
+function readStoredSession(): AuthSession | null {
+  try {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    if (!stored) return null;
+
+    const parsed: unknown = JSON.parse(stored);
+    if (!isAuthSession(parsed) || isTokenExpired(parsed.token)) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Storage may be unavailable or restricted; memory auth still works.
+    }
+    return null;
+  }
+}
+
 export function getAuthSession(): AuthSession | null {
+  if (memorySession && !isTokenExpired(memorySession.token)) return memorySession;
+  memorySession = readStoredSession();
   return memorySession;
 }
 
 export function setAuthSession(session: AuthSession): void {
+  if (!isAuthSession(session) || isTokenExpired(session.token)) {
+    clearAuthSession();
+    return;
+  }
   memorySession = session;
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // Keep the in-memory session when browser storage is unavailable.
+  }
 }
 
 export function clearAuthSession(): void {
   memorySession = null;
+  try {
+    sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Storage may be unavailable or restricted.
+  }
 }
 
 function clientRequestId(): string {
@@ -110,7 +178,7 @@ async function request(path: string, options: ApiRequestOptions = {}): Promise<R
   const abortFromCaller = () => controller.abort();
   signal?.addEventListener('abort', abortFromCaller, { once: true });
   try {
-    return await fetch(`${API_BASE_URL}${path}`, { ...options, headers, body, signal: controller.signal });
+    return await fetch(`${API_BASE_URL}${path}`, { ...options, credentials: 'include', headers, body, signal: controller.signal });
   } catch {
     if (controller.signal.aborted) {
       const failureType = signal?.aborted ? 'cancelled' : 'timeout';
@@ -123,16 +191,17 @@ async function request(path: string, options: ApiRequestOptions = {}): Promise<R
   }
 }
 
+function handleUnauthorized(): void {
+  clearAuthSession();
+  window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const response = await request(path, options);
   if (!response.ok) {
     const payload = await readErrorPayload(response);
     const requestId = response.headers.get('X-Request-ID') || payload.requestId;
-    const session = getAuthSession();
-    if (response.status === 401 && session) {
-      clearAuthSession();
-      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
-    }
+    if (response.status === 401) handleUnauthorized();
     throw new ApiError(
       payload.message || (response.status >= 500 ? 'The request could not be completed.' : `Request failed (${response.status})`),
       response.status,
@@ -154,6 +223,7 @@ export async function downloadApiFile(path: string, filename: string): Promise<v
   const response = await request(path);
   if (!response.ok) {
     const payload = await readErrorPayload(response);
+    if (response.status === 401) handleUnauthorized();
     throw new ApiError(payload.message || `Request failed (${response.status})`, response.status, payload.code || 'INTERNAL_ERROR', response.headers.get('X-Request-ID') || payload.requestId, payload.retryable ?? false, 'http', payload.operation, payload.stage);
   }
 

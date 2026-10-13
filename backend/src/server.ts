@@ -7,6 +7,7 @@ import compress from '@fastify/compress';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
+import cookie from '@fastify/cookie';
 import fastifyJwt from '@fastify/jwt';
 import prisma from './config/prisma';
 import apiRoutes from './routes/api';
@@ -67,6 +68,8 @@ async function start() {
       }
     });
 
+    await server.register(cookie);
+
     // 2. High-Speed Compression (Brotli + Gzip)
     await server.register(compress, {
       threshold: Number(process.env.COMPRESS_THRESHOLD || 1024),
@@ -95,7 +98,11 @@ async function start() {
 
     // 5. JWT Authentication Plugin
     await server.register(fastifyJwt, {
-      secret: process.env.JWT_SECRET
+      secret: process.env.JWT_SECRET,
+      cookie: {
+        cookieName: 'jansetu_token',
+        signed: false
+      }
     });
 
     // 6. Register Core API Routes. Prisma owns the single bounded database pool.

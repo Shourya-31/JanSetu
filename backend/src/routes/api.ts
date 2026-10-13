@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import { login } from '../controllers/authController';
+import { getCurrentUser, login, logout } from '../controllers/authController';
 import { getAllVillageProfiles, getVillageProfile, saveVillageProfile, finalizeVillageProfile, patchVillageProfile, deleteVillageProfile } from '../controllers/villageController';
 import { getHouseholdSurveys, createHouseholdSlots, saveHouseholdSurvey, patchHouseholdSurvey, deleteHouseholdSurvey, verifyHouseholdRecord, updateRegistryStatusRecord, createCorrectionTicketRecord } from '../controllers/householdController';
 import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminController';
@@ -97,6 +97,13 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
     schema: { ...loginSchema, querystring: emptyQuerySchema },
     config: { rateLimit: { max: 5, timeWindow: '1 minute' } }
   }, login);
+  fastify.get('/api/auth/me', {
+    ...authenticated,
+    schema: { querystring: emptyQuerySchema }
+  }, getCurrentUser);
+  fastify.post('/api/auth/logout', {
+    schema: { querystring: emptyQuerySchema }
+  }, logout);
   fastify.get('/api/hierarchy', {
     ...authenticated,
     schema: { querystring: emptyQuerySchema }
