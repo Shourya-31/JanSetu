@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import prisma from '../src/config/prisma';
 import { login } from '../src/controllers/authController';
 import { AppError, classifyError, createRequestId, ERROR_CODES, installErrorHandler, sanitizeErrorText, toErrorResponse, withErrorContext } from '../src/utils/errors';
@@ -11,15 +12,15 @@ type CapturedFailure = {
 };
 
 function captureFailure(error: unknown, requestId = 'request-42'): CapturedFailure {
-  let handler: ((error: any, request: any, reply: any) => unknown) | undefined;
+  let handler: ((error: FastifyError, request: FastifyRequest, reply: FastifyReply) => unknown) | undefined;
   const logs: Record<string, unknown>[] = [];
   const server = {
-    setErrorHandler(value: typeof handler) {
+    setErrorHandler(value: (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => unknown) {
       handler = value;
     },
     log: {
-      error(data: Record<string, unknown>) {
-        logs.push(data);
+      error(data: unknown) {
+        if (typeof data === 'object' && data !== null) logs.push(data as Record<string, unknown>);
       }
     }
   };
@@ -35,13 +36,21 @@ function captureFailure(error: unknown, requestId = 'request-42'): CapturedFailu
       };
     }
   };
-  handler?.(error, {
+  handler?.(error as FastifyError, {
     id: requestId,
     method: 'POST',
     url: '/api/auth/login',
     routeOptions: { url: '/api/auth/login' }
-  }, reply);
+  } as FastifyRequest, reply as FastifyReply);
   return { response, logs };
+}
+
+type UserUpsertMock = (...args: never[]) => Promise<unknown>;
+
+function replaceUserUpsert(mock: UserUpsertMock): () => void {
+  const original = prisma.user.upsert;
+  Object.defineProperty(prisma.user, 'upsert', { configurable: true, value: mock });
+  return () => Object.defineProperty(prisma.user, 'upsert', { configurable: true, value: original });
 }
 
 test('error responses have a stable safe envelope and request id', () => {
@@ -115,12 +124,14 @@ test('request ids reject control characters and remain distinct when generated',
 });
 
 test('login Prisma failure preserves the upsert stage, cause, request id, safe response, and redacted log', async () => {
-  const originalUpsert = prisma.user.upsert;
   process.env.ADMIN_USERNAME = 'diagnostic-admin';
   process.env.ADMIN_PASSWORD = 'diagnostic-password';
-  prisma.user.upsert = (async () => {
+  const restoreUpsert = replaceUserUpsert(async () => {
     throw Object.assign(new Error('postgresql://db-user:db-password@db.internal/jansetu password=db-password'), { code: 'P1001' });
-  }) as typeof prisma.user.upsert;
+  });
+  // prisma.user.upsert = (async () => {
+  //   throw Object.assign(new Error('postgresql://adiryaboxi:123esaqw@db.internal/jansetu password=123esaqw'), { code: 'P1001' });
+  // }) as typeof prisma.user.upsert;
 
   try {
     const request = {
@@ -151,20 +162,19 @@ test('login Prisma failure preserves the upsert stage, cause, request id, safe r
     assert.equal(String(captured.logs[0].causeMessage).includes('db-password'), false);
     assert.equal(String(captured.logs[0].causeMessage).includes('[redacted]'), true);
   } finally {
-    prisma.user.upsert = originalUpsert;
+    restoreUpsert();
   }
 });
 
 test('login JWT signing failure preserves the signing stage and never returns a success payload', async () => {
-  const originalUpsert = prisma.user.upsert;
   process.env.ADMIN_USERNAME = 'diagnostic-admin';
   process.env.ADMIN_PASSWORD = 'diagnostic-password';
-  prisma.user.upsert = (async () => ({
+  const restoreUpsert = replaceUserUpsert(async () => ({
     id: 'env_admin_id',
     userCode: 'diagnostic-admin',
     role: 'admin',
     fullName: 'Administrator'
-  })) as typeof prisma.user.upsert;
+  }));
 
   try {
     const request = {
@@ -201,7 +211,7 @@ test('login JWT signing failure preserves the signing stage and never returns a 
     assert.equal(captured.logs[0].causeCode, 'JWT_SIGN_ERROR');
     assert.equal(result.payload.token, undefined);
   } finally {
-    prisma.user.upsert = originalUpsert;
+    restoreUpsert();
   }
 });
 

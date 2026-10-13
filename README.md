@@ -277,11 +277,19 @@ CLOUDINARY_API_SECRET=your-api-secret
 The Compose service overrides `DATABASE_URL` inside the backend container so that it uses the `postgres` service name rather than `localhost`. Do not commit real credentials, JWT secrets, Cloudinary secrets, or production connection strings.
 
 The Compose deployment also runs a one-shot `db-init` service after PostgreSQL is
-healthy. It applies the Prisma schema, PostgreSQL extensions/indexes, and analytics
-view, then seeds the Narayanpur Block → Gram Panchayat → Village hierarchy. The
-backend starts only after that initialization succeeds. Environment-managed login
+healthy. It applies the version-controlled Prisma migration, then attempts optional
+PostgreSQL extensions/indexes and analytics-view tuning, and finally seeds the
+Narayanpur Block → Gram Panchayat → Village hierarchy. Required schema preparation
+and hierarchy seeding are fatal; optional tuning is logged and may be skipped. The
+backend starts only after required initialization succeeds. Environment-managed login
 credentials are provisioned on the first successful login; no separate user seed
 command is required for the normal Compose flow.
+
+For an existing database created before migration history was added, `db-init` stops
+instead of guessing or changing the schema. Take and review a backup, verify schema
+compatibility, and explicitly approve the one-time baseline with
+`DB_INIT_APPROVE_BASELINE=true`; do not set this on an unreviewed database. The
+baseline migration is `20261013123000_baseline`.
 
 ### 2. Build and start from the repository root
 
