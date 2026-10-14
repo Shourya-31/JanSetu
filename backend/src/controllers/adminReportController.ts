@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { withErrorContext } from '../utils/errors';
 import prisma from '../config/prisma';
+import { mergePhotoUrls } from '../utils/villagePhotos';
 
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -74,7 +75,12 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
         completedSections: Array.isArray(vs.completedSections) ? vs.completedSections : [],
         answers: {
           ...(vs.surveyData && typeof vs.surveyData === 'object' ? vs.surveyData as Record<string, unknown> : {}),
-          villagePhotos: Array.isArray(vs.villagePhotos) ? vs.villagePhotos : [],
+          villagePhotos: mergePhotoUrls(
+            vs.villagePhotos,
+            vs.surveyData && typeof vs.surveyData === 'object'
+              ? (vs.surveyData as Record<string, unknown>).villagePhotos
+              : undefined
+          ),
           totalHouseholds: vs.totalHouseholds,
           totalPopulation: vs.totalPopulation,
           scPopulation: vs.scPopulation,

@@ -205,7 +205,7 @@ export const VillageSurveyForm: React.FC<{
   initialData?: Record<string, unknown>;
   onBack: () => void;
   onSectionSave: (data: Record<string, unknown>, sectionId: string) => Promise<void>;
-  onPhotosSave: (photoUrls: string[]) => Promise<void>;
+  onPhotosSave: (photoUrls: string[]) => Promise<string[]>;
   onFinalize: () => Promise<void>;
   saveState?: "idle" | "saving" | "saved" | "error";
   saveError?: string;
@@ -230,6 +230,11 @@ export const VillageSurveyForm: React.FC<{
     //Store selected photos
     const [villagePhotos, setVillagePhotos] = useState<File[]>([]);
     const [uploadingPhotos, setUploadingPhotos] = useState(false);
+    const savedPhotoUrls = Array.isArray(initialData?.villagePhotos)
+      ? initialData.villagePhotos.filter((photo): photo is string => typeof photo === "string" && photo.trim().length > 0)
+      : typeof initialData?.villagePhotos === "string" && initialData.villagePhotos.trim().length > 0
+        ? [initialData.villagePhotos]
+        : [];
 
 
   const [completedSections, setCompletedSections] = useState<string[]>(() => {
@@ -657,18 +662,17 @@ if (id === "health") {
           await onPhotosSave(uploadedUrls);
         }
         const failedCount = results.length - uploadedUrls.length;
-        setVillagePhotos([]);
+        setVillagePhotos(results.flatMap((result, index) => result.status === "rejected" ? [villagePhotos[index]] : []));
         if (failedCount > 0) {
           alert(
             uploadedUrls.length > 0
-              ? `${uploadedUrls.length} फोटो सफलतापूर्वक सहेजी गईं। ${failedCount} फोटो अपलोड नहीं हो सकीं; उन्हें हटा दिया गया है।`
+              ? `${uploadedUrls.length} फोटो सफलतापूर्वक सहेजी गईं। ${failedCount} फोटो अपलोड नहीं हो सकीं; आप उन्हें फिर से भेज सकते हैं।`
               : "फोटो सेवा अभी उपलब्ध नहीं है या Cloudinary सीमा पूरी हो गई है। फोटो सहेजी नहीं गईं; सर्वेक्षण जारी रख सकते हैं।"
           );
         } else {
           alert(`${uploadedUrls.length} फोटो सफलतापूर्वक सहेजी गईं।`);
         }
       } catch {
-        setVillagePhotos([]);
         alert("फोटो सहेजी नहीं जा सकीं। सर्वेक्षण जारी रख सकते हैं।");
       } finally {
         setUploadingPhotos(false);
@@ -683,6 +687,18 @@ if (id === "health") {
     {uploadingPhotos ? "फोटो अपलोड हो रही हैं..." : "फोटो सबमिट करें"}
   </button>
 </div>
+{savedPhotoUrls.length > 0 && (
+  <div className="mt-4">
+    <p className="text-xs text-slate-600 mb-2">सहेजी गई तस्वीरें ({savedPhotoUrls.length})</p>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+      {savedPhotoUrls.map((photo, index) => (
+        <a key={`${photo}-${index}`} href={photo} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border bg-white">
+          <img src={photo} alt={`Saved village photo ${index + 1}`} className="w-full h-24 object-cover" />
+        </a>
+      ))}
+    </div>
+  </div>
+)}
 </div>
           </>
         )}
