@@ -14,6 +14,11 @@ export interface HouseholdApiRecord {
   [key: string]: unknown;
 }
 
+export interface HouseholdSurveyCollection {
+  householdCount: number;
+  households: Record<string, HouseholdApiRecord>;
+}
+
 export interface VillageApiProfile {
   id: string;
   villageId?: number;
@@ -50,26 +55,49 @@ export async function fetchVillageProfile(villageName: string, block?: string, p
   }
 }
 
-export async function fetchHouseholdSurveys(villageName: string): Promise<Record<string, HouseholdApiRecord>> {
-  if (!villageName) return {};
-  const res = await apiRequest<Record<string, HouseholdApiRecord> | { data?: Record<string, HouseholdApiRecord> }>(
-    `/api/households?villageName=${encodeURIComponent(villageName)}`
+export async function fetchHouseholdSurveys(
+  villageName: string,
+  villageId?: number,
+  block?: string,
+  panchayat?: string
+): Promise<HouseholdSurveyCollection> {
+  const normalizedVillageName = villageName.trim();
+  if (!normalizedVillageName && villageId === undefined) return { householdCount: 0, households: {} };
+  const query = new URLSearchParams();
+  if (normalizedVillageName) query.set('villageName', normalizedVillageName);
+  if (villageId !== undefined && Number.isSafeInteger(villageId) && villageId > 0) {
+    query.set('villageId', String(villageId));
+  }
+  if (block) query.set('block', block);
+  if (panchayat) query.set('panchayat', panchayat);
+  const res = await apiRequest<HouseholdSurveyCollection | Record<string, HouseholdApiRecord>>(
+    `/api/households?${query.toString()}`
   );
   if (!res || typeof res !== 'object' || Array.isArray(res)) {
     throw new Error('Household survey response was malformed');
   }
-  const payload = res as Record<string, unknown>;
-  if ('data' in payload) {
-    if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
+  if ('households' in res) {
+    if (!res.households || typeof res.households !== 'object' || Array.isArray(res.households)
+      || typeof res.householdCount !== 'number' || !Number.isInteger(res.householdCount) || res.householdCount < 0) {
       throw new Error('Household survey response data was malformed');
     }
-    return payload.data as Record<string, HouseholdApiRecord>;
+    return res as HouseholdSurveyCollection;
   }
-  return res as Record<string, HouseholdApiRecord>;
+
+  const legacyRecords = res as Record<string, HouseholdApiRecord>;
+  const highestSavedHouseNumber = Object.keys(legacyRecords).reduce(
+    (highest, houseNumber) => Math.max(highest, Number(houseNumber) || 0),
+    0
+  );
+  return { householdCount: highestSavedHouseNumber, households: legacyRecords };
 }
 
-export function initializeHouseholdSlots(input: unknown): Promise<{ success: boolean; data: HouseholdApiRecord[] }> {
-  return apiRequest<{ success: boolean; data: HouseholdApiRecord[] }>('/api/households/initialize', {
+export function initializeHouseholdSlots(input: unknown): Promise<{
+  success: boolean;
+  householdCount: number;
+  households: Record<string, HouseholdApiRecord>;
+}> {
+  return apiRequest('/api/households/initialize', {
     method: 'POST',
     body: input
   });
@@ -101,10 +129,22 @@ export function finalizeVillageSurvey(villageId: number, version: number) {
   });
 }
 
-export function saveHouseholdSurvey(villageName: string, houseNumber: number, data: Record<string, unknown>) {
+export function saveHouseholdSurvey(
+  villageName: string,
+  houseNumber: number,
+  data: Record<string, unknown>,
+  villageId?: number
+) {
   return apiRequest<{ success: boolean; data: HouseholdApiRecord }>('/api/households', {
     method: 'POST',
-    body: { villageName, houseNumber, data }
+    body: {
+      villageName,
+      ...(villageId !== undefined && Number.isSafeInteger(villageId) && villageId > 0 ? { villageId } : {}),
+      ...(typeof data.block === 'string' ? { block: data.block } : {}),
+      ...(typeof data.panchayat === 'string' ? { panchayat: data.panchayat } : {}),
+      houseNumber,
+      data
+    }
   });
 }
 

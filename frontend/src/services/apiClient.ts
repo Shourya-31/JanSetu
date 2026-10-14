@@ -2,6 +2,7 @@ export type AppRole = 'admin' | 'surveyor';
 
 export interface AuthSession {
   token: string;
+  surveyMode?: 'village' | 'household';
   user: {
     id: string;
     userCode: string;
@@ -67,7 +68,8 @@ function isAuthSession(value: unknown): value is AuthSession {
     typeof candidateUser.userCode === 'string' &&
     candidateUser.userCode.length > 0 &&
     (candidateUser.role === 'admin' || candidateUser.role === 'surveyor') &&
-    typeof candidateUser.fullName === 'string'
+    typeof candidateUser.fullName === 'string' &&
+    (candidate.surveyMode === undefined || candidate.surveyMode === 'village' || candidate.surveyMode === 'household')
   );
 }
 

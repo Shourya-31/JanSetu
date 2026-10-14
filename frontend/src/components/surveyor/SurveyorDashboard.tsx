@@ -37,12 +37,14 @@ import {
 import { VillageSurveyForm } from "./village-survey/VillageSurveyForm";
 import {
   fetchHouseholdSurveys,
+  initializeHouseholdSlots,
   fetchAllVillageProfiles,
   fetchVillageProfile,
   saveHouseholdSurvey,
   saveVillageSurvey,
   finalizeVillageSurvey,
 } from "../../services/surveyorApi";
+import { buildHouseholdSlots } from "../../services/householdSlots";
 
 import HouseholdSurvey from "./household/HouseholdSurvey";
 
@@ -492,11 +494,11 @@ useEffect(() => {
 
 
 
-    setVillageData(null);
+    setVillageData(null);
 
 
 
-    setHouseholds([]);
+    setHouseholds([]);
 
 
 
@@ -504,15 +506,15 @@ useEffect(() => {
 
 
 
-    setDataError("");
+    setDataError("");
 
 
 
-    setViewMode("selection");
+    setViewMode("selection");
 
 
 
-  };
+  };
 
 
 
@@ -543,24 +545,23 @@ useEffect(() => {
          setVillageSaveError("");
          setViewMode("village_survey");
        } else {
-         const householdMap = await fetchHouseholdSurveys(village.nameHindi);
-         const nextHouseholds = Object.entries(householdMap).map(([key, value]) => ({
-           id: String(value.id ?? `local-${village.id}-${key}`),
-           version: Number(value.version ?? 1),
-           houseNumber: Number(key),
-           headName: typeof value.headName === "string" ? value.headName : "",
-           isCompleted: Boolean(value.isCompleted ?? value.auditStatus === "Verified"),
-           data: {
-             ...(typeof value.surveyAnswers === "object" && value.surveyAnswers ? value.surveyAnswers : {}),
-             villageName: village.nameHindi,
-             block: selectedBlock?.blockName ?? "",
-             panchayat: selectedPanchayat?.name ?? "",
-             houseNumber: Number(key),
-             surveyorName: surveyorId,
-           },
-         }));
+         const numericVillageId = Number(village.id);
+         const householdCollection = await fetchHouseholdSurveys(
+           village.nameHindi,
+           Number.isSafeInteger(numericVillageId) && numericVillageId > 0 ? numericVillageId : undefined,
+           selectedBlock?.blockName,
+           selectedPanchayat?.name
+         );
+         const nextHouseholds = buildHouseholdSlots(
+           village.nameHindi,
+           selectedBlock?.blockName ?? "",
+           selectedPanchayat?.name ?? "",
+           surveyorId,
+           householdCollection.householdCount,
+           householdCollection.households
+         );
 
-         setHouseholds(nextHouseholds.sort((a, b) => a.houseNumber - b.houseNumber));
+         setHouseholds(nextHouseholds);
          setViewMode("household_survey");
        }
      } catch (error) {
@@ -677,7 +678,7 @@ useEffect(() => {
 
 
 
-  // HOUSEHOLD COUNT SUBMIT
+  // HOUSEHOLD COUNT SUBMIT
 
 
 
@@ -685,243 +686,70 @@ useEffect(() => {
 
 
 
-  const handleHouseholdCountSubmit = async (
+  const handleHouseholdCountSubmit = async (
+    count: number
+  ) => {
+    if (!selectedVillage) return;
 
+    setDataError("");
+    setDataLoading(true);
 
+    try {
+      const saved = await initializeHouseholdSlots({
+        villageName: selectedVillage.nameHindi,
+        ...(Number.isSafeInteger(Number(selectedVillage.id)) && Number(selectedVillage.id) > 0
+          ? { villageId: Number(selectedVillage.id) }
+          : {}),
+        block: selectedBlock?.blockName ?? "",
+        panchayat: selectedPanchayat?.name ?? "",
+        count,
+      });
+      const newHouseholds = buildHouseholdSlots(
+        selectedVillage.nameHindi,
+        selectedBlock?.blockName ?? "",
+        selectedPanchayat?.name ?? "",
+        surveyorId,
+        saved.householdCount,
+        saved.households
+      );
+      setHouseholds(newHouseholds);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "परिवार सूची तैयार नहीं हो सकी।";
+      setDataError(message);
+      throw error;
+    } finally {
+      setDataLoading(false);
 
-    count: number
 
 
+    }
 
-  ) => {
 
 
-
-    if (!selectedVillage) return;
-
-
-
-
-
-
-
-    setDataError("");
-
-
-
-    setDataLoading(true);
-
-
-
-
-
-
-
-    try {
-
-
-
-      const newHouseholds: HouseholdItem[] =
-
-
-
-        Array.from(
-
-
-
-          { length: count },
-
-
-
-          (_, index) => ({
-
-
-
-            id: `local-${selectedVillage.id}-${index + 1}`,
-
-
-
-
-
-
-
-            version: 1,
-
-
-
-
-
-
-
-            houseNumber: index + 1,
-
-
-
-
-
-
-
-            headName: "",
-
-
-
-
-
-
-
-            isCompleted: false,
-
-
-
-
-
-
-
-            data: {
-
-
-
-              villageName:
-
-
-
-                selectedVillage.nameHindi,
-
-
-
-
-
-
-
-              block:
-
-
-
-                selectedBlock?.blockName ?? "",
-
-
-
-
-
-
-
-              panchayat:
-
-
-
-                selectedPanchayat?.name ?? "",
-
-
-
-
-
-
-
-              houseNumber: index + 1,
-
-
-
-
-
-
-
-              surveyorName: surveyorId,
-
-
-
-            },
-
-
-
-          })
-
-
-
-        );
-
-
-
-
-
-
-
-      setHouseholds(newHouseholds);
-
-
-
-    } catch (error) {
-
-
-
-      setDataError(
-
-
-
-        error instanceof Error
-
-
-
-          ? error.message
-
-
-
-          : "परिवार सूची तैयार नहीं हो सकी।"
-
-
-
-      );
-
-
-
-
-
-
-
-      throw error;
-
-
-
-    } finally {
-
-
-
-      setDataLoading(false);
-
-
-
-    }
-
-
-
-  };
+  };
 
   // =========================================================
   // ZERO FAMILY SURVEY COMPLETE
   // =========================================================
 
   const handleZeroFamilyComplete = async () => {
-    if (!selectedVillage) return;
-
-    setDataError("");
     setZeroFamilySurveyStarted(false);
-    setHouseholds([]);
-
-    // 0 परिवार वाले गाँव में कोई household record/card नहीं बनाया जाता।
-    // Manual confirmation के बाद अगले गाँव की सूची पर जाएँ।
     resetToSelection();
   };
 
 
 
-  
 
 
 
-  // HOUSEHOLD SAVE
+
+  // HOUSEHOLD SAVE
 
 
 
-  // Local state only
+  // Local state only
 
 
 
@@ -966,7 +794,9 @@ useEffect(() => {
       await saveHouseholdSurvey(selectedVillage.nameHindi, houseNumber, {
         ...surveyAnswers,
         isCompleted: isFullyCompleted,
-      });
+      }, Number.isSafeInteger(Number(selectedVillage.id)) && Number(selectedVillage.id) > 0
+        ? Number(selectedVillage.id)
+        : undefined);
 
       const existingHousehold = households.find((household) => household.houseNumber === houseNumber);
       const updatedHousehold: HouseholdItem = {
@@ -985,8 +815,6 @@ useEffect(() => {
         }
         return [...previous, updatedHousehold].sort((a, b) => a.houseNumber - b.houseNumber);
       });
-    } catch (error) {
-      setDataError(error instanceof Error ? error.message : "परिवार सर्वे सहेजा नहीं जा सका।");
     } finally {
       setDataLoading(false);
     }
@@ -998,11 +826,11 @@ useEffect(() => {
 
 
 
-  
 
 
 
-  // RENDER
+
+  // RENDER
 
 
 
@@ -2096,11 +1924,11 @@ useEffect(() => {
 
 
 
-        {viewMode === "household_survey" &&
+        {viewMode === "household_survey" &&
 
 
 
-          selectedVillage && (
+          selectedVillage && (
 
 
 
@@ -2108,111 +1936,110 @@ useEffect(() => {
 
 
 
-            <HouseholdSurvey
+            <HouseholdSurvey
+              key={selectedVillage.id}
+              villageName={
 
 
 
-              villageName={
+                selectedVillage.nameHindi
 
 
 
-                selectedVillage.nameHindi
+              }
 
 
 
-              }
 
 
 
 
+              blockName={
 
 
 
-              blockName={
+                selectedBlock?.blockName ?? ""
 
 
 
-                selectedBlock?.blockName ?? ""
+              }
 
 
 
-              }
 
 
 
 
+              panchayatName={
 
 
 
-              panchayatName={
+                selectedPanchayat?.name ?? ""
 
 
 
-                selectedPanchayat?.name ?? ""
+              }
 
 
 
-              }
 
 
 
 
+              households={households}
 
+              householdCount={households.length}
 
 
-              households={households}
 
 
 
 
+              surveyorName={surveyorId}
 
 
 
-              surveyorName={surveyorId}
 
 
 
 
+              onBack={resetToSelection}
 
 
 
-              onBack={resetToSelection}
 
 
 
 
+              onHouseholdSave={
 
 
 
-              onHouseholdSave={
+                handleSaveHousehold
 
 
 
-                handleSaveHousehold
+              }
 
 
 
-              }
 
 
 
 
+              onHouseholdCountSubmit={
 
 
 
-              onHouseholdCountSubmit={
+                handleHouseholdCountSubmit
 
 
 
-                handleHouseholdCountSubmit
+              }
 
 
 
-              }
-
-
-
-                          onZeroFamilyComplete={
+                          onZeroFamilyComplete={
                 handleZeroFamilyComplete
               }
 />
@@ -2223,7 +2050,7 @@ useEffect(() => {
 
 
 
-          )}
+          )}
 
 
 
@@ -2231,15 +2058,15 @@ useEffect(() => {
 
 
 
-      </main>
+      </main>
 
 
 
-    </div>
+    </div>
 
 
 
-  );
+  );
 
 
 

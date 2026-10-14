@@ -1,8 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useRef, useState } from "react";
 
 import {
   ArrowLeft,
@@ -29,11 +25,11 @@ interface HouseholdFormProps {
   panchayatName: string;
   surveyorName: string;
 
-  existingData?: any;
+  existingData?: Record<string, unknown>;
 
   onBack: () => void;
-  onSave: (data: any) => void;
-  onComplete: (data: any) => void;
+  onSave: (data: Record<string, unknown>) => void | Promise<void>;
+  onComplete: (data: Record<string, unknown>) => void | Promise<void>;
 }
 
 const REQUIRED_SECTIONS = [
@@ -62,8 +58,9 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   onComplete,
 }) => {
   const [currentPage, setCurrentPage] = useState<1 | 2>(1);
+  const [saveError, setSaveError] = useState("");
 
-  const [formData, setFormData] = useState<any>(
+  const [formData, setFormData] = useState<Record<string, unknown>>(
     existingData ?? {}
   );
 
@@ -71,25 +68,17 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   // REFS
   // =========================================================
 
-  const generalRef = useRef<any>(null);
-  const demographyRef = useRef<any>(null);
-  const documentsRef = useRef<any>(null);
-  const womenRef = useRef<any>(null);
-  const disabilityRef = useRef<any>(null);
-  const educationRef = useRef<any>(null);
-  const employmentRef = useRef<any>(null);
-  const housingRef = useRef<any>(null);
-  const healthRef = useRef<any>(null);
-  const shgRef = useRef<any>(null);
-  const otherRef = useRef<any>(null);
-
-  // =========================================================
-  // LOAD EXISTING DATA
-  // =========================================================
-
-  useEffect(() => {
-    setFormData(existingData ?? {});
-  }, [existingData]);
+  const generalRef = useRef<React.ComponentRef<typeof HouseholdGeneralInformation>>(null);
+  const demographyRef = useRef<React.ComponentRef<typeof HouseholdDemography>>(null);
+  const documentsRef = useRef<React.ComponentRef<typeof HouseholdDocumentsSchemes>>(null);
+  const womenRef = useRef<React.ComponentRef<typeof HouseholdWomenSocialSecurity>>(null);
+  const disabilityRef = useRef<React.ComponentRef<typeof HouseholdDisabilityDocuments>>(null);
+  const educationRef = useRef<React.ComponentRef<typeof HouseholdChildrenEducation>>(null);
+  const employmentRef = useRef<React.ComponentRef<typeof HouseholdAgricultureEmployment>>(null);
+  const housingRef = useRef<React.ComponentRef<typeof HouseholdHousingFacilities>>(null);
+  const healthRef = useRef<React.ComponentRef<typeof HouseholdHealth>>(null);
+  const shgRef = useRef<React.ComponentRef<typeof HouseholdSHG>>(null);
+  const otherRef = useRef<React.ComponentRef<typeof HouseholdOtherInformation>>(null);
 
   // =========================================================
   // PAGE NAVIGATION
@@ -124,7 +113,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   // HELPER
   // =========================================================
 
-  const isFilled = (value: any): boolean => {
+  const isFilled = (value: unknown): boolean => {
     if (
       value === null ||
       value === undefined
@@ -151,7 +140,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   };
 
   const hasAnyData = (
-    data: any,
+    data: Record<string, unknown>,
     keys: string[]
   ): boolean => {
     return keys.some((key) =>
@@ -224,7 +213,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   // FINAL SAVE
   // =========================================================
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const collectedData = collectAllData();
 
     // -------------------------------------------------------
@@ -403,7 +392,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
     // FINAL DATA
     // =======================================================
 
-    const finalData = {
+    const finalData: Record<string, unknown> = {
       ...collectedData,
 
       generalCompleted,
@@ -451,31 +440,28 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
 
     // Update local state
     setFormData(dataToSave);
+    setSaveError("");
 
     // =======================================================
     // ACTUAL SAVE
     // =======================================================
 
-    onSave(dataToSave);
+    try {
+      if (allSectionsCompleted) {
+        await onComplete(dataToSave);
+        return;
+      }
 
-    // =======================================================
-    // COMPLETE
-    // =======================================================
-
-    if (allSectionsCompleted) {
-      onComplete(dataToSave);
-      return;
+      await onSave(dataToSave);
+      alert(
+        `सर्वे आंशिक रूप से सहेजा गया है। ${completedCount}/11 अनुभाग पूरे हैं।`
+      );
+      onBack();
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "परिवार सर्वे सहेजा नहीं जा सका।"
+      );
     }
-
-    // =======================================================
-    // PARTIAL
-    // =======================================================
-
-    alert(
-      `सर्वे आंशिक रूप से सहेजा गया है। ${completedCount}/11 अनुभाग पूरे हैं।`
-    );
-
-    onBack();
   };
 
   // =========================================================
@@ -483,9 +469,11 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   // =========================================================
 
   const completedCount =
-    REQUIRED_SECTIONS.filter(
-      (key) => Boolean(formData?.[key])
-    ).length;
+    Number.isInteger(Number(formData?.completedSections))
+      ? Math.min(REQUIRED_SECTIONS.length, Math.max(0, Number(formData?.completedSections)))
+      : REQUIRED_SECTIONS.filter(
+          (key) => Boolean(formData?.[key])
+        ).length;
 
   const allSectionsCompleted =
     completedCount ===
@@ -551,6 +539,12 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
           ================================================= */}
 
           <div className="px-5 lg:px-6 py-4 border-b border-slate-200">
+
+            {saveError && (
+              <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                {saveError}
+              </p>
+            )}
 
             <div className="flex items-center justify-between mb-2">
 

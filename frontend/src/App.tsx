@@ -18,7 +18,10 @@ export const App: React.FC = () => {
   const [session, setSession] = useState<AuthSession | null>(() => getAuthSession());
   const [isRestoringSession, setIsRestoringSession] = useState(true);
 
-  const [surveyMode, setSurveyMode] = useState<SurveyMode | null>(null);
+  const [surveyMode, setSurveyMode] = useState<SurveyMode | null>(() => {
+    const existingSession = getAuthSession();
+    return existingSession?.user.role === "surveyor" ? existingSession.surveyMode ?? null : null;
+  });
 
   useEffect(() => {
     const unsubscribe = onUnauthorized(() => {
@@ -26,7 +29,10 @@ export const App: React.FC = () => {
       setSurveyMode(null);
     });
     void restoreAuthSession()
-      .then((restoredSession) => setSession(restoredSession))
+      .then((restoredSession) => {
+        setSession(restoredSession);
+        setSurveyMode(restoredSession?.surveyMode ?? null);
+      })
       .catch(() => setSession(null))
       .finally(() => setIsRestoringSession(false));
     return unsubscribe;
@@ -40,8 +46,9 @@ export const App: React.FC = () => {
     password: string
   ) => {
     const nextSession = await login('surveyor', identifier, password);
-    setAuthSession(nextSession);
-    setSession(nextSession);
+    const surveyorSession = { ...nextSession, surveyMode: mode };
+    setAuthSession(surveyorSession);
+    setSession(surveyorSession);
     setSurveyMode(mode);
   };
 

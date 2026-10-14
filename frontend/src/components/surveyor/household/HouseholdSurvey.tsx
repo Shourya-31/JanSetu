@@ -23,6 +23,7 @@ interface HouseholdSurveyProps {
   panchayatName: string;
 
   households: HouseholdItem[];
+  householdCount: number;
 
   surveyorName?: string;
 
@@ -70,6 +71,11 @@ const getCompletedSectionCount = (
 ): number => {
   if (!data) return 0;
 
+  const savedCount = Number(data.completedSections);
+  if (Number.isInteger(savedCount)) {
+    return Math.min(TOTAL_SECTIONS, Math.max(0, savedCount));
+  }
+
   return HOUSEHOLD_SECTION_IDS.filter(
     (sectionId) =>
       Boolean(data[`${sectionId}Completed`])
@@ -83,6 +89,7 @@ const HouseholdSurvey: React.FC<
   blockName,
   panchayatName,
   households,
+  householdCount,
   surveyorName = "सर्वेक्षक",
   onBack,
   onHouseholdSave,
@@ -101,7 +108,10 @@ const HouseholdSurvey: React.FC<
   // =======================================================
 
   const [familyCount, setFamilyCount] =
-    useState("");
+    useState(String(householdCount));
+
+  const [countError, setCountError] = useState("");
+  const [countSaving, setCountSaving] = useState(false);
 
   const [zeroFamilySurveyStarted, setZeroFamilySurveyStarted] =
     useState(false);
@@ -178,19 +188,25 @@ const HouseholdSurvey: React.FC<
   // START SURVEY
   // =======================================================
 
-  const handleStartSurvey = () => {
+  const handleStartSurvey = async () => {
     if (familyCount.trim() === "") return;
 
     const count = Number(familyCount);
 
-    if (Number.isNaN(count) || count < 0) return;
-
-    if (count === 0) {
-      setZeroFamilySurveyStarted(true);
-      return;
+    if (!Number.isInteger(count) || count < 0 || count > 5000) return;
+    setCountError("");
+    setCountSaving(true);
+    try {
+      await onHouseholdCountSubmit(count);
+      setFamilyCount(String(count));
+      setZeroFamilySurveyStarted(count === 0);
+    } catch (error) {
+      setCountError(
+        error instanceof Error ? error.message : "परिवार संख्या सहेजी नहीं जा सकी।"
+      );
+    } finally {
+      setCountSaving(false);
     }
-
-    void onHouseholdCountSubmit(count);
   };
 
   // =======================================================
@@ -210,13 +226,11 @@ const HouseholdSurvey: React.FC<
   onBack={() => setActiveHouse(null)}
 
   // Section save होते ही parent में partial data save होगा
-  onSave={(data) => {
-    onHouseholdSave(activeHouse, data);
-  }}
+  onSave={(data) => onHouseholdSave(activeHouse, data)}
 
   // 11/11 complete होने पर
-  onComplete={(data) => {
-    onHouseholdSave(activeHouse, data);
+  onComplete={async (data) => {
+    await onHouseholdSave(activeHouse, data);
     setActiveHouse(null);
   }}
 />
@@ -297,18 +311,18 @@ const HouseholdSurvey: React.FC<
             FAMILY COUNT
         ================================================== */}
 
-        {households.length === 0 && !zeroFamilySurveyStarted && (
+        {!zeroFamilySurveyStarted && (
 
           <div className="max-w-2xl">
 
             <div className="border border-slate-200 rounded-xl bg-slate-50 p-4">
 
               <h3 className="text-base font-bold text-slate-900">
-                कुल कितने परिवार हैं?
+                {households.length > 0 ? "कुल परिवारों की संख्या" : "कुल कितने परिवार हैं?"}
               </h3>
 
               <p className="text-xs text-slate-500 mt-1">
-                इस ग्राम में कुल परिवारों की संख्या दर्ज करें। यदि कोई परिवार नहीं है तो 0 दर्ज करें।
+                परिवार संख्या सहेजी रहती है। संख्या घटाने पर पहले से भरे परिवारों के रिकॉर्ड सुरक्षित रखे जाएंगे और ऐसे बदलाव को सिस्टम रोकेगा।
               </p>
 
               <div className="mt-4">
@@ -322,12 +336,14 @@ const HouseholdSurvey: React.FC<
                   <input
                     type="number"
                     min={0}
+                    max={5000}
                     value={familyCount}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setFamilyCount(
                         e.target.value
-                      )
-                    }
+                      );
+                      setCountError("");
+                    }}
                     placeholder="उदाहरण: 25 (या 0)"
                     className="flex-1 px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
                   />
@@ -337,21 +353,28 @@ const HouseholdSurvey: React.FC<
                     onClick={handleStartSurvey}
                     disabled={
                       familyCount.trim() === "" ||
-                      Number.isNaN(Number(familyCount)) ||
-                      Number(familyCount) < 0
+                      !Number.isInteger(Number(familyCount)) ||
+                      Number(familyCount) < 0 ||
+                      Number(familyCount) > 5000 ||
+                      countSaving
                     }
                     className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-colors ${
                       familyCount.trim() !== "" &&
-                      !Number.isNaN(Number(familyCount)) &&
+                      Number.isInteger(Number(familyCount)) &&
                       Number(familyCount) >= 0
                         ? "bg-slate-900 text-white hover:bg-slate-800 cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
                     }`}
                   >
-                    सर्वे शुरू करें →
+                    {countSaving ? "सहेजा जा रहा है…" : households.length > 0 ? "संख्या अपडेट करें" : "सर्वे शुरू करें →"}
                   </button>
 
                 </div>
+                {countError && (
+                  <p role="alert" className="mt-2 text-sm font-semibold text-red-700">
+                    {countError}
+                  </p>
+                )}
 
               </div>
 

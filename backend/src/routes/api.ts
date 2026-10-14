@@ -12,6 +12,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import {
   boundedSurveyObjectSchema,
   householdAnswerSchema,
+  householdSlotInitializationSchema,
   householdSubmissionEnvelopeSchema,
   villageProfileBodySchema,
   villageSurveySchema
@@ -162,20 +163,21 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   // 3. Household Survey Routes
   fastify.get('/api/households', {
     ...authenticated,
-    schema: { querystring: querySchema({ villageName: text() }, ['villageName']) }
+    schema: {
+      querystring: {
+        ...querySchema({
+          villageName: text(),
+          villageId: { anyOf: [{ type: 'integer', minimum: 1 }, { const: 'NaN' }] },
+          block: text(),
+          panchayat: text()
+        }),
+        anyOf: [{ required: ['villageName'] }, { required: ['villageId'] }]
+      }
+    }
   }, getHouseholdSurveys);
   fastify.post('/api/households/initialize', {
     ...authenticated,
-    schema: {
-      querystring: emptyQuerySchema,
-      body: {
-        type: 'object', required: ['villageName', 'block', 'panchayat', 'count'], additionalProperties: false,
-        properties: {
-          villageName: text(), block: text(), panchayat: text(),
-          count: { type: 'integer', minimum: 1, maximum: 5000 }
-        }
-      }
-    }
+    schema: { querystring: emptyQuerySchema, body: householdSlotInitializationSchema }
   }, createHouseholdSlots);
   fastify.post('/api/households', {
     ...authenticated,

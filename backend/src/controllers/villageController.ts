@@ -9,6 +9,7 @@ import {
   progressForSections
 } from '../utils/villageSurveyProgress';
 import { mergePhotoUrls } from '../utils/villagePhotos';
+import { preserveExpectedHouseholdCount } from '../utils/householdCount';
 
 let cachedVillages: any = null;
 let villageExpiry = 0;
@@ -118,9 +119,12 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         include: villageInclude
       });
       if (!village) throw new Error('Village not found in hierarchy');
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(${village.id}::bigint);
+      `;
       const incoming = body.villageSurvey ?? body.data ?? body;
       const normalized = incoming && typeof incoming === 'object' ? incoming as Record<string, any> : {};
-      const existing = village.villageSurvey as any;
+      const existing = await tx.villageSurvey.findUnique({ where: { villageId: village.id } });
       const previousData = existing?.surveyData && typeof existing.surveyData === 'object' ? existing.surveyData as Record<string, unknown> : {};
       const villagePhotos = mergePhotoUrls(
         existing?.villagePhotos,
@@ -128,7 +132,10 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         normalized.villagePhotos,
         body.villagePhotos
       );
-      const surveyData = { ...previousData, ...normalized, villagePhotos };
+      const surveyData = preserveExpectedHouseholdCount(
+        previousData,
+        { ...previousData, ...normalized, villagePhotos }
+      );
       const requested = Array.isArray(body.completedSections) ? body.completedSections : (Array.isArray(existing?.completedSections) ? existing.completedSections : []);
       const completedSections = normalizeCompletedSections(requested);
       const value = (key: string, alias?: string) => normalized[key] ?? (alias ? body[alias] : undefined) ?? existing?.[key] ?? null;

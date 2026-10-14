@@ -238,23 +238,46 @@ const requiredHouseholdFields = [
 ];
 const householdSubmissionDataSchema = {
   ...householdAnswerSchema,
-  required: [...requiredCompletions, ...requiredHouseholdFields],
-  properties: {
-    ...householdAnswerSchema.properties,
-    ...Object.fromEntries(requiredCompletions.map((field) => [field, { const: true }]))
-  }
+  allOf: [{
+    if: {
+      properties: { isCompleted: { const: true } },
+      required: ['isCompleted']
+    },
+    then: {
+      required: [...requiredCompletions, ...requiredHouseholdFields],
+      properties: Object.fromEntries(requiredCompletions.map((field) => [field, { const: true }]))
+    }
+  }]
 };
 
 export const householdSubmissionEnvelopeSchema = {
   type: 'object',
   additionalProperties: false,
   anyOf: [
+    { required: ['villageId', 'houseNumber', 'data'] },
     { required: ['villageName', 'houseNumber', 'data'] },
     { required: ['data'], properties: { data: { type: 'object', required: ['villageName', 'houseNumber'] } } }
   ],
   properties: {
     villageName: { type: 'string', minLength: 1, maxLength: 200, pattern: '\\S' },
+    villageId: { anyOf: [{ type: 'integer', minimum: 1 }, { type: 'null' }, { const: 'NaN' }] },
+    block: { type: 'string', maxLength: 200 },
+    panchayat: { type: 'string', maxLength: 200 },
     houseNumber: { type: 'integer', minimum: 1, maximum: 10000000 },
     data: householdSubmissionDataSchema
+  }
+};
+
+export const householdSlotInitializationSchema = {
+  type: 'object',
+  required: ['block', 'panchayat', 'count'],
+  additionalProperties: false,
+  anyOf: [{ required: ['villageName'] }, { required: ['villageId'] }],
+  properties: {
+    villageName: { type: 'string', minLength: 1, maxLength: 200, pattern: '\\S' },
+    villageId: { anyOf: [{ type: 'integer', minimum: 1 }, { type: 'null' }, { const: 'NaN' }] },
+    block: { type: 'string', minLength: 1, maxLength: 200, pattern: '\\S' },
+    panchayat: { type: 'string', minLength: 1, maxLength: 200, pattern: '\\S' },
+    count: { type: 'integer', minimum: 0, maximum: 5000 }
   }
 };

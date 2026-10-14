@@ -14,10 +14,14 @@ export async function login(role: AppRole, identifier: string, password: string)
   return session;
 }
 
-export async function restoreAuthSession(): Promise<AuthSession> {
+export async function restoreAuthSession(): Promise<AuthSession | null> {
+  const existingSession = getAuthSession();
+  if (!existingSession) return null;
+
   const response = await apiRequest<{ success: boolean; user: AuthSession['user'] }>('/api/auth/me');
   const session: AuthSession = {
-    token: getAuthSession()?.token || '',
+    token: existingSession.token,
+    surveyMode: existingSession.surveyMode,
     user: response.user
   };
   setAuthSession(session);
