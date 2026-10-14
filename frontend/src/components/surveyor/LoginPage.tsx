@@ -124,7 +124,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             <div>
               <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
-                सामाजिक-आर्थिक सर्वेक्षण एवं जनगणना पोर्टल
+                ग्रामीण विकासदृष्टि
               </h1>
               <p className="text-xs text-slate-500 font-medium">
                 जिला खनिज संस्थान न्यास (DMFT) • ग्रामीण विकास प्रणाली
