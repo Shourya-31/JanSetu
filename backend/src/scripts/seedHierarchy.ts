@@ -22,7 +22,7 @@ type SourceBlock = {
   panchayats: SourcePanchayat[];
 };
 
-const { CENSUS_HIERARCHY } = require('../../../frontend/src/data/narayanpurHierarchy') as {
+const { CENSUS_HIERARCHY } = require('../data/narayanpurHierarchy') as {
   CENSUS_HIERARCHY: SourceBlock[];
 };
 
@@ -34,14 +34,14 @@ async function getOrCreate<T extends { id: number }>(
   return existing ?? createFn();
 }
 
-async function seedHierarchy() {
+export async function seedHierarchy(database = prisma) {
   let totalVillages = 0;
 
   for (const sourceBlock of CENSUS_HIERARCHY) {
     // 1. Get or create Block
     const block = await getOrCreate(
-      () => prisma.block.findFirst({ where: { nameHindi: sourceBlock.blockName } }),
-      () => prisma.block.create({
+      () => database.block.findFirst({ where: { nameHindi: sourceBlock.blockName } }),
+      () => database.block.create({
         data: { nameHindi: sourceBlock.blockName, nameEnglish: sourceBlock.blockNameEnglish }
       })
     );
@@ -49,10 +49,10 @@ async function seedHierarchy() {
     for (const sourcePanchayat of sourceBlock.panchayats) {
       // 2. Get or create GramPanchayat
       const gp = await getOrCreate(
-        () => prisma.gramPanchayat.findFirst({
+        () => database.gramPanchayat.findFirst({
           where: { blockId: block.id, nameHindi: sourcePanchayat.name }
         }),
-        () => prisma.gramPanchayat.create({
+        () => database.gramPanchayat.create({
           data: {
             nameHindi: sourcePanchayat.name,
             nameEnglish: sourcePanchayat.nameEnglish,
@@ -64,10 +64,10 @@ async function seedHierarchy() {
       for (const sourceVillage of sourcePanchayat.villages) {
         // 3. Get or create Village
         await getOrCreate(
-          () => prisma.village.findFirst({
+          () => database.village.findFirst({
             where: { gramPanchayatId: gp.id, nameHindi: sourceVillage.nameHindi }
           }),
-          () => prisma.village.create({
+          () => database.village.create({
             data: {
               nameHindi: sourceVillage.nameHindi,
               nameEnglish: sourceVillage.nameEnglish,
@@ -82,9 +82,9 @@ async function seedHierarchy() {
     }
   }
 
-  const blockCount = await prisma.block.count();
-  const gpCount = await prisma.gramPanchayat.count();
-  const villageCount = await prisma.village.count();
+  const blockCount = await database.block.count();
+  const gpCount = await database.gramPanchayat.count();
+  const villageCount = await database.village.count();
 
   console.log(`✅ Hierarchy seeded:`);
   console.log(`   Blocks:          ${blockCount}`);
@@ -92,11 +92,13 @@ async function seedHierarchy() {
   console.log(`   Villages:        ${villageCount} (processed ${totalVillages})`);
 }
 
-seedHierarchy()
-  .catch((error) => {
-    console.error('Hierarchy seeding failed:', error.message);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (require.main === module) {
+  seedHierarchy()
+    .catch((error) => {
+      console.error('Hierarchy seeding failed:', error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

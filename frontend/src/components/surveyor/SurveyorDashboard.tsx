@@ -39,11 +39,9 @@ import {
   fetchHouseholdSurveys,
   fetchAllVillageProfiles,
   fetchVillageProfile,
-  initializeHouseholdSlots,
   saveHouseholdSurvey,
   saveVillageSurvey,
   finalizeVillageSurvey,
-  uploadVillagePhoto,
 } from "../../services/surveyorApi";
 
 import HouseholdSurvey from "./household/HouseholdSurvey";
@@ -208,7 +206,7 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
   
 
   // 0 परिवार वाले गाँव के लिए manual completion state
-  const [zeroFamilySurveyStarted, setZeroFamilySurveyStarted] =
+  const [, setZeroFamilySurveyStarted] =
     useState(false);
 
 const [dataError, setDataError] = useState("");
@@ -630,18 +628,28 @@ useEffect(() => {
     }
   };
 
-  const handleVillagePhotosSave = async (photoUrls: string[]) => {
-    if (!selectedVillage) return;
-    await saveVillageSurvey({
+  const handleVillagePhotosSave = async (photoUrls: string[]): Promise<string[]> => {
+    if (!selectedVillage) return [];
+    const existingPhotoUrls = Array.isArray(villageData?.villagePhotos)
+      ? villageData.villagePhotos.filter((photo): photo is string => typeof photo === "string")
+      : typeof villageData?.villagePhotos === "string"
+        ? [villageData.villagePhotos]
+        : [];
+    const allPhotoUrls = [...new Set([...existingPhotoUrls, ...photoUrls])];
+    const result = await saveVillageSurvey({
       villageId: Number(villageData?.villageId),
       villageName: selectedVillage.nameHindi,
       block: selectedBlock?.blockName ?? "",
       panchayat: selectedPanchayat?.name ?? "",
       surveyorName: surveyorId,
-      villageSurvey: { villagePhotos: photoUrls },
+      villageSurvey: { villagePhotos: allPhotoUrls },
       completedSections: Array.isArray(villageData?.completedSections) ? villageData.completedSections : [],
     });
-    setVillageData((previous) => previous ? { ...previous, villagePhotos: photoUrls } : previous);
+    const persistedPhotoUrls = Array.isArray(result.data.villageSurvey?.villagePhotos)
+      ? result.data.villageSurvey.villagePhotos.filter((photo): photo is string => typeof photo === "string")
+      : allPhotoUrls;
+    setVillageData((previous) => previous ? { ...previous, villagePhotos: persistedPhotoUrls } : previous);
+    return persistedPhotoUrls;
   };
 
   const handleVillageFinalize = async () => {

@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { withErrorContext } from '../utils/errors';
 import prisma from '../config/prisma';
+import { mergePhotoUrls } from '../utils/villagePhotos';
 
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -73,7 +75,12 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
         completedSections: Array.isArray(vs.completedSections) ? vs.completedSections : [],
         answers: {
           ...(vs.surveyData && typeof vs.surveyData === 'object' ? vs.surveyData as Record<string, unknown> : {}),
-          villagePhotos: Array.isArray(vs.villagePhotos) ? vs.villagePhotos : [],
+          villagePhotos: mergePhotoUrls(
+            vs.villagePhotos,
+            vs.surveyData && typeof vs.surveyData === 'object'
+              ? (vs.surveyData as Record<string, unknown>).villagePhotos
+              : undefined
+          ),
           totalHouseholds: vs.totalHouseholds,
           totalPopulation: vs.totalPopulation,
           scPopulation: vs.scPopulation,
@@ -233,8 +240,7 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
     });
 
   } catch (error) {
-    req.log.error(error);
-    return reply.code(500).send({ error: 'Failed to fetch admin surveys' });
+    throw withErrorContext(error, { operation: 'admin.surveys.query', stage: 'database_query' });
   }
 }
 
@@ -332,7 +338,6 @@ export async function getAdminGramStats(req: FastifyRequest, reply: FastifyReply
     });
 
   } catch (error) {
-    req.log.error(error);
-    return reply.code(500).send({ error: 'Failed to fetch admin gram stats' });
+    throw withErrorContext(error, { operation: 'admin.gram_stats.query', stage: 'database_query' });
   }
 }

@@ -6,6 +6,22 @@ import {
   normalizeCompletedSections,
   progressForSections
 } from '../src/utils/villageSurveyProgress';
+import { mergePhotoUrls, normalizePhotoUrls } from '../src/utils/villagePhotos';
+
+test('village photo batches append without duplicates and retain legacy single-photo values', () => {
+  assert.deepEqual(
+    mergePhotoUrls('https://cdn.example/one.jpg', ['https://cdn.example/one.jpg', ' https://cdn.example/two.jpg ']),
+    ['https://cdn.example/one.jpg', 'https://cdn.example/two.jpg']
+  );
+  assert.deepEqual(normalizePhotoUrls('https://cdn.example/legacy.jpg'), ['https://cdn.example/legacy.jpg']);
+});
+
+test('a failed or omitted new photo batch cannot erase saved photos', () => {
+  assert.deepEqual(
+    mergePhotoUrls(['one', 'two'], undefined, []),
+    ['one', 'two']
+  );
+});
 
 test('partial village saves retain only valid completed sections and calculate progress', () => {
   const sections = normalizeCompletedSections(['general', 'water', 'water', 'unknown']);

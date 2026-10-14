@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import prisma from '../config/prisma';
+import { withErrorContext } from '../utils/errors';
 
 export async function getSurveyAuditLogs(req: FastifyRequest, reply: FastifyReply) {
   const query = req.query as {
@@ -33,7 +34,6 @@ export async function getSurveyAuditLogs(req: FastifyRequest, reply: FastifyRepl
       nextCursor: hasMore ? data[data.length - 1].id : null
     });
   } catch (error) {
-    req.log.error({ err: error }, 'Audit log query failed');
-    return reply.status(500).send({ error: 'Audit log query failed' });
+    throw withErrorContext(error, { operation: 'audit.logs.query', stage: 'database_query' });
   }
 }

@@ -8,9 +8,11 @@ import {
   normalizeCompletedSections,
   progressForSections
 } from '../utils/villageSurveyProgress';
+import { mergePhotoUrls } from '../utils/villagePhotos';
 
 let cachedVillages: any = null;
 let villageExpiry = 0;
+let villageRefresh: Promise<any> | null = null;
 
 export function invalidateVillageCache() {
   cachedVillages = null;
@@ -19,6 +21,8 @@ export function invalidateVillageCache() {
 
 function formatVillageRecord(v: any, surveyedHouseholds = 0) {
   const vs = v.villageSurvey || {};
+  const surveyData = vs.surveyData && typeof vs.surveyData === 'object' ? vs.surveyData : {};
+  const villagePhotos = mergePhotoUrls(vs.villagePhotos, (surveyData as Record<string, unknown>).villagePhotos);
   return {
     id: v.id,
     villageId: v.id,
@@ -41,8 +45,8 @@ function formatVillageRecord(v: any, surveyedHouseholds = 0) {
     electrification: vs.electricity || 'Not reported',
     hasAnganwadi: vs.anganwadiWorkerPresent || 'Not reported',
     odfStatus: vs.odf || 'Not reported',
-    villagePhotos: vs.villagePhotos || [],
-    villageSurvey: vs,
+    villagePhotos,
+    villageSurvey: { ...vs, villagePhotos },
     completedSections: Array.isArray(vs.completedSections) ? vs.completedSections : [],
     progress: vs.isCompleted ? 100 : Number(vs.progress || 0),
     isCompleted: Boolean(vs.isCompleted),
@@ -60,6 +64,8 @@ export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyR
   const now = Date.now();
   if (cachedVillages && now < villageExpiry) return reply.send(cachedVillages);
   try {
+    if (villageRefresh) return reply.send(await villageRefresh);
+    villageRefresh = (async () => {
     const [villages, householdCounts] = await Promise.all([
       prisma.village.findMany({ orderBy: { nameHindi: 'asc' }, include: villageInclude }),
       prisma.householdSurvey.groupBy({ by: ['villageId'], _count: { id: true } })
@@ -70,9 +76,13 @@ export async function getAllVillageProfiles(req: FastifyRequest, reply: FastifyR
     villages.forEach((v) => { result[String(v.id)] = formatVillageRecord(v, countMap[v.id] ?? 0); });
     cachedVillages = result;
     villageExpiry = now + 60000;
-    return reply.send(result);
+    return result;
+    })();
+    return reply.send(await villageRefresh);
   } catch (err: any) {
     return sendInternalError(req, reply, err, 'Village profile query failed');
+  } finally {
+    villageRefresh = null;
   }
 }
 
@@ -112,7 +122,13 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
       const normalized = incoming && typeof incoming === 'object' ? incoming as Record<string, any> : {};
       const existing = village.villageSurvey as any;
       const previousData = existing?.surveyData && typeof existing.surveyData === 'object' ? existing.surveyData as Record<string, unknown> : {};
-      const surveyData = { ...previousData, ...normalized };
+      const villagePhotos = mergePhotoUrls(
+        existing?.villagePhotos,
+        previousData.villagePhotos,
+        normalized.villagePhotos,
+        body.villagePhotos
+      );
+      const surveyData = { ...previousData, ...normalized, villagePhotos };
       const requested = Array.isArray(body.completedSections) ? body.completedSections : (Array.isArray(existing?.completedSections) ? existing.completedSections : []);
       const completedSections = normalizeCompletedSections(requested);
       const value = (key: string, alias?: string) => normalized[key] ?? (alias ? body[alias] : undefined) ?? existing?.[key] ?? null;
@@ -134,7 +150,7 @@ export async function saveVillageProfile(req: FastifyRequest, reply: FastifyRepl
         electricity: value('electricity', 'electrification'),
         anganwadiWorkerPresent: value('anganwadiWorkerPresent', 'hasAnganwadi'),
         odf: value('odf', 'odfStatus'),
-        villagePhotos: value('villagePhotos') ?? [],
+        villagePhotos,
         surveyData: surveyData as any,
         completedSections: completedSections as any,
         progress: progressForSections(completedSections),

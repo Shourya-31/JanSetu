@@ -5,7 +5,7 @@ import {
 } from "./components/surveyor/LoginPage";
 import { SurveyorDashboard } from "./components/surveyor/SurveyorDashboard";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
-import { login } from "./services/authApi";
+import { login, logout, restoreAuthSession } from "./services/authApi";
 import {
   clearAuthSession,
   getAuthSession,
@@ -15,13 +15,22 @@ import {
 } from "./services/apiClient";
 
 export const App: React.FC = () => {
-  const [session, setSession] = useState<AuthSession | null>(() =>
-    getAuthSession()
-  );
+  const [session, setSession] = useState<AuthSession | null>(() => getAuthSession());
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
 
   const [surveyMode, setSurveyMode] = useState<SurveyMode | null>(null);
 
-  useEffect(() => onUnauthorized(() => setSession(null)), []);
+  useEffect(() => {
+    const unsubscribe = onUnauthorized(() => {
+      setSession(null);
+      setSurveyMode(null);
+    });
+    void restoreAuthSession()
+      .then((restoredSession) => setSession(restoredSession))
+      .catch(() => setSession(null))
+      .finally(() => setIsRestoringSession(false));
+    return unsubscribe;
+  }, []);
 
   // Only Admin login is handled here
   
@@ -47,6 +56,7 @@ export const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    void logout().catch(() => undefined);
     clearAuthSession();
     setSession(null);
     setSurveyMode(null);
@@ -55,6 +65,8 @@ export const App: React.FC = () => {
   /*
    * Admin logged in
    */
+  if (isRestoringSession) return null;
+
   if (session?.user.role === "admin") {
     return (
       <AdminDashboard
@@ -72,7 +84,7 @@ export const App: React.FC = () => {
       <SurveyorDashboard
         surveyorId="surveyor"
         surveyMode={surveyMode}
-        onLogout={() => setSurveyMode(null)}
+        onLogout={handleLogout}
       />
     );
   }

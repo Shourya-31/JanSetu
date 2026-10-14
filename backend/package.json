@@ -10,13 +10,16 @@
     "start:dev": "tsx watch src/server.ts",
     "start:cluster": "pm2 start ecosystem.config.js --env production",
     "dev": "tsx watch src/server.ts",
-    "test": "tsx --test test/apiValidation.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "db:generate": "prisma generate",
     "db:init": "tsx src/scripts/deployInitDb.ts",
     "db:install-audit-protection": "tsx src/scripts/installAuditProtection.ts",
     "db:seed-hierarchy": "tsx src/scripts/seedHierarchy.ts",
     "db:seed-users": "tsx src/scripts/seedUsers.ts",
-    "db:backup": "tsx src/scripts/backupDb.ts"
+    "db:manage-surveyor-accounts": "tsx src/scripts/manageSurveyorAccounts.ts",
+    "db:reset-surveyor-passwords": "tsx src/scripts/resetSurveyorPasswords.ts",
+    "db:backup": "tsx src/scripts/backupDb.ts",
+    "load:test": "node scripts/loadTest.mjs"
   },
   "keywords": [
     "fastify",
@@ -30,11 +33,11 @@
   "license": "ISC",
   "dependencies": {
     "@fastify/compress": "^7.0.1",
+    "@fastify/cookie": "^9.4.0",
     "@fastify/cors": "^9.0.1",
     "@fastify/helmet": "^11.1.1",
     "@fastify/jwt": "^8.0.1",
     "@fastify/multipart": "^8.3.0",
-    "@fastify/postgres": "^5.2.2",
     "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^5.10.2",
     "cloudinary": "^2.11.0",

@@ -1,4 +1,4 @@
-import { apiRequest, getAuthSession } from './apiClient';
+import { apiRequest, ApiError } from './apiClient';
 import type { Block } from '../data/narayanpurHierarchy';
 
 export interface HouseholdApiRecord {
@@ -44,31 +44,31 @@ export async function fetchVillageProfile(villageName: string, block?: string, p
     if (block) query.set('block', block);
     if (panchayat) query.set('panchayat', panchayat);
     return await apiRequest<VillageApiProfile>(`/api/villages/profile?${query.toString()}`);
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
   }
 }
 
 export async function fetchHouseholdSurveys(villageName: string): Promise<Record<string, HouseholdApiRecord>> {
   if (!villageName) return {};
-  try {
-    const res = await apiRequest<
-      Record<string, HouseholdApiRecord> | { data?: Record<string, HouseholdApiRecord> }
-    >(`/api/households?villageName=${encodeURIComponent(villageName)}`);
-    if (!res || typeof res !== "object" || Array.isArray(res)) return {};
-    const payload = res as Record<string, unknown>;
-    if ("data" in payload) {
-      return payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)
-        ? payload.data as Record<string, HouseholdApiRecord>
-        : {};
-    }
-    return res as Record<string, HouseholdApiRecord>;
-  } catch {
-    return {};
+  const res = await apiRequest<Record<string, HouseholdApiRecord> | { data?: Record<string, HouseholdApiRecord> }>(
+    `/api/households?villageName=${encodeURIComponent(villageName)}`
+  );
+  if (!res || typeof res !== 'object' || Array.isArray(res)) {
+    throw new Error('Household survey response was malformed');
   }
+  const payload = res as Record<string, unknown>;
+  if ('data' in payload) {
+    if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) {
+      throw new Error('Household survey response data was malformed');
+    }
+    return payload.data as Record<string, HouseholdApiRecord>;
+  }
+  return res as Record<string, HouseholdApiRecord>;
 }
 
-export function initializeHouseholdSlots(input: any): Promise<{ success: boolean; data: HouseholdApiRecord[] }> {
+export function initializeHouseholdSlots(input: unknown): Promise<{ success: boolean; data: HouseholdApiRecord[] }> {
   return apiRequest<{ success: boolean; data: HouseholdApiRecord[] }>('/api/households/initialize', {
     method: 'POST',
     body: input
@@ -76,34 +76,12 @@ export function initializeHouseholdSlots(input: any): Promise<{ success: boolean
 }
 
 export async function uploadVillagePhoto(file: File): Promise<string> {
-  const session = getAuthSession();
   const formData = new FormData();
   formData.append('image', file);
-
-  const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '';
-  const headers: Record<string, string> = {};
-  if (session?.token) {
-    headers['Authorization'] = `Bearer ${session.token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
+  const result = await apiRequest<{ secure_url?: string; url?: string }>('/api/upload/image', {
     method: 'POST',
-    headers,
     body: formData
   });
-
-  if (!response.ok) {
-    let message = 'Image upload failed';
-    try {
-      const payload = await response.json() as { error?: string };
-      if (payload.error) message = payload.error;
-    } catch {
-      // Keep the generic upload error when the server response is not JSON.
-    }
-    throw new Error(message);
-  }
-
-  const result = await response.json() as { secure_url?: string; url?: string };
   const url = result.secure_url || result.url;
   if (!url) throw new Error('Image upload returned no URL');
   return url;

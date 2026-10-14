@@ -126,7 +126,7 @@ Browser
   │                                                  │
   └── Docker deployment: Nginx :8080 ── /api proxy ──┤
                                                      ▼
-                                           Fastify API :3000
+                                           Fastify API :8080
                                                      │
                           ┌──────────────────────────┴──────────────────────────┐
                           ▼                                                     ▼
@@ -141,7 +141,7 @@ Browser
 | Service | Image/build | Internal port | Host port | Purpose |
 |---|---|---:|---:|---|
 | `postgres` | `postgres:17-alpine` | 5432 | Not published | Persistent survey database |
-| `backend` | `backend/Dockerfile` | 3000 | Not published | Fastify API and authentication |
+| `backend` | `backend/Dockerfile` | 8080 | Not published | Fastify API and authentication |
 | `frontend` | `frontend/Dockerfile` + Nginx | 80 | 8080 | React application and API reverse proxy |
 
 The PostgreSQL data is stored in the named `postgres_data` volume. The repository `backups` directory is mounted read-only into the database container at `/backups`.
@@ -244,7 +244,8 @@ The recommended way to run the complete application is Docker Compose.
 
 ### 1. Configure private variables
 
-Create or update the root `.env` file with:
+Create the root `.env` file from [`.env.example`](.env.example). This file is read by
+Docker Compose for the PostgreSQL container:
 
 ```dotenv
 POSTGRES_USER=your_local_postgres_user
@@ -252,12 +253,13 @@ POSTGRES_PASSWORD=use_a_strong_local_password
 POSTGRES_DB=jansetu
 ```
 
-Configure the backend secrets and service settings in `backend/.env`:
+Create `backend/.env` from [`backend/.env.example`](backend/.env.example) for the
+backend secrets and service settings:
 
 ```dotenv
 NODE_ENV=production
 HOST=0.0.0.0
-PORT=3000
+PORT=8080
 DATABASE_URL=postgresql://user:password@localhost:5432/jansetu?schema=public
 JWT_SECRET=at_least_32_random_characters
 CORS_ORIGIN=http://localhost:8080
@@ -274,11 +276,28 @@ CLOUDINARY_API_SECRET=your-api-secret
 
 The Compose service overrides `DATABASE_URL` inside the backend container so that it uses the `postgres` service name rather than `localhost`. Do not commit real credentials, JWT secrets, Cloudinary secrets, or production connection strings.
 
-### 2. Build and start
+The Compose deployment also runs a one-shot `db-init` service after PostgreSQL is
+healthy. It applies the version-controlled Prisma migration, then attempts optional
+PostgreSQL extensions/indexes and analytics-view tuning, and finally seeds the
+Narayanpur Block → Gram Panchayat → Village hierarchy. Required schema preparation
+and hierarchy seeding are fatal; optional tuning is logged and may be skipped. The
+backend starts only after required initialization succeeds. Environment-managed login
+credentials are provisioned on the first successful login; no separate user seed
+command is required for the normal Compose flow.
 
-From the repository root:
+For an existing database created before migration history was added, `db-init` stops
+instead of guessing or changing the schema. Take and review a backup, verify schema
+compatibility, and explicitly approve the one-time baseline with
+`DB_INIT_APPROVE_BASELINE=true`; do not set this on an unreviewed database. The
+baseline migration is `20261013123000_baseline`.
+
+### 2. Build and start from the repository root
+
+Run these commands after changing into the cloned repository. Running `docker compose`
+from `/home/ubuntu` or another directory will not find this project's `compose.yaml`.
 
 ```powershell
+cd /home/ubuntu/JanSetu
 docker compose up -d --build
 docker compose ps
 ```
@@ -338,7 +357,7 @@ Start the backend in watch mode:
 npm run dev
 ```
 
-The API listens on <http://localhost:3000>.
+The API listens on <http://localhost:8080>.
 
 ### 3. Install and start the frontend
 
@@ -350,7 +369,7 @@ npm install
 npm run dev
 ```
 
-The Vite application listens on <http://localhost:5173>. Vite proxies `/api` requests to `http://localhost:3000`, so no frontend API URL is required for the standard local setup.
+The Vite application listens on <http://localhost:5173>. Vite proxies `/api` requests to `http://localhost:8080`, so no frontend API URL is required for the standard local setup.
 
 For a frontend build preview:
 
@@ -367,7 +386,7 @@ npm run preview
 |---|---|---|
 | `NODE_ENV` | No | Runtime mode; development enables more verbose logging |
 | `HOST` | No | Listen host; defaults to `0.0.0.0` |
-| `PORT` | No | API port; defaults to `3000` |
+| `PORT` | No | API port; defaults to `8080` |
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | JWT signing secret; startup rejects values shorter than 32 characters |
 | `CORS_ORIGIN` | Recommended | Comma-separated allowed origins; development defaults to Vite |
@@ -534,16 +553,16 @@ Use PM2 only for a non-container deployment where process supervision is require
 
 ### The frontend cannot reach the API
 
-1. Confirm the backend is listening on port 3000.
+1. Confirm the backend is listening on port 8080.
 2. In Docker, confirm `docker compose ps` reports `backend` as healthy.
-3. In local development, confirm Vite is running on port 5173 and the backend is running on port 3000.
+3. In local development, confirm Vite is running on port 5173 and the backend is running on port 8080.
 4. For a separate frontend/API deployment, set `VITE_API_BASE_URL` and configure backend `CORS_ORIGIN`.
 
 ### The backend exits during startup
 
 - Verify `DATABASE_URL` is present and points to a reachable PostgreSQL instance.
 - Verify `JWT_SECRET` is at least 32 characters.
-- Check whether port 3000 is already in use.
+- Check whether port 8080 is already in use.
 - Review `docker compose logs backend` or the local terminal output.
 
 ### Docker reports an unhealthy backend
@@ -555,18 +574,18 @@ Use PM2 only for a non-container deployment where process supervision is require
 
 ### Database tables or hierarchy are missing
 
-Run the initialization and hierarchy scripts from `backend/`:
+The normal Compose startup runs both initialization steps automatically. To rerun
+them manually after changing the schema or hierarchy, use:
+
+```powershell
+docker compose run --rm db-init
+```
+
+For local development without Docker, run the scripts from `backend/`:
 
 ```powershell
 npm run db:init
 npm run db:seed-hierarchy
-```
-
-For Docker, run the equivalent commands inside the backend container after the database is healthy:
-
-```powershell
-docker compose exec backend npm run db:init
-docker compose exec backend npm run db:seed-hierarchy
 ```
 
 ### Image upload fails
