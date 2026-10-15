@@ -8,6 +8,7 @@ export function toHouseholdSurveyAnswers(record: HouseholdSurvey): Record<string
     surveyorName: record.surveyorName,
     caste: record.caste,
     isBpl: record.isBpl,
+    totalMembers: record.totalMembers,
     elderly: record.eldersCount,
     children: record.childrenCount,
     women: record.womenCount,

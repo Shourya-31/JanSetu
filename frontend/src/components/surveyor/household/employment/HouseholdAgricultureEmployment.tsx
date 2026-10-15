@@ -309,6 +309,13 @@ const HouseholdAgricultureEmployment = forwardRef<
             checked={animalEmployment === "नहीं"}
             onChange={setAnimalEmployment}
           />
+
+          <RadioOption
+            name="animalEmployment"
+            value="पात्रता नहीं"
+            checked={animalEmployment === "पात्रता नहीं"}
+            onChange={setAnimalEmployment}
+          />
         </div>
       </div>
 

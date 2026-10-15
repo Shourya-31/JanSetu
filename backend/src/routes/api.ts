@@ -19,6 +19,20 @@ import {
 } from './surveySchemas';
 import { AppError, ERROR_CODES } from '../utils/errors';
 
+export async function validateAnimalEmploymentAnswer(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const body = req.body as { data?: unknown } | undefined;
+  const data = body?.data;
+  if (!data || typeof data !== 'object' || Array.isArray(data)
+    || !Object.hasOwn(data, 'animalEmployment')) return;
+
+  const value = (data as Record<string, unknown>).animalEmployment;
+  if (typeof value === 'string' && ['', 'हाँ', 'नहीं', 'पात्रता नहीं'].includes(value)) return;
+
+  reply.code(400).send({
+    error: 'animalEmployment must be empty, हाँ, नहीं, or पात्रता नहीं'
+  });
+}
+
 async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   try {
     await req.jwtVerify();
@@ -181,6 +195,7 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   }, createHouseholdSlots);
   fastify.post('/api/households', {
     ...authenticated,
+    preValidation: validateAnimalEmploymentAnswer,
     schema: { body: householdSubmissionEnvelopeSchema, querystring: emptyQuerySchema }
   }, saveHouseholdSurvey);
   fastify.patch('/api/households/:id', {

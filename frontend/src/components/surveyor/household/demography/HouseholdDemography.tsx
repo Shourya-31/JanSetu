@@ -8,6 +8,7 @@ export interface HouseholdDemographyRef {
   getData: () => {
     caste: string;
     isBpl: string;
+    totalMembers: string;
     elderly: string;
     children: string;
     women: string;
@@ -20,6 +21,7 @@ interface HouseholdDemographyProps {
   existingData?: {
     caste?: string;
     isBpl?: string;
+    totalMembers?: string | number;
     elderly?: string;
     children?: string;
     women?: string;
@@ -33,6 +35,15 @@ const inputClass =
   "text-sm text-slate-900 focus:outline-none focus:ring-1 " +
   "focus:ring-slate-900 focus:border-slate-900";
 
+export function isValidTotalMembers(value: unknown): boolean {
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value > 0 && value <= 10_000_000;
+  }
+
+  return typeof value === "string"
+    && /^(?:0*[1-9]\d{0,6}|0*10000000)$/.test(value);
+}
+
 // const HouseholdDemography: React.FC<HouseholdDemographyProps> = ({
 //   houseNumber,
 //   existingData,
@@ -44,6 +55,7 @@ const HouseholdDemography = forwardRef<
 >(({ houseNumber, existingData }, ref) => {
   const [caste, setCaste] = useState(existingData?.caste ?? "");
   const [isBpl, setIsBpl] = useState(existingData?.isBpl ?? "");
+  const [totalMembers, setTotalMembers] = useState(String(existingData?.totalMembers ?? ""));
   const [elderly, setElderly] = useState(existingData?.elderly ?? "");
   const [children, setChildren] = useState(existingData?.children ?? "");
   const [women, setWomen] = useState(existingData?.women ?? "");
@@ -66,6 +78,7 @@ const HouseholdDemography = forwardRef<
   getData: () => ({
     caste,
     isBpl,
+    totalMembers,
     elderly,
     children,
     women,
@@ -163,7 +176,29 @@ const HouseholdDemography = forwardRef<
             3. कुल सदस्य
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            <div>
+              <label
+                htmlFor={`total-members-${houseNumber}`}
+                className="block text-xs font-semibold text-slate-600 mb-1.5"
+              >
+                परिवार के कुल सदस्य
+              </label>
+
+              <input
+                id={`total-members-${houseNumber}`}
+                type="number"
+                min="1"
+                max="10000000"
+                step="1"
+                required
+                value={totalMembers}
+                onChange={(e) => setTotalMembers(e.target.value)}
+                placeholder="संख्या"
+                className={inputClass}
+              />
+            </div>
 
             {/* बुजुर्ग */}
 

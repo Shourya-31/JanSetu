@@ -3,6 +3,7 @@ import test from 'node:test';
 import Fastify from 'fastify';
 import type { HouseholdSurvey } from '@prisma/client';
 import { householdSlotInitializationSchema, householdSubmissionEnvelopeSchema } from '../src/routes/surveySchemas';
+import { validateAnimalEmploymentAnswer } from '../src/routes/api';
 import { toHouseholdSurveyAnswers } from '../src/utils/householdSurvey';
 
 test('household response restores saved answers and section progress', () => {
@@ -13,6 +14,7 @@ test('household response restores saved answers and section progress', () => {
     surveyorName: 'survey-user',
     caste: '',
     isBpl: '',
+    totalMembers: 5,
     eldersCount: 0,
     childrenCount: 0,
     womenCount: 0,
@@ -53,7 +55,7 @@ test('household response restores saved answers and section progress', () => {
     mainIncomeSource: null,
     livestockSource: null,
     otherLivestockSource: null,
-    animalEmployment: null,
+    animalEmployment: 'पात्रता नहीं',
     houseType: null,
     housingSchemeBenefit: null,
     toiletStatus: null,
@@ -78,6 +80,8 @@ test('household response restores saved answers and section progress', () => {
   assert.equal(answers.headName, 'Saved household');
   assert.equal(answers.surveyDate, '2026-10-14');
   assert.equal(answers.completedSections, 1);
+  assert.equal(answers.totalMembers, 5);
+  assert.equal(answers.animalEmployment, 'पात्रता नहीं');
   assert.equal(answers.elderly, 0);
   assert.equal(answers.isCompleted, false);
 });
@@ -85,6 +89,7 @@ test('household response restores saved answers and section progress', () => {
 test('household endpoint schema accepts partial drafts and rejects incomplete completion submissions', async (t) => {
   const app = Fastify();
   app.post('/households', {
+    preValidation: validateAnimalEmploymentAnswer,
     schema: { body: householdSubmissionEnvelopeSchema }
   }, async (request) => request.body);
   await app.ready();
@@ -101,6 +106,58 @@ test('household endpoint schema accepts partial drafts and rejects incomplete co
   });
 
   assert.equal(draft.statusCode, 200);
+
+  const invalidMemberCounts = await Promise.all(['', '0', '1.5', 0, 1.5].map((totalMembers) => app.inject({
+    method: 'POST',
+    url: '/households',
+    payload: {
+      villageName: 'Test village',
+      houseNumber: 1,
+      data: { totalMembers }
+    }
+  })));
+  assert.ok(invalidMemberCounts.every((response) => response.statusCode === 400));
+
+  const animalEmploymentAnswers = await Promise.all(
+    ['', 'हाँ', 'नहीं', 'पात्रता नहीं'].map((animalEmployment) => app.inject({
+      method: 'POST',
+      url: '/households',
+      payload: {
+        villageName: 'Test village',
+        houseNumber: 1,
+        data: { animalEmployment }
+      }
+    }))
+  );
+  assert.ok(animalEmploymentAnswers.every((response) => response.statusCode === 200));
+
+  const invalidAnimalEmploymentAnswers = await Promise.all(
+    ['Maybe', ' पात्रता नहीं ', null, 1].map((animalEmployment) => app.inject({
+      method: 'POST',
+      url: '/households',
+      payload: {
+        villageName: 'Test village',
+        houseNumber: 1,
+        data: { animalEmployment }
+      }
+    }))
+  );
+  assert.deepEqual(
+    invalidAnimalEmploymentAnswers.map((response) => response.statusCode),
+    [400, 400, 400, 400],
+    JSON.stringify(invalidAnimalEmploymentAnswers.map((response) => response.body))
+  );
+
+  const validMemberCount = await app.inject({
+    method: 'POST',
+    url: '/households',
+    payload: {
+      villageName: 'Test village',
+      houseNumber: 1,
+      data: { totalMembers: '0004' }
+    }
+  });
+  assert.equal(validMemberCount.statusCode, 200);
 
   const incompleteCompletion = await app.inject({
     method: 'POST',

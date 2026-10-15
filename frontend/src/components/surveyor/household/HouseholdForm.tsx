@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import HouseholdGeneralInformation from "./general/HouseholdGeneralInformation";
-import HouseholdDemography from "./demography/HouseholdDemography";
+import HouseholdDemography, { isValidTotalMembers } from "./demography/HouseholdDemography";
 import HouseholdDocumentsSchemes from "./documents/HouseholdDocumentsSchemes";
 import HouseholdWomenSocialSecurity from "./women/HouseholdWomenSocialSecurity";
 import HouseholdDisabilityDocuments from "./disability/HouseholdDisabilityDocuments";
@@ -152,7 +152,7 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
   // COLLECT DATA FROM ALL 11 SECTIONS
   // =========================================================
 
-  const collectAllData = () => {
+  const collectAllData = (): Record<string, unknown> => {
     const generalData =
       generalRef.current?.getData?.() ?? {};
 
@@ -215,6 +215,10 @@ const HouseholdForm: React.FC<HouseholdFormProps> = ({
 
   const handleComplete = async () => {
     const collectedData = collectAllData();
+    if (!isValidTotalMembers(collectedData.totalMembers)) {
+      setSaveError("कृपया परिवार के कुल सदस्यों की संख्या 1 से 10000000 के बीच पूर्णांक में दर्ज करें।");
+      return;
+    }
 
     // -------------------------------------------------------
     // SECTION 1

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import type { HouseholdSurvey } from '@prisma/client';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import prisma from '../src/config/prisma';
 import { createHouseholdSlots, getHouseholdSurveys, saveHouseholdSurvey } from '../src/controllers/householdController';
@@ -12,6 +13,141 @@ function replaceMethod(target: object, key: string, value: (...args: never[]) =>
     else Reflect.deleteProperty(target, key);
   };
 }
+
+test('household updates persist total members and retain answers omitted from a draft payload', async (t) => {
+  const existing = {
+    id: 'household-1',
+    trackingId: 'DMFT-HHD-1',
+    villageId: 12,
+    houseNumber: 1,
+    headName: 'Saved head',
+    totalMembers: 4,
+    eldersCount: 1,
+    childrenCount: 1,
+    womenCount: 2,
+    completedSections: 1,
+    isCompleted: false,
+    mobile: '',
+    surveyDate: '',
+    surveyorName: '',
+    caste: 'सामान्य',
+    isBpl: '',
+    animalEmployment: 'पात्रता नहीं'
+  } as HouseholdSurvey;
+  let persistedUpdate: Record<string, unknown> | undefined;
+  let persistedWhere: unknown;
+  const tx = {
+    $executeRaw: async () => 1,
+    village: {
+      findFirst: async () => ({ id: 12, nameHindi: 'Test village' })
+    },
+    villageSurvey: {
+      findUnique: async () => ({ surveyData: { householdSurveyCount: 1 } })
+    },
+    householdSurvey: {
+      findUnique: async () => existing,
+      upsert: async ({ where, update }: { where: unknown; update: Record<string, unknown> }) => {
+        persistedWhere = where;
+        persistedUpdate = update;
+        return { ...existing, ...update };
+      }
+    },
+    surveyAuditLog: {
+      create: async () => ({})
+    }
+  };
+  const restoreTransaction = replaceMethod(
+    prisma,
+    '$transaction',
+    (async (callback: (transaction: typeof tx) => Promise<unknown>) => callback(tx)) as (...args: never[]) => unknown
+  );
+  t.after(restoreTransaction);
+
+  const response = createReply();
+  await saveHouseholdSurvey({
+    body: {
+      villageName: 'Test village',
+      houseNumber: 1,
+      data: { totalMembers: '7', completedSections: 2 }
+    },
+    user: { id: 'surveyor-1' }
+  } as FastifyRequest, response.reply);
+
+  assert.equal(response.result.response?.statusCode, 200);
+  assert.deepEqual(persistedWhere, {
+    uq_house_per_village: { villageId: 12, houseNumber: 1 }
+  });
+  assert.equal(persistedUpdate?.totalMembers, 7);
+  assert.equal(persistedUpdate?.headName, 'Saved head');
+  assert.equal(persistedUpdate?.caste, 'सामान्य');
+  assert.equal(persistedUpdate?.animalEmployment, 'पात्रता नहीं');
+  assert.equal(persistedUpdate?.eldersCount, 1);
+  assert.equal(
+    (response.result.response?.payload as { data: { totalMembers: number } }).data.totalMembers,
+    7
+  );
+
+  const exactValueResponse = createReply();
+  await saveHouseholdSurvey({
+    body: {
+      villageName: 'Test village',
+      houseNumber: 1,
+      data: { animalEmployment: 'पात्रता नहीं' }
+    },
+    user: { id: 'surveyor-1' }
+  } as FastifyRequest, exactValueResponse.reply);
+
+  assert.equal(persistedUpdate?.animalEmployment, 'पात्रता नहीं');
+  assert.equal(
+    (exactValueResponse.result.response?.payload as { data: { animalEmployment: string } }).data.animalEmployment,
+    'पात्रता नहीं'
+  );
+});
+
+test('household GET restores the persisted total in its form answers', async (t) => {
+  const savedRecord = {
+    id: 'household-1',
+    trackingId: 'DMFT-HHD-1',
+    villageId: 12,
+    houseNumber: 1,
+    headName: 'Saved head',
+    totalMembers: 6,
+    eldersCount: 1,
+    childrenCount: 2,
+    womenCount: 3,
+    completedSections: 1,
+    isCompleted: false,
+    auditStatus: 'Draft',
+    registryStatus: 'Draft',
+    animalEmployment: 'पात्रता नहीं'
+  };
+  const restoreVillageLookup = replaceMethod(
+    prisma.village,
+    'findUnique',
+    (async () => ({
+      id: 12,
+      nameHindi: 'Test village',
+      villageSurvey: { surveyData: { householdSurveyCount: 1 } }
+    })) as (...args: never[]) => unknown
+  );
+  const restoreHouseholdList = replaceMethod(
+    prisma.householdSurvey,
+    'findMany',
+    (async () => [savedRecord]) as (...args: never[]) => unknown
+  );
+  t.after(restoreVillageLookup);
+  t.after(restoreHouseholdList);
+
+  const response = createReply();
+  await getHouseholdSurveys({ query: { villageId: 12 } } as FastifyRequest, response.reply);
+
+  const payload = response.result.response?.payload as {
+    households: Record<string, { totalMembers: number; surveyAnswers: { totalMembers: number } }>;
+  };
+  assert.equal(payload.households['1'].totalMembers, 6);
+  assert.equal(payload.households['1'].surveyAnswers.totalMembers, 6);
+  assert.equal(payload.households['1'].surveyAnswers.animalEmployment, 'पात्रता नहीं');
+});
 
 test('household save returns a conflict before writing when its number exceeds the village count', async (t) => {
   let villageWhere: unknown;

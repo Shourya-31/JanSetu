@@ -67,7 +67,7 @@ export async function getHouseholdSurveys(req: FastifyRequest, reply: FastifyRep
         mobile: h.mobile,
         caste: h.caste,
         isBPL: h.isBpl,
-        totalMembers: 1, // hardcoded or add to schema if needed, but not in frontend form
+        totalMembers: h.totalMembers,
         eldersCount: h.eldersCount,
         childrenCount: h.childrenCount,
         unemployedCount: h.unemployedMembers,
@@ -192,7 +192,8 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
   const block = body.block || (body.data && body.data.block);
   const panchayat = body.panchayat || (body.data && body.data.panchayat);
   const houseNumber = body.houseNumber !== undefined ? Number(body.houseNumber) : (body.data && body.data.houseNumber !== undefined ? Number(body.data.houseNumber) : undefined);
-  const payloadData = body.data || body;
+  const rawPayloadData = body.data || body;
+  let payloadData = rawPayloadData;
 
   if ((villageId === undefined && !villageName) || houseNumber === undefined || !payloadData) {
     return reply.status(400).send({ error: 'villageId or villageName, houseNumber, and data payload are required' });
@@ -228,6 +229,9 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
         const existing = await tx.householdSurvey.findUnique({
           where: { uq_house_per_village: { villageId: village.id, houseNumber } }
         });
+        payloadData = existing
+          ? { ...toHouseholdSurveyAnswers(existing), ...rawPayloadData }
+          : rawPayloadData;
 
         const survey = await tx.householdSurvey.upsert({
           where: {
@@ -245,6 +249,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             surveyorName: payloadData.surveyorName || '',
             caste: payloadData.caste || '',
             isBpl: payloadData.isBpl || payloadData.isBPL || '',
+            totalMembers: Number(payloadData.totalMembers || 0),
             eldersCount: parseInt(String(payloadData.elderly || payloadData.eldersCount || 0).replace(/[^0-9]/g,"")) || 0,
             childrenCount: parseInt(String(payloadData.children || payloadData.childrenCount || 0).replace(/[^0-9]/g,"")) || 0,
             womenCount: parseInt(String(payloadData.women || payloadData.womenCount || 0).replace(/[^0-9]/g,"")) || 0,
@@ -316,6 +321,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             surveyorName: payloadData.surveyorName || '',
             caste: payloadData.caste || '',
             isBpl: payloadData.isBpl || payloadData.isBPL || '',
+            totalMembers: Number(payloadData.totalMembers || 0),
             eldersCount: parseInt(String(payloadData.elderly || payloadData.eldersCount || 0).replace(/[^0-9]/g,"")) || 0,
             childrenCount: parseInt(String(payloadData.children || payloadData.childrenCount || 0).replace(/[^0-9]/g,"")) || 0,
             womenCount: parseInt(String(payloadData.women || payloadData.womenCount || 0).replace(/[^0-9]/g,"")) || 0,
@@ -382,7 +388,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
           changedBy: actorId,
           changes: {
             reason: 'Household survey submission',
-            changedFields: Object.keys(payloadData),
+            changedFields: Object.keys(rawPayloadData),
             before: toAuditSnapshot(existing),
             after: toAuditSnapshot(survey)
           }

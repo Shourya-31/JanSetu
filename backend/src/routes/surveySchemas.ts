@@ -6,6 +6,12 @@ const countValue = {
     { type: 'string', pattern: '^(|[0-9]{1,8})$' }
   ]
 };
+const positiveCountValue = {
+  anyOf: [
+    { type: 'integer', minimum: 1, maximum: 10000000 },
+    { type: 'string', pattern: '^(?:0*[1-9][0-9]{0,6}|0*10000000)$' }
+  ]
+};
 
 function objectWithFields(
   fields: string[],
@@ -175,7 +181,7 @@ const householdTextFields = [
   'deathCertificateReceived', 'pmGaribKalyanRation', 'childrenWithoutBirthCertificate',
   'vaccinationStatus', 'anganwadiMeal', 'childrenSchoolStatus', 'otherSchoolReason', 'pmKisan',
   'miningEmployment', 'annualIncome', 'mainIncomeSource', 'livestockSource', 'otherLivestockSource',
-  'animalEmployment', 'houseType', 'housingSchemeBenefit', 'toiletStatus', 'tapWaterConnection',
+  'houseType', 'housingSchemeBenefit', 'toiletStatus', 'tapWaterConnection',
   'drinkingWaterSource', 'electricityConnection', 'solarEnergy', 'familyDisease', 'freeMedicines',
   'shgMember', 'priorityNeed1', 'priorityNeed2', 'priorityNeed3', 'eligibleSchemeNotReceived',
   'schemeBenefitName', 'trackingId', 'block', 'blockName', 'panchayat', 'panchayatName', 'incomeSource',
@@ -183,7 +189,7 @@ const householdTextFields = [
 ];
 const householdArrayFields = ['assistanceTypes', 'schoolNotGoingReason'];
 const householdCountFields = [
-  'totalMembers', 'eldersCount', 'childrenCount', 'unemployedCount', 'unemployedMembers',
+  'eldersCount', 'childrenCount', 'unemployedCount', 'unemployedMembers',
   'noAadhaarMembers', 'noCasteCertificateMembers', 'noAyushmanMembers', 'noVoterIdMembers',
   'noShramikCardMembers', 'missingAadhaar', 'missingCasteCert', 'missingAyushman', 'missingVoterId'
 ];
@@ -201,6 +207,8 @@ export const householdAnswerSchema = {
     mobile: { type: 'string', maxLength: 32, pattern: '^[0-9+() -]*$' },
     ...Object.fromEntries(householdTextFields.map((field) => [field, formText()])),
     ...Object.fromEntries(householdCountFields.map((field) => [field, countValue])),
+    animalEmployment: { type: 'string', enum: ['', 'हाँ', 'नहीं', 'पात्रता नहीं'] },
+    totalMembers: positiveCountValue,
     womenCount: countValue,
     ...Object.fromEntries(householdArrayFields.map((field) => [field, formTextArray])),
     generalCompleted: { type: 'boolean' },
@@ -223,7 +231,7 @@ const requiredCompletions = [
   'healthCompleted', 'shgCompleted', 'otherCompleted'
 ];
 const requiredHouseholdFields = [
-  'headName', 'mobile', 'surveyDate', 'surveyorName', 'caste', 'isBpl', 'elderly', 'children', 'women',
+  'headName', 'mobile', 'surveyDate', 'surveyorName', 'caste', 'isBpl', 'totalMembers', 'elderly', 'children', 'women',
   'rationCard', 'noAadhaarMembers', 'aadhaarEkyc', 'noCasteCertificateMembers', 'noAyushmanMembers',
   'noVoterIdMembers', 'mnregaJobCard', 'noShramikCardMembers', 'janDhanAccount', 'kcc',
   'forestRightsPatta', 'marriagecertificate', 'bankName', 'jsy', 'pmmvy', 'mahtariVandana',

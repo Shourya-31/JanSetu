@@ -21,7 +21,7 @@ describe('buildHouseholdSlots', () => {
       version: 3,
       auditStatus: 'Draft',
       registryStatus: 'Draft',
-      surveyAnswers: { headName: 'Saved head', completedSections: 2 }
+      surveyAnswers: { headName: 'Saved head', totalMembers: 4, completedSections: 2 }
     } satisfies HouseholdApiRecord;
 
     const slots = buildHouseholdSlots('Village', 'Block', 'Panchayat', 'Surveyor', 125, { 17: saved });
@@ -32,7 +32,7 @@ describe('buildHouseholdSlots', () => {
       version: 3,
       houseNumber: 17,
       headName: 'Saved head',
-      data: { headName: 'Saved head', completedSections: 2 }
+      data: { headName: 'Saved head', totalMembers: 4, completedSections: 2 }
     });
     expect(slots[15].data.headName).toBeUndefined();
     expect(slots[124].houseNumber).toBe(125);

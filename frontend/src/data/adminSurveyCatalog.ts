@@ -1256,7 +1256,7 @@ export const householdSections: ReportSection[] = [
         label:
           "7. क्या परिवार के सदस्य पशुपालन/पशु आधारित कार्य से रोजगार प्राप्त करते हैं?",
         type: "categorical",
-        options: ["हाँ", "नहीं"],
+        options: ["हाँ", "नहीं", "पात्रता नहीं"],
       },
     ],
     source:
