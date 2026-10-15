@@ -133,7 +133,7 @@ const HouseholdAgricultureEmployment = forwardRef<
 
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-3">
-          1. परिवार में कितने सदस्य वर्तमान में बेरोजगार हैं?
+          1. परिवार में कितने सदस्य (18–45 वष) वर्तमान में बेरोजगार हैं?
         </label>
 
         <input
@@ -152,7 +152,7 @@ const HouseholdAgricultureEmployment = forwardRef<
 
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-3">
-          2. क्या परिवार को PM किसान योजना का लाभ मिल रहा है?
+          2. िपछले वष PM-KISAN की रािश ा ई?
         </label>
 
         <div className="flex flex-wrap gap-3">
@@ -185,7 +185,7 @@ const HouseholdAgricultureEmployment = forwardRef<
 
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-3">
-          3. क्या परिवार का कोई सदस्य खनन कार्य में रोजगार करता है?
+          3. परवार का कोई सद खनन म कायरत है? 
         </label>
 
         <div className="flex flex-wrap gap-3">
@@ -211,7 +211,7 @@ const HouseholdAgricultureEmployment = forwardRef<
 
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-3">
-          4. परिवार की अनुमानित वार्षिक आय
+          4. परवार की कुल वार्षिक आय:
         </label>
 
         <input
