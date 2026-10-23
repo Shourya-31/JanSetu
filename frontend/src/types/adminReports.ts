@@ -74,3 +74,52 @@ export interface ReportScope {
   panchayatId?: string;
   villageId?: string;
 }
+
+export interface AnalyticsScope {
+  blockId?: string;
+  panchayatId?: string;
+  villageId?: string;
+}
+
+export interface AdminLocationVillage {
+  id: string;
+  nameHindi: string;
+  nameEnglish: string;
+  action: string;
+  population: number;
+  surveyStatus: "completed" | "incomplete" | "unavailable";
+}
+
+export interface AdminLocationPanchayat {
+  id: string;
+  name: string;
+  nameEnglish: string;
+  villages: AdminLocationVillage[];
+}
+
+export interface AdminLocationBlock {
+  id: string;
+  blockName: string;
+  blockNameEnglish: string;
+  panchayats: AdminLocationPanchayat[];
+}
+
+export interface AdminAnalyticsSummary {
+  districts: number;
+  blocks: number;
+  gramPanchayats: number;
+  villages: number;
+  villageSurveysCompleted: number;
+  villageSurveysPending: number;
+  villageSurveysIncomplete: number;
+  villageSurveysUnavailable: number;
+  villageCompletionPercent: number;
+  householdRecords: number;
+  completedHouseholdRecords: number;
+  incompleteHouseholdRecords: number;
+  householdCompletionPercent: number | null;
+  population: number | null;
+  populationResponses: number;
+  totalHouseholds: number | null;
+  householdTotalResponses: number;
+}

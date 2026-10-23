@@ -148,11 +148,12 @@ export function compileReport(
   }
   for (const record of householdSurveys)
     if (record.householdId) {
-      if (householdIds.has(record.householdId))
+      const householdKey = `${record.villageId}:${record.householdId}`;
+      if (householdIds.has(householdKey))
         throw new Error(
           "Multiple household survey versions supplied. The integration adapter must select the eligible version per household.",
         );
-      householdIds.add(record.householdId);
+      householdIds.add(householdKey);
     }
   const statistics: Distribution[] = [],
     answers: AnswerRow[] = [];

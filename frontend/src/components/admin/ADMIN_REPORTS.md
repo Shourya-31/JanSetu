@@ -1,15 +1,15 @@
 ﻿# Admin Analytics and Consolidated Reports
 
-The Admin frontend remains disconnected from the backend. `offlineAdminReportService` makes no HTTP requests and returns an integration-pending empty dataset. Authentication, the two top tabs, Analytics default navigation, logout, location hierarchy, and Surveyor submission code are preserved. This work edits frontend files only; the pre-existing modified backend lockfile was left untouched.
+The Admin frontend uses `liveAdminReportService` for the authenticated database-backed hierarchy, analytics summary, and detailed survey endpoints. `offlineAdminReportService` remains available for isolated tests. The Analytics overview loads automatically at All Districts scope; location filters narrow the same summary, and full survey detail is fetched for a selected village. The current database hierarchy represents Narayanpur as its only district.
 
 ## Refined frontend modules
 
-- `src/components/admin/AdminSurveyWorkspace.tsx`: existing location controls; independent Entire Block/Single Village report scopes; View Report and export actions; scope-keyed cancellation prevents stale data from being shown/exported. Reports show recorded counts and consolidated tables; percentage charts belong only to Analytics.
+- `src/components/admin/AdminSurveyWorkspace.tsx`: live database location controls; automatically loaded, scope-keyed analytics summaries; independent Entire Block/Single Village report scopes; View Report and export actions; scope-keyed cancellation prevents stale data from being shown/exported.
 - `src/components/admin/AdminAnalysis.tsx`: recorded village section tables, village family-count ratios, eligible-household charts, supported child-count ratio, and recorded numeric totals where denominators cannot be determined.
 - `src/components/admin/AdminConsolidatedTables.tsx`: searchable section-wise tables, ten survey records per page, consistent stable identifiers, bounded horizontal scrolling, and linked nested saved data. Each household is a row in every relevant section, rather than an individual form.
 - `src/utils/adminSurveyValues.ts`: shared missing-value display, numeric validation, and percentage rounding.
 - `src/utils/adminAnalyticsMetrics.ts`: reviewed numerator/denominator mappings, invalid-count flags, eligible-household filtering, and person-count ratio calculation.
-- `src/utils/adminReportModel.ts`: scope filtering and deduplication, preservation of original answers, calculations, and compilation of the shared table dataset. Identical record IDs deduplicate; conflicting duplicates or multiple survey versions per village/household reject the dataset rather than double-counting.
+- `src/utils/adminReportModel.ts`: scope filtering and deduplication, preservation of original answers, calculations, and compilation of the shared table dataset. Household identity includes both village and house number; conflicting duplicate versions for the same household are rejected rather than double-counted.
 - `src/utils/adminReportTables.ts`: original section/field ordering, row-oriented primary worksheets, repeated village facility tables, and recursive linked tables for any supplied structured household data.
 - `src/utils/adminReportExports.ts`: scope-aware, consolidated PDF print layout and real XLSX workbook. All supplied scope records are exported, irrespective of screen pagination/search.
 - `scripts/test-admin-reports.mjs`: isolated development fixtures and calculation, scope, completeness, export round-trip, and rendering checks.
@@ -49,18 +49,16 @@ Current forms contain no member-level collection. If future supplied answers con
 
 Both exports consume the same compiled, scope-filtered table dataset as the report screen and label the chosen scope. Single-village filenames identify the village. Exports are disabled for integration-pending or empty datasets; failures display an error.
 
-## Future integration mapping
+## Database integration
 
-1. Supply a verified authorized adapter implementing `AdminReportService.loadSurveys(scope, signal)`; do not assume an unverified API shape. No API requests/endpoints have been added.
-2. Frontend block names/IDs are `narayanpur` / Narayanpur and `orchha-abhujmad` / Orchha (Abhujmad). Narayangaon and Orzha are not in the existing hierarchy. Database location IDs use a different representation; finalize an explicit authoritative mapping during integration.
-3. Village general answers are flat, with sections under `anganbadiData`, `schoolData`, `hostelData`, `healthData` (facility arrays) and `waterData`, `employmentData`, `ladiesData`, `cleanlinessData`, `pensionData`, `developmentData` (objects). Household answers are flat `getData()` spreads, not nested section objects.
-4. Supply stable `id`, `blockId`, `panchayatId`, `villageId`, `villageName`, complete answers, household identity, timestamps, and explicit completion status when known. Names/house numbers are not stable identity keys.
-5. Fetch every eligible page, select one eligible survey version per entity, and fail on incomplete retrieval. Preserve all saved fields. Set `integrationPending: false` only after actual retrieval succeeds.
-6. Backend source inspected earlier included Admin analytics/query controllers returning 501, so those summary contracts cannot be presumed usable. Retrieval coverage, authorization, pagination, eligibility metadata, and location relationships must be verified during integration.
-7. The existing `authApi.ts` currently returns a mock frontend login session. It is unchanged. This implementation does not establish live backend authentication or claim production authorization is connected.
+1. `/api/admin/hierarchy` returns database IDs for block, Gram Panchayat, and village selectors. `/api/admin/analytics` uses optional numeric IDs for scoped summary queries. `/api/admin/surveys` accepts database block/panchayat/village IDs for detailed Reports and selected-village Analytics.
+2. The schema contains no district model; current application data is the Narayanpur district hierarchy, so All Districts currently means all available blocks and their related records.
+3. Village completion is the explicit `VillageSurvey.isCompleted` submission flag. Household completion is `HouseholdSurvey.isCompleted`. Household saves upsert by the schema's unique `(villageId, houseNumber)` key and increment `version` in place; the report identity is therefore village plus house number, not house number alone.
+4. Analytics summaries aggregate village statuses and household completion in the backend. Detailed answers and existing analytics sections remain available at village scope. These changes do not establish production deployment or independently verify production database contents.
+5. Existing admin route authentication/authorization guards remain in place. The existing frontend `authApi.ts` behavior is unchanged.
 
 ## Validation
 
-Run `npm run test:admin`, `npm run build`, and scoped ESLint on the modified Admin files. Isolated checks cover complete field labels, missing values, filtering/deduplication, removal of Village categorical percentages, family ratios/inconsistencies, eligible household conditions, paired child counts, unknown denominators, normalized nested data, consolidated household rows, block/village export scope, records beyond page one, Hindi/HTML escaping, XLSX serialization and reload, offline behavior, navigation, and frontend-only rendering. Tests never supply sample data to the normal Admin screen.
+Validation for the analytics integration includes backend `npm test` and `npm run build`, frontend `npm test` and `npm run build`, plus scoped source diagnostics. Controller tests mock Prisma and do not connect to or change a database. Tests never supply sample data to the normal Admin screen.
 
-The populated development preview and its sample-data modules have been removed. Admin always uses the configured report service; the default remains disconnected until backend integration.
+The populated development preview and its sample-data modules have been removed. Admin uses the configured report service; the default service is the live backend adapter.

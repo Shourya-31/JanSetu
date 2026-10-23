@@ -42,4 +42,23 @@ describe('animal employment in admin details and reports', () => {
       expect(distribution?.options.find((option) => option.option === animalEmployment)?.count).toBe(1);
     }
   });
+
+  it('treats identical house numbers in different villages as separate households', () => {
+    const report = compileReport({
+      villageSurveys: [],
+      householdSurveys: ['3', '4'].map((villageId) => ({
+        id: `household-${villageId}`,
+        blockId: 'test-block',
+        panchayatId: 'test-panchayat',
+        villageId,
+        villageName: `Village ${villageId}`,
+        householdId: '1',
+        completed: false,
+        answers: { animalEmployment: 'हाँ' }
+      })),
+      integrationPending: false
+    }, { blockId: 'test-block' }, 'Test Block');
+
+    expect(report.summary.householdRecords).toBe(2);
+  });
 });

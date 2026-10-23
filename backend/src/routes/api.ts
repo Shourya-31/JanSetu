@@ -5,7 +5,7 @@ import { getHouseholdSurveys, createHouseholdSlots, saveHouseholdSurvey, patchHo
 import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminController';
 import { exportHouseholdsCsv } from '../controllers/exportController';
 import { getAdminSurveys, getAdminGramStats } from '../controllers/adminReportController';
-import { getHierarchy } from '../controllers/hierarchyController';
+import { getAdminHierarchy, getHierarchy } from '../controllers/hierarchyController';
 import { getSurveyAuditLogs } from '../controllers/auditController';
 import { uploadImage } from '../controllers/uploadController';
 import { FastifyReply, FastifyRequest } from 'fastify';
@@ -260,6 +260,10 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
     ...adminOnly,
     schema: { querystring: querySchema({ blockId: text(), panchayatId: text(), villageId: text() }, ['blockId']) }
   }, getAdminSurveys);
+  fastify.get('/api/admin/hierarchy', {
+    ...adminOnly,
+    schema: { querystring: emptyQuerySchema }
+  }, getAdminHierarchy);
   
   fastify.get('/api/admin/gram-stats', {
     ...adminOnly,
@@ -272,7 +276,13 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
   }, queryAdminHouseholds);
   fastify.get('/api/admin/analytics', {
     ...adminOnly,
-    schema: { querystring: emptyQuerySchema }
+    schema: {
+      querystring: querySchema({
+        blockId: { type: 'string', pattern: '^[1-9][0-9]{0,7}$' },
+        panchayatId: { type: 'string', pattern: '^[1-9][0-9]{0,7}$' },
+        villageId: { type: 'string', pattern: '^[1-9][0-9]{0,9}$' }
+      })
+    }
   }, getAnalyticsSummary);
   fastify.get('/api/admin/audit-logs', {
     ...adminOnly,

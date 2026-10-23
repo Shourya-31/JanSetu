@@ -1,11 +1,14 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { CENSUS_HIERARCHY } from "../../data/narayanpurHierarchy";
 import {
   householdSections,
   villageSections,
 } from "../../data/adminSurveyCatalog";
 import type { AdminReportService } from "../../services/adminReportService";
-import type { SurveyDataset } from "../../types/adminReports";
+import type {
+  AdminAnalyticsSummary,
+  AdminLocationBlock,
+  SurveyDataset,
+} from "../../types/adminReports";
 import {
   compileReport,
   type CompiledReport,
@@ -27,13 +30,21 @@ export function AdminSurveyWorkspace({
   mode: "analytics" | "reports";
   service: AdminReportService;
 }) {
+  const [hierarchy, setHierarchy] = useState<AdminLocationBlock[]>([]);
+  const [hierarchyState, setHierarchyState] = useState<{
+    key: number;
+    status: "loading" | "success" | "error";
+    error: string;
+  }>({ key: -1, status: "loading", error: "" });
+  const [hierarchyRetry, setHierarchyRetry] = useState(0);
   const [district, setDistrict] = useState(""),
     [blockId, setBlock] = useState(""),
     [panchayatId, setPanchayat] = useState(""),
     [villageId, setVillage] = useState("");
   const [reportScope, setReportScope] = useState<"block" | "village">("block");
-  const scopeReady =
-    !!blockId && (mode !== "reports" || reportScope === "block" || !!villageId);
+  const scopeReady = mode === "reports"
+    ? !!blockId && (reportScope === "block" || !!villageId)
+    : !!villageId;
   const activeVillageId =
     mode === "reports" && reportScope === "block" ? "" : villageId;
   const [state, setState] = useState<{
@@ -45,11 +56,35 @@ export function AdminSurveyWorkspace({
   const [retry, setRetry] = useState(0),
     [exporting, setExporting] = useState(false),
     [exportError, setExportError] = useState("");
-  const block = CENSUS_HIERARCHY.find((b) => b.id === blockId),
+  const [summaryState, setSummaryState] = useState<{
+    key: string;
+    status: "idle" | "loading" | "success" | "error";
+    data: AdminAnalyticsSummary | null;
+    error: string;
+  }>({ key: "", status: "idle", data: null, error: "" });
+  const block = hierarchy.find((b) => b.id === blockId),
     panchayat = block?.panchayats.find((p) => p.id === panchayatId);
+  const selectedVillage = panchayat?.villages.find((v) => v.id === villageId);
+  const scopedVillages = hierarchy.flatMap((currentBlock) =>
+    (!blockId || currentBlock.id === blockId ? currentBlock.panchayats : [])
+      .flatMap((currentPanchayat) =>
+        (!panchayatId || currentPanchayat.id === panchayatId ? currentPanchayat.villages : [])
+          .filter((village) => !villageId || village.id === villageId)
+          .map((village) => ({ ...village, blockName: currentBlock.blockName, panchayatName: currentPanchayat.name }))
+      )
+  );
   const blockName = block
     ? `${block.blockName} / ${block.blockNameEnglish}`
     : "";
+  const scopeHeading = selectedVillage
+    ? `${selectedVillage.nameHindi} / ${selectedVillage.nameEnglish} Overview`
+    : panchayat
+      ? `${panchayat.name} / ${panchayat.nameEnglish} Overview`
+      : block
+        ? `${block.blockName} / ${block.blockNameEnglish} Block Overview`
+        : district
+          ? "Narayanpur District Overview"
+          : "All Districts Overview";
   const requestKey = JSON.stringify([
     blockId,
     panchayatId,
@@ -57,6 +92,52 @@ export function AdminSurveyWorkspace({
     reportScope,
     retry,
   ]);
+  const summaryKey = JSON.stringify([district, blockId, panchayatId, villageId, retry]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    service.loadHierarchy(controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setHierarchy(data);
+          setHierarchyState({ key: hierarchyRetry, status: "success", error: "" });
+        }
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setHierarchyState({
+          key: hierarchyRetry,
+          status: "error",
+          error: error instanceof Error ? error.message : "Could not load locations.",
+        });
+      });
+    return () => controller.abort();
+  }, [service, hierarchyRetry]);
+
+  useEffect(() => {
+    if (mode !== "analytics") return;
+    const controller = new AbortController();
+    service.loadAnalytics({
+      blockId: blockId || undefined,
+      panchayatId: panchayatId || undefined,
+      villageId: villageId || undefined,
+    }, controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted)
+          setSummaryState({ key: summaryKey, status: "success", data, error: "" });
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setSummaryState({
+            key: summaryKey,
+            status: "error",
+            data: null,
+            error: error instanceof Error ? error.message : "Could not load analytics.",
+          });
+      });
+    return () => controller.abort();
+  }, [mode, service, blockId, panchayatId, villageId, summaryKey]);
+
   useEffect(() => {
     if (!scopeReady) return;
     const controller = new AbortController();
@@ -167,7 +248,7 @@ export function AdminSurveyWorkspace({
         </h2>
         <p className="mt-2 text-sm text-slate-500">
           {mode === "analytics"
-            ? "Select a location to explore Village and Household Survey responses."
+            ? "Database-backed overview across all districts, with optional location filters."
             : "Select an entire block or a single village to view complete compiled survey tables."}
         </p>
       </div>
@@ -189,7 +270,7 @@ export function AdminSurveyWorkspace({
                   changeBlock("");
                 }}
               >
-                <option value="">Select district</option>
+                <option value="">All Districts</option>
                 <option value="narayanpur">नारायणपुर / Narayanpur</option>
               </select>
             </label>
@@ -199,11 +280,10 @@ export function AdminSurveyWorkspace({
             <select
               className={control}
               value={blockId}
-              disabled={mode === "analytics" && !district}
               onChange={(e) => changeBlock(e.target.value)}
             >
               <option value="">Select block</option>
-              {CENSUS_HIERARCHY.map((b) => (
+                {hierarchy.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.blockName} / {b.blockNameEnglish}
                 </option>
@@ -298,6 +378,91 @@ export function AdminSurveyWorkspace({
           )}
         </div>
       </section>
+      {hierarchyState.key !== hierarchyRetry && (
+        <p role="status" className="text-sm text-slate-500">Loading locations…</p>
+      )}
+      {hierarchyState.key === hierarchyRetry && hierarchyState.status === "error" && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          {hierarchyState.error}
+          <button className="ml-3 underline" onClick={() => setHierarchyRetry((n) => n + 1)}>
+            Retry
+          </button>
+        </div>
+      )}
+      {mode === "analytics" && (
+        <section className={card} aria-label="Analytics overview">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-slate-900">{scopeHeading}</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Aggregated from current database records. Completed surveys use the submitted status stored for each village or household.
+            </p>
+          </div>
+          {(summaryState.key !== summaryKey || summaryState.status === "loading") && (
+            <p role="status" className="text-sm text-slate-500">Loading analytics…</p>
+          )}
+          {summaryState.key === summaryKey && summaryState.status === "error" && (
+            <div role="alert" className="text-sm text-rose-800">
+              {summaryState.error}
+              <button className="ml-3 underline" onClick={() => setRetry((n) => n + 1)}>
+                Retry
+              </button>
+            </div>
+          )}
+          {summaryState.key === summaryKey && summaryState.status === "success" && summaryState.data && (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {[
+                  ["Districts", summaryState.data.districts],
+                  ["Blocks", summaryState.data.blocks],
+                  ["Gram Panchayats", summaryState.data.gramPanchayats],
+                  ["Villages", summaryState.data.villages],
+                  ["Village surveys completed", summaryState.data.villageSurveysCompleted],
+                  ["Village surveys pending", summaryState.data.villageSurveysPending],
+                  ["Village completion", `${summaryState.data.villageCompletionPercent}%`],
+                  ["Household survey records", summaryState.data.householdRecords],
+                  ["Households completed", summaryState.data.completedHouseholdRecords],
+                  ["Household completion", summaryState.data.householdCompletionPercent === null ? "Unavailable" : `${summaryState.data.householdCompletionPercent}%`],
+                  ["Population from village surveys", summaryState.data.population === null ? "Unavailable" : summaryState.data.population.toLocaleString("en-IN")],
+                  ["Household total from village surveys", summaryState.data.totalHouseholds === null ? "Unavailable" : summaryState.data.totalHouseholds.toLocaleString("en-IN")],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">{label}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Village survey status: {summaryState.data.villageSurveysIncomplete} incomplete, {summaryState.data.villageSurveysUnavailable} unavailable. Household records: {summaryState.data.incompleteHouseholdRecords} incomplete of {summaryState.data.householdRecords}. Population values available for {summaryState.data.populationResponses} villages; household totals available for {summaryState.data.householdTotalResponses} villages.
+              </p>
+              {scopedVillages.length > 0 && (
+                <section className="mt-5 border-t border-slate-200 pt-4" aria-label="Village survey statuses">
+                  <h4 className="mb-3 text-sm font-semibold text-slate-800">Village survey status</h4>
+                  <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+                    {scopedVillages.map((village) => {
+                      const completed = village.surveyStatus === "completed";
+                      const unavailable = village.surveyStatus === "unavailable";
+                      return (
+                        <li key={village.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-800">{village.nameHindi} / {village.nameEnglish}</p>
+                            <p className="truncate text-xs text-slate-500">{village.blockName} · {village.panchayatName}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${completed ? "bg-emerald-100 text-emerald-800" : unavailable ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"}`}>
+                            {completed ? "Completed" : unavailable ? "Unavailable" : "Incomplete"}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              )}
+              {summaryState.data.villages === 0 && (
+                <p className="mt-4 text-sm text-slate-500">No villages are available in this scope.</p>
+              )}
+            </>
+          )}
+        </section>
+      )}
       {mode === "reports" && (
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -354,9 +519,9 @@ export function AdminSurveyWorkspace({
             Loading survey records…
           </div>
         )}
-      {!blockId && (
+      {mode === "reports" && !blockId && (
         <div className={`${card} text-center text-slate-500`}>
-          Select {mode === "reports" ? "a block" : "a location"} to begin.
+          Select a block to begin.
         </div>
       )}
       {mode === "reports" &&

@@ -3,31 +3,33 @@ import { withErrorContext } from '../utils/errors';
 import prisma from '../config/prisma';
 import { mergePhotoUrls } from '../utils/villagePhotos';
 
-function slugify(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
-
 export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) {
   try {
     const query = req.query as { blockId: string; panchayatId?: string; villageId?: string };
     const { blockId, panchayatId, villageId } = query;
-
-    if (!blockId) {
+    const parseId = (value?: string) => {
+      if (value === undefined) return undefined;
+      const id = Number(value);
+      return Number.isSafeInteger(id) && id > 0 ? id : null;
+    };
+    const blockDbId = parseId(blockId);
+    const panchayatDbId = parseId(panchayatId);
+    const villageDbId = parseId(villageId);
+    if (blockDbId === null || panchayatDbId === null || villageDbId === null) {
+      return reply.code(400).send({ error: 'Location IDs must be positive integers.' });
+    }
+    if (blockDbId === undefined) {
       return reply.code(400).send({ error: 'blockId is required' });
     }
 
-    const whereClause: any = {
+    const whereClause = {
+      ...(villageDbId === undefined ? {} : { id: villageDbId }),
       gramPanchayat: {
-        block: {
-          nameEnglish: {
-            contains: blockId.replace(/-/g, ' '),
-            mode: 'insensitive'
-          }
-        }
+        blockId: blockDbId,
+        ...(panchayatDbId === undefined ? {} : { id: panchayatDbId })
       }
     };
-
-    const blockVillages = await prisma.village.findMany({
+    const villages = await prisma.village.findMany({
       where: whereClause,
       include: {
         villageSurvey: true,
@@ -38,36 +40,17 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
         }
       }
     });
-    const villages = blockVillages.filter((v) => {
-      const blockSlug = slugify(v.gramPanchayat.block.nameEnglish);
-      const panchayatSlug = slugify(v.gramPanchayat.nameEnglish);
-      const villageSlug = slugify(v.nameEnglish);
-      const panchayatMatches =
-        !panchayatId ||
-        panchayatId === panchayatSlug ||
-        panchayatId === `${blockSlug}-${panchayatSlug}`;
-      const villageMatches =
-        !villageId ||
-        villageId === v.id.toString() ||
-        villageId === villageSlug ||
-        villageId === `${blockSlug}-${panchayatSlug}-${villageSlug}`;
-      return panchayatMatches && villageMatches;
-    });
-
     const villageSurveys = villages.map(v => {
       const vs = v.villageSurvey;
       if (!vs) return null;
       
-      const blockSlug = v.gramPanchayat.block.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const panchayatSlug = v.gramPanchayat.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      
       return {
         id: vs.id,
-        blockId: blockSlug,
-        panchayatId: panchayatSlug,
-        panchayatKey: `${blockSlug}-${panchayatSlug}`,
+        blockId: String(v.gramPanchayat.block.id),
+        panchayatId: String(v.gramPanchayat.id),
+        panchayatKey: String(v.gramPanchayat.id),
         villageId: v.id.toString(),
-        villageKey: `${blockSlug}-${panchayatSlug}-${slugify(v.nameEnglish)}`,
+        villageKey: v.id.toString(),
         villageName: v.nameHindi,
         submittedAt: vs.updatedAt.toISOString(),
         completed: vs.isCompleted,
@@ -152,16 +135,13 @@ export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) 
     });
 
     const householdSurveys = households.map(h => {
-      const blockSlug = h.village.gramPanchayat.block.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const panchayatSlug = h.village.gramPanchayat.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      
       return {
         id: h.id,
-        blockId: blockSlug,
-        panchayatId: panchayatSlug,
-        panchayatKey: `${blockSlug}-${panchayatSlug}`,
+        blockId: String(h.village.gramPanchayat.block.id),
+        panchayatId: String(h.village.gramPanchayat.id),
+        panchayatKey: String(h.village.gramPanchayat.id),
         villageId: h.villageId.toString(),
-        villageKey: `${blockSlug}-${panchayatSlug}-${slugify(h.village.nameEnglish)}`,
+        villageKey: h.villageId.toString(),
         villageName: h.village.nameHindi,
         householdId: h.houseNumber.toString(),
         submittedAt: h.submittedAt.toISOString(),

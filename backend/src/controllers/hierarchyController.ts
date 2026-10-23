@@ -63,3 +63,46 @@ export async function getHierarchy(req: FastifyRequest, reply: FastifyReply) {
     hierarchyRefresh = null;
   }
 }
+
+export async function getAdminHierarchy(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const blocks = await prisma.block.findMany({
+      orderBy: { nameHindi: 'asc' },
+      include: {
+        gramPanchayats: {
+          orderBy: { nameHindi: 'asc' },
+          include: {
+            villages: {
+              orderBy: { nameHindi: 'asc' },
+              include: { villageSurvey: { select: { isCompleted: true } } }
+            }
+          }
+        }
+      }
+    });
+    return reply.send(blocks.map((block) => ({
+      id: String(block.id),
+      blockName: block.nameHindi,
+      blockNameEnglish: block.nameEnglish,
+      panchayats: block.gramPanchayats.map((panchayat) => ({
+        id: String(panchayat.id),
+        name: panchayat.nameHindi,
+        nameEnglish: panchayat.nameEnglish,
+        villages: panchayat.villages.map((village) => ({
+          id: String(village.id),
+          nameHindi: village.nameHindi,
+          nameEnglish: village.nameEnglish,
+          action: village.affectedStatus,
+          population: village.population,
+          surveyStatus: village.villageSurvey?.isCompleted === true
+            ? 'completed'
+            : village.villageSurvey
+              ? 'incomplete'
+              : 'unavailable'
+        }))
+      }))
+    })));
+  } catch (error) {
+    throw withErrorContext(error, { operation: 'admin.hierarchy.query', stage: 'database_query' });
+  }
+}
