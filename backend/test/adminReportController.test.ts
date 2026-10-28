@@ -376,6 +376,174 @@ test('statistical analysis reports exclusive category counts and unaffected vill
   );
 });
 
+test('statistical analysis village drill-down is admin-only, filters by block/category, and returns finalized status', async (t) => {
+  const village = {
+    id: 11,
+    nameHindi: 'ग्राम',
+    nameEnglish: 'Village',
+    affectedStatus: 'Direct and Indirect Both',
+    villageSurvey: { isCompleted: true },
+    gramPanchayat: {
+      nameHindi: 'पंचायत',
+      nameEnglish: 'Panchayat',
+      block: { id: 1, nameEnglish: 'Narayanpur' }
+    }
+  };
+  const indirectVillage = { ...village, id: 12, nameEnglish: 'Indirect Village', affectedStatus: 'Indirect Affected' };
+  const restoreBlocks = replaceMethod(prisma.block, 'findMany', (async () => [
+    { id: 1, nameEnglish: 'Narayanpur' }
+  ]) as (...args: never[]) => unknown);
+  const restoreCounts = replaceMethod(prisma.village, 'count', (async (args: { where: Record<string, unknown> }) => {
+    if ('villageSurvey' in args.where) return 1;
+    return 2;
+  }) as (...args: never[]) => unknown);
+  let villageQuery: Record<string, unknown> | undefined;
+  const restoreVillages = replaceMethod(prisma.village, 'findMany', (async (args: { where: Record<string, unknown>; take: number; skip: number }) => {
+    villageQuery = args.where;
+    assert.equal(args.take, 10);
+    assert.equal(args.skip, 0);
+    const status = args.where.affectedStatus;
+    return typeof status === 'object' && status !== null && 'in' in status ? [village] : [indirectVillage];
+  }) as (...args: never[]) => unknown);
+  const app = Fastify();
+  await app.register(fastifyJwt, { secret: 'a-test-secret-longer-than-thirty-two-characters' });
+  await app.register(apiRoutes);
+  await app.ready();
+  t.after(async () => {
+    restoreBlocks();
+    restoreCounts();
+    restoreVillages();
+    await app.close();
+  });
+
+  const anonymous = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=village&category=DIRECT&metric=completion&page=1&pageSize=10&blockId=1'
+  });
+  assert.equal(anonymous.statusCode, 401);
+  const surveyorToken = app.jwt.sign({ role: 'surveyor' });
+  const forbidden = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=village&category=DIRECT&metric=completion&page=1&pageSize=10&blockId=1',
+    headers: { authorization: 'Bearer ' + surveyorToken }
+  });
+  assert.equal(forbidden.statusCode, 403);
+
+  const adminToken = app.jwt.sign({ role: 'admin' });
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=village&category=DIRECT&metric=completion&page=1&pageSize=10&blockId=1',
+    headers: { authorization: 'Bearer ' + adminToken }
+  });
+  const body = response.json();
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(villageQuery?.affectedStatus, { in: ['Direct Affected', 'Direct and Indirect Both'] });
+  assert.deepEqual(body.records.map((record: { villageId: number }) => record.villageId), [11]);
+  assert.equal(body.records[0].affectedStatus, 'Direct and Indirect Both');
+  assert.equal(body.records[0].surveyCompleted, true);
+  assert.equal(body.records[0].completionPercent, 100);
+  assert.equal(body.totals.eligibleVillages, 2);
+  assert.equal(body.totals.completedVillages, 1);
+  assert.equal(body.totals.completionPercent, 50);
+
+  const indirectResponse = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=village&category=INDIRECT&metric=villages&page=1&pageSize=10&blockId=1',
+    headers: { authorization: 'Bearer ' + adminToken }
+  });
+  const indirectBody = indirectResponse.json();
+  assert.equal(indirectResponse.statusCode, 200, JSON.stringify(indirectBody));
+  assert.equal(villageQuery?.affectedStatus, 'Indirect Affected');
+  assert.equal(indirectBody.records[0].affectedStatus, 'Indirect Affected');
+  assert.equal(indirectBody.records.some((record: { affectedStatus: string }) => record.affectedStatus === 'Direct and Indirect Both'), false);
+
+  const invalidPage = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=village&category=DIRECT&metric=completion&page=0&pageSize=101',
+    headers: { authorization: 'Bearer ' + adminToken }
+  });
+  assert.equal(invalidPage.statusCode, 400);
+});
+
+test('statistical analysis household drill-down returns actual house numbers and village-level completion', async (t) => {
+  const village = {
+    id: 19,
+    nameHindi: 'ग्राम',
+    nameEnglish: 'Village',
+    affectedStatus: 'Direct Affected',
+    gramPanchayat: {
+      nameHindi: 'पंचायत',
+      nameEnglish: 'Panchayat',
+      block: { id: 1, nameEnglish: 'Narayanpur' }
+    },
+    households: [
+      { id: 'hh-1', houseNumber: 14, isCompleted: true },
+      { id: 'hh-2', houseNumber: 22, isCompleted: false }
+    ]
+  };
+  const restoreBlocks = replaceMethod(prisma.block, 'findMany', (async () => [
+    { id: 1, nameEnglish: 'Narayanpur' }
+  ]) as (...args: never[]) => unknown);
+  const restoreVillageCounts = replaceMethod(prisma.village, 'count', (async (args: { where: Record<string, unknown> }) => {
+    if ('households' in args.where) {
+      const filter = args.where.households as Record<string, unknown>;
+      return 'some' in filter ? 1 : 0;
+    }
+    if ('villageSurvey' in args.where) return 0;
+    return 1;
+  }) as (...args: never[]) => unknown);
+  let villageQuery: Record<string, unknown> | undefined;
+  const restoreVillages = replaceMethod(prisma.village, 'findMany', (async (args: { where: Record<string, unknown> }) => {
+    villageQuery = args.where;
+    return [village];
+  }) as (...args: never[]) => unknown);
+  const restoreHouseholdCounts = replaceMethod(prisma.householdSurvey, 'count', (async (args: { where: Record<string, unknown> }) => (
+    args.where.isCompleted === true ? 1 : 2
+  )) as (...args: never[]) => unknown);
+  const restoreHouseholdGroups = replaceMethod(prisma.householdSurvey, 'groupBy', (async () => [
+    { villageId: 19, isCompleted: true, _count: { _all: 1 } },
+    { villageId: 19, isCompleted: false, _count: { _all: 1 } }
+  ]) as (...args: never[]) => unknown);
+  const app = Fastify();
+  await app.register(fastifyJwt, { secret: 'a-test-secret-longer-than-thirty-two-characters' });
+  await app.register(apiRoutes);
+  await app.ready();
+  t.after(async () => {
+    restoreBlocks();
+    restoreVillageCounts();
+    restoreVillages();
+    restoreHouseholdCounts();
+    restoreHouseholdGroups();
+    await app.close();
+  });
+
+  const adminToken = app.jwt.sign({ role: 'admin' });
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=household&category=DIRECT&metric=completion&page=1&pageSize=25&blockId=1',
+    headers: { authorization: 'Bearer ' + adminToken }
+  });
+  const body = response.json();
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(body.records[0].households.map((house: { houseNumber: number }) => house.houseNumber), [14, 22]);
+  assert.deepEqual(body.records[0].households.map((house: { isCompleted: boolean }) => house.isCompleted), [true, false]);
+  assert.equal(body.records[0].villageCompletionPercent, 50);
+  assert.equal(body.totals.householdCount, 2);
+  assert.equal(body.totals.completedHouseholdCount, 1);
+
+  const averageResponse = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis/details?scope=household&category=DIRECT&metric=average&page=1&pageSize=25&blockId=1',
+    headers: { authorization: 'Bearer ' + adminToken }
+  });
+  const averageBody = averageResponse.json();
+  assert.equal(averageResponse.statusCode, 200);
+  assert.ok('some' in (villageQuery?.households as Record<string, unknown>));
+  assert.equal(averageBody.totals.metricCount, 1);
+  assert.equal(averageBody.totals.villagesWithHouseholds, 1);
+  assert.equal(averageBody.totals.averagePercent, 50);
+});
+
 test('admin hierarchy exposes persisted village completion statuses', async (t) => {
   const restoreBlocks = replaceMethod(
     prisma.block,

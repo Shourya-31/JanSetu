@@ -6,6 +6,7 @@ import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminC
 import { exportHouseholdsCsv } from '../controllers/exportController';
 import { getAdminSurveys, getAdminGramStats } from '../controllers/adminReportController';
 import { getStatisticalAnalysis } from '../controllers/statisticalAnalysisController';
+import { getStatisticalAnalysisDetails } from '../controllers/statisticalAnalysisDetailsController';
 import { getAdminHierarchy, getHierarchy } from '../controllers/hierarchyController';
 import { getSurveyAuditLogs } from '../controllers/auditController';
 import { uploadImage } from '../controllers/uploadController';
@@ -290,6 +291,23 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
     ...adminOnly,
     schema: { querystring: emptyQuerySchema }
   }, getStatisticalAnalysis);
+  fastify.get('/api/admin/statistical-analysis/details', {
+    ...adminOnly,
+    schema: {
+      querystring: querySchema({
+        scope: { type: 'string', enum: ['village', 'household'] },
+        blockId: { type: 'integer', minimum: 1 },
+        blockIds: { type: 'array', minItems: 1, maxItems: 10, uniqueItems: true, items: { type: 'integer', minimum: 1 } },
+        category: { type: 'string', enum: ['ALL', 'DIRECT', 'INDIRECT', 'UNAFFECTED', 'UNCLASSIFIED'] },
+        metric: {
+          type: 'string',
+          enum: ['block', 'total', 'villages', 'completed', 'completion', 'households', 'householdCompleted', 'average', 'other']
+        },
+        page: { type: 'integer', minimum: 1, maximum: 100000 },
+        pageSize: { type: 'integer', minimum: 1, maximum: 100 }
+      }, ['scope', 'category', 'metric', 'page', 'pageSize'])
+    }
+  }, getStatisticalAnalysisDetails);
   fastify.get('/api/admin/audit-logs', {
     ...adminOnly,
     schema: {
