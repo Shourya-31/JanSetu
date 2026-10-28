@@ -1,7 +1,8 @@
 export type VillageAction =
   | 'Direct Affected'
   | 'Direct and Indirect Both'
-  | 'Indirect Affected';
+  | 'Indirect Affected'
+  | 'Unaffected';
 
 export interface Village {
   id: string;

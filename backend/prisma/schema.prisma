@@ -58,6 +58,8 @@ model Block {
   householdsFilled         Int            @default(0) @map("households_filled")
 
   gramPanchayats   GramPanchayat[]
+  statisticalAnalysisSummary StatisticalAnalysisSummary?
+  statisticalAnalysisRefreshQueue StatisticalAnalysisRefreshQueue?
 
   @@unique([nameHindi], name: "uq_block_hindi")
   @@map("blocks")
@@ -81,6 +83,44 @@ model GramPanchayat {
 
   @@unique([blockId, nameHindi], name: "uq_gp_per_block")
   @@map("gram_panchayats")
+}
+
+model StatisticalAnalysisSummary {
+  blockId Int @id @map("block_id")
+  block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  totalVillages Int @default(0) @map("total_villages")
+  unclassifiedVillages Int @default(0) @map("unclassified_villages")
+  directVillageCount Int @default(0) @map("direct_village_count")
+  directVillageSurveysCompleted Int @default(0) @map("direct_village_surveys_completed")
+  indirectVillageCount Int @default(0) @map("indirect_village_count")
+  indirectVillageSurveysCompleted Int @default(0) @map("indirect_village_surveys_completed")
+
+  directHouseholdInput Int @default(0) @map("direct_household_input")
+  directHouseholdCompleted Int @default(0) @map("direct_household_completed")
+  directVillageHouseholdCompletionPercentSum Float @default(0) @map("direct_village_household_completion_percent_sum")
+  directVillageHouseholdCompletionPercentCount Int @default(0) @map("direct_village_household_completion_percent_count")
+
+  indirectHouseholdInput Int @default(0) @map("indirect_household_input")
+  indirectHouseholdCompleted Int @default(0) @map("indirect_household_completed")
+  indirectVillageHouseholdCompletionPercentSum Float @default(0) @map("indirect_village_household_completion_percent_sum")
+  indirectVillageHouseholdCompletionPercentCount Int @default(0) @map("indirect_village_household_completion_percent_count")
+
+  isStale Boolean @default(true) @map("is_stale")
+  refreshedAt DateTime? @map("refreshed_at")
+  sourceUpdatedAt DateTime? @map("source_updated_at")
+
+  @@map("statistical_analysis_summaries")
+}
+
+model StatisticalAnalysisRefreshQueue {
+  blockId Int @id @map("block_id")
+  block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  queuedAt DateTime @default(now()) @map("queued_at")
+  attempts Int @default(0)
+  lastError String? @map("last_error")
+
+  @@map("statistical_analysis_refresh_queue")
 }
 
 model Village {

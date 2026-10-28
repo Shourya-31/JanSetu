@@ -1,8 +1,9 @@
 ﻿import { useState } from "react";
-import { BarChart3, FileText, LogOut } from "lucide-react";
+import { BarChart3, FileText, LogOut, TableProperties } from "lucide-react";
 import { AdminSurveyWorkspace } from "./AdminSurveyWorkspace";
+import { StatisticalAnalysisPage } from "./StatisticalAnalysisPage";
 import {
-  offlineAdminReportService, liveAdminReportService,
+  liveAdminReportService,
   type AdminReportService,
 } from "../../services/adminReportService";
 export function AdminDashboard({
@@ -14,7 +15,7 @@ export function AdminDashboard({
   onLogout: () => void;
   service?: AdminReportService;
 }) {
-  const [page, setPage] = useState<"analytics" | "reports">("analytics");
+  const [page, setPage] = useState<"analytics" | "statistical-analysis" | "reports">("analytics");
   return (
     <div className="min-h-screen bg-slate-50 font-hindi pb-12">
       <header className="sticky top-0 z-20 border-b bg-white shadow-xs">
@@ -34,8 +35,8 @@ export function AdminDashboard({
             aria-label="Admin sections"
             className="flex gap-2 order-3 w-full sm:order-none sm:w-auto"
           >
-            {(["analytics", "reports"] as const).map((tab) => {
-              const Icon = tab === "analytics" ? BarChart3 : FileText;
+            {(["analytics", "statistical-analysis", "reports"] as const).map((tab) => {
+              const Icon = tab === "analytics" ? BarChart3 : tab === "reports" ? FileText : TableProperties;
               return (
                 <button
                   key={tab}
@@ -44,7 +45,7 @@ export function AdminDashboard({
                   className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold cursor-pointer ${page === tab ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"}`}
                 >
                   <Icon size={16} />
-                  {tab === "analytics" ? "Analytics" : "Reports"}
+                  {tab === "analytics" ? "Analytics" : tab === "statistical-analysis" ? "Statistical Analysis" : "Reports"}
                 </button>
               );
             })}
@@ -59,7 +60,9 @@ export function AdminDashboard({
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">
-        <AdminSurveyWorkspace key={page} mode={page} service={service} />
+        {page === "statistical-analysis"
+          ? <StatisticalAnalysisPage />
+          : <AdminSurveyWorkspace key={page} mode={page} service={service} />}
       </main>
     </div>
   );

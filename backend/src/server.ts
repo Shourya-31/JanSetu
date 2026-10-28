@@ -12,6 +12,7 @@ import fastifyJwt from '@fastify/jwt';
 import prisma from './config/prisma';
 import apiRoutes from './routes/api';
 import { createRequestId, ERROR_CODES, installErrorHandler, toErrorResponse, AppError } from './utils/errors';
+import { startStatisticalAnalysisRefreshWorker, stopStatisticalAnalysisRefreshWorker } from './services/statisticalAnalysisRefresh';
 
 const server = Fastify({
   logger: process.env.NODE_ENV === 'production' ? { level: process.env.LOG_LEVEL || 'info' } : true,
@@ -163,8 +164,7 @@ async function start() {
     await server.listen({ port: Number(PORT), host: HOST });
     console.log(`🚀 JanSetu Fastify Backend Engine (TypeScript) running on http://${HOST}:${PORT}`);
 
-    // Schedule only after the previous refresh and its retries have completed.
-    
+    startStatisticalAnalysisRefreshWorker(server.log);
 
   } catch (err) {
     const startupError = err as NodeJS.ErrnoException;
@@ -187,6 +187,7 @@ const gracefulShutdown = async (signal: string) => {
   shuttingDown = true;
   
   try {
+    stopStatisticalAnalysisRefreshWorker();
     await server.close();
     await prisma.$disconnect();
     console.log('✅ Server & Database pool closed cleanly.');

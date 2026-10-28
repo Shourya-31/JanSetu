@@ -1,0 +1,3311 @@
+{
+  "sourceTitle": "जिला नारायणपुर प्रभावित क्षेत्र मानचित्रण ग्राम सूची",
+  "sourceFileName": "total village List-2026_Hindi.pdf",
+  "entryCount": 413,
+  "entries": [
+    {
+      "serial": 1,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खड़कागांव",
+      "village": "खड़कागांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 2,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खड़कागांव",
+      "village": "खैराभाट",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 3,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "के रलापाल",
+      "village": "के रलापाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 4,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बिं जली",
+      "village": "बिं जली",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 5,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बिं जली",
+      "village": "तेलसी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 6,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (गुरिया)",
+      "village": "सुलेंगा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 7,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (गुरिया)",
+      "village": "गुरिया",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 8,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करलखा",
+      "village": "करलखा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 9,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करलखा",
+      "village": "कनेरा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 10,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करलखा",
+      "village": "पातुरबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 11,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "एड़का",
+      "village": "एड़का",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 12,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गरांजी",
+      "village": "गरांजी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 13,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "पालकी",
+      "village": "पालकी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 14,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "पालकी",
+      "village": "पुसागांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 15,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "ब्रेहबेड़ा",
+      "village": "ब्रेहबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 16,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "ब्रेहबेड़ा",
+      "village": "सरगीपाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 17,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बाकु लवाही",
+      "village": "बाकु लवाही",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 18,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बेलगांव",
+      "village": "बेलगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 19,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "एकोड़ी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 20,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "गुमियागाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 21,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "ताड़ोनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 22,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "कु रूसनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 23,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "तिरहुल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 24,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "ढू ठा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 25,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "महिमागवाड़ी",
+      "village": "महिमागवाड़ी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 26,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "धौड़ाई",
+      "village": "धौड़ाई",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 27,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "पल्ली",
+      "village": "पल्ली",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 28,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "पल्ली",
+      "village": "बोथा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 29,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "पल्ली",
+      "village": "दुड़मी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 30,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बड़गांव",
+      "village": "बड़गांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 31,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बड़गांव",
+      "village": "कु म्हारीबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 32,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बड़गांव",
+      "village": "कनेरा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 33,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (धौड़ाई)",
+      "village": "सुलेंगा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 34,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (धौड़ाई)",
+      "village": "कु म्हारीछोटा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 35,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (धौड़ाई)",
+      "village": "मड़ागड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 36,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गौरदण्ड",
+      "village": "गौरदण्ड",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 37,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गौरदण्ड",
+      "village": "उमरगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 38,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गौरदण्ड",
+      "village": "गुट्टापाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 39,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गौरदण्ड",
+      "village": "चिहरा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 40,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "छोटेडोंगर",
+      "village": "छोटेडोंगर",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 41,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "धनोरा",
+      "village": "धनोरा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 42,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "धनोरा",
+      "village": "हिकपुला",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 43,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "धनोरा",
+      "village": "मड़मनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 44,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कन्हारगांव",
+      "village": "कन्हारगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 45,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "मढ़ोनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 46,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "कचोरा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 47,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "कायानार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 48,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "ब्रेहबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 49,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "हितुलवाड",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 50,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "होड़नार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 51,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "तोयामेटा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 52,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मढ़ोनार",
+      "village": "हुर्रेवाही",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 53,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "राजपुर",
+      "village": "राजपुर",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 54,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "राजपुर",
+      "village": "बेड़मा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 55,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "राजपुर",
+      "village": "हिरंगई",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 56,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "राजपुर",
+      "village": "झारा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 57,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "राजपुर",
+      "village": "ब्रेहबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 58,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "टेमरूगांव",
+      "village": "टेमरूगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 59,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "टेमरूगांव",
+      "village": "पदनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 60,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खोड़गांव",
+      "village": "खोड़गांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 61,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खोड़गांव",
+      "village": "परलभाट",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 62,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खोड़गांव",
+      "village": "सुपगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 63,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खोड़गांव",
+      "village": "अं जरेल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 64,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "भरण्डा",
+      "village": "भरण्डा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 65,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "भरण्डा",
+      "village": "टेमरूगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 66,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "भरण्डा",
+      "village": "मरदेल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 67,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "दुग्गाबेंगाल",
+      "village": "दुग्गाबेंगाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 68,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तारागांव",
+      "village": "तारागांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 69,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तारागांव",
+      "village": "बड़कानार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 70,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "महका",
+      "village": "महका",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 71,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बम्हनी",
+      "village": "बम्हनी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 72,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बम्हनी",
+      "village": "मेटाडोंगरी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 73,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आतरगांव",
+      "village": "आतरगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 74,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आतरगांव",
+      "village": "परपा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 75,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "चमेली",
+      "village": "चमेली",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 76,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "चमेली",
+      "village": "राहेताड़",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 77,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "चमेली",
+      "village": "बहके र",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 78,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "चमेली",
+      "village": "तुरूसमेटा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 79,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "रायनार",
+      "village": "रायनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 80,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "रायनार",
+      "village": "टेकानार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 81,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "रायनार",
+      "village": "झोरीगांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 82,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "ईरको",
+      "village": "ईरको",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 83,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "आमोकाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 84,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "मुरनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 85,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "गुमराड़ी (वीरान)",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 86,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोहकामेटा",
+      "village": "कोहकामेटा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 87,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोहकामेटा",
+      "village": "गड़ावाही",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 88,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोहकामेटा",
+      "village": "कोडनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 89,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "कं दाड़ी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 90,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "जीवलापदर",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 91,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "आलवार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 92,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "गुमियापाल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 93,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "घोड़ागांव",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 94,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "झारावाही",
+      "village": "धुटाखार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 95,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "झारावाही",
+      "village": "हटलानार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 96,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "कोडकानार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 97,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "ताड़ोनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 98,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "ताड़नार उर्फ मरकाबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 99,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "टाचेली",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 100,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमागल",
+      "village": "खेड़पार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 101,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "ओरछापार",
+      "village": "बड़ेतोंडाबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 102,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "ओरछापार",
+      "village": "गदाधी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 103,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गुडाडी",
+      "village": "गुडाडी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 104,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गुडाडी",
+      "village": "मरकाबेड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 105,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुंगा",
+      "village": "घोट",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 106,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "थुलथुली",
+      "village": "मेहनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 107,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "पोचावाड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 108,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "मेडू र",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 109,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "तंदार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 110,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "कु ए",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 111,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "कोरोवाया",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 112,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "वट्टेकल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 113,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हांडावाड़ा",
+      "village": "हांडावाड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 114,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हांडावाड़ा",
+      "village": "हितावाड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 115,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मंडाली",
+      "village": "मंडाली",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 116,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मंडाली",
+      "village": "मकसोली",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 117,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मंडाली",
+      "village": "तसनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 118,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "कु ण्डला",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 119,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "हरिमरका उर्फ हुर्रागुण्डा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 120,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "आलनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 121,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "एहनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 122,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "इडनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 123,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "नेलनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 124,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हिकु ल",
+      "village": "हिकु ल",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 125,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हिकु ल",
+      "village": "परलनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 126,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हिकु ल",
+      "village": "तोयनार",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 127,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हिकु ल",
+      "village": "टाहकावाड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 128,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धोधरबेड़ा",
+      "village": "कोडाकोटी",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 129,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "रेकावाया",
+      "village": "आलवाड़ा",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 130,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "रेकावाया",
+      "village": "कोरोबेड़ा (वीरान)",
+      "officialStatus": "प्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 131,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "कोडोली (वीरान)",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 132,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "नेड़नार",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 133,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "आकाबेड़ा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 134,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "ओरछापार",
+      "village": "ओरछापार",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 135,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गुडाडी",
+      "village": "जुवाड़ा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 136,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदेर",
+      "village": "आदेर",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 137,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली",
+      "village": "कोडोली",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 138,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "थुलथुली",
+      "village": "मोडमवाड़ा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 139,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "भाटबेड़ा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 140,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मंडाली",
+      "village": "रायनार उर्फ भाटबेड़ा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 141,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "गुनेर",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 142,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "कलमनार",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 143,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "कांगाली",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 144,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली उर्फ कस्तूरमेटा",
+      "village": "कोडोली उर्फ कस्तूरमेटा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 145,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "एड़का",
+      "village": "कनागांव",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 146,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सोनपुर",
+      "village": "सोनपुर",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 147,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गढ़बेंगाल",
+      "village": "गढ़बेंगाल",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 148,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गढ़बेंगाल",
+      "village": "कु म्हली",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 149,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बागडोंगरी",
+      "village": "बागडोंगरी",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 150,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बागडोंगरी",
+      "village": "कोकोड़ी",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 151,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "करमरी",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 152,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "कोडोली",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 153,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "हिकोनार",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 154,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कोंगेरा",
+      "village": "कोंगेरा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 155,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कोंगेरा",
+      "village": "झारा",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 156,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तोयनार",
+      "village": "बांसपाल",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 157,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (धौड़ाई)",
+      "village": "कोकपाड़",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 158,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बोरपाल",
+      "village": "बोरपाल",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 159,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "दुग्गाबेंगाल",
+      "village": "चिपरेल",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 160,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "ताड़ोपाल",
+      "village": "खड़कागांव",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 161,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कौशलनार",
+      "village": "कौशलनार",
+      "officialStatus": "प्रत्यक्ष एवं अप्रत्यक्ष दोनों"
+    },
+    {
+      "serial": 162,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमासरा",
+      "village": "आमासरा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 163,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमासरा",
+      "village": "पुंगारपाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 164,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमासरा",
+      "village": "खुरपाई",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 165,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमासरा",
+      "village": "महका",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 166,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "देवगांव",
+      "village": "देवगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 167,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गढ़बेंगाल",
+      "village": "ब्रेहबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 168,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नयानार",
+      "village": "नयानार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 169,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "रेमावंड",
+      "village": "रेमावंड",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 170,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तिमनार",
+      "village": "तिमनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 171,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "हलमीमुंजमेटा",
+      "village": "हलमीमुंजमेटा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 172,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "हलमीमुंजमेटा",
+      "village": "मरकाबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 173,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बागबेड़ा",
+      "village": "सिवनी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 174,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मटला",
+      "village": "मटला",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 175,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मटला",
+      "village": "पानीगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 176,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मटला",
+      "village": "सिरपुर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 177,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "फरसगांव",
+      "village": "फरसगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 178,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "फरसगांव",
+      "village": "मुण्डपाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 179,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "फरसगांव",
+      "village": "बेड़माकोट",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 180,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बड़ेजमहारी",
+      "village": "बड़ेजमहारी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 181,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बड़ेजमहारी",
+      "village": "कोचवाही",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 182,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कु कड़ाझोर",
+      "village": "कु कड़ाझोर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 183,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कु कड़ाझोर",
+      "village": "सीतापाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 184,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बोरंड",
+      "village": "बोरंड",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 185,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बोरंड",
+      "village": "रेंगाबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 186,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "करमरी",
+      "village": "परलभाट",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 187,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कोलियारी",
+      "village": "कोलियारी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 188,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "डण्डवन",
+      "village": "डण्डवन",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 189,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "डण्डवन",
+      "village": "बागझर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 190,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कोंगेरा",
+      "village": "कोंडाहुर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 191,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "छिनारी",
+      "village": "छिनारी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 192,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "छिनारी",
+      "village": "आदपाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 193,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "छिनारी",
+      "village": "छोटेफरसगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 194,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तोयनार",
+      "village": "तोयनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 195,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "सुलेंगा (धौड़ाई)",
+      "village": "तिरकानार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 196,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "टेमरूगांव",
+      "village": "कोडेर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 197,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "टेमरूगांव",
+      "village": "गरदापाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 198,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तुरथा",
+      "village": "तुरथा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 199,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तुरथा",
+      "village": "एं डांगपाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 200,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तुरथा",
+      "village": "कालेपाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 201,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तुरथा",
+      "village": "कढ़ाहगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 202,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नेलवाड़",
+      "village": "नेलवाड़",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 203,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नेलवाड़",
+      "village": "लालसुहनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 204,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नेलवाड़",
+      "village": "छोटेसुहनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 205,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नेलवाड़",
+      "village": "कस्तूरवाड़",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 206,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमगांव",
+      "village": "आमगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 207,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमगांव",
+      "village": "मरासकोडो",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 208,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कोरेण्डा",
+      "village": "कोरेण्डा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 209,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "ताड़ोपाल",
+      "village": "ताड़ोपाल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 210,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "चांदागांव",
+      "village": "चांदागांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 211,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नौमुंजमेटा",
+      "village": "नौमुंजमेटा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 212,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नौमुंजमेटा",
+      "village": "गरावंड",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 213,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बावड़ी",
+      "village": "बावड़ी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 214,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बावड़ी",
+      "village": "गोंगला",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 215,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बावड़ी",
+      "village": "गोटाबेनूर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 216,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बावड़ी",
+      "village": "मालेचुर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 217,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खड़कागांव (बी)",
+      "village": "खड़कागांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 218,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खड़कागांव (बी)",
+      "village": "बोरगांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 219,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "तेरदूल",
+      "village": "तेरदूल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 220,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मालिं गनार",
+      "village": "मालिं गनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 221,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "मालिं गनार",
+      "village": "गोहदा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 222,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कपसी",
+      "village": "कपसी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 223,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "गोटाजमहारी",
+      "village": "गोटाजमहारी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 224,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "नेतानार",
+      "village": "नेतानार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 225,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "बेरानिर्पी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 226,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "कोरसकोडो",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 227,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "बेचा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 228,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "गुरमंजूर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 229,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "हिकमेटल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 230,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "गारपा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 231,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "आदोपरक (वीरान)",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 232,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "गुमियाबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 233,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "झारावाही",
+      "village": "झारावाही",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 234,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "कोटेनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 235,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "आतेटोखड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 236,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कच्छपाल",
+      "village": "टेके",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 237,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कच्छपाल",
+      "village": "मुरकु ड",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 238,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कच्छपाल",
+      "village": "कनागांव",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 239,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कच्छपाल",
+      "village": "इराकभट्टी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 240,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु तुल",
+      "village": "कु तुल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 241,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु तुल",
+      "village": "कोडलियार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 242,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु तुल",
+      "village": "मेहंदी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 243,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमागल",
+      "village": "गोमागल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 244,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गुडाडी",
+      "village": "जबगुण्डा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 245,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गुडाडी",
+      "village": "कु मनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 246,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरुमवाड़ा",
+      "village": "गुडेकोट",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 247,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "लंका",
+      "village": "तालावाड़ा (वीरान)",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 248,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "लंका",
+      "village": "करंगुल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 249,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पिड़ियाकोट",
+      "village": "पिड़ियाकोट",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 250,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पिड़ियाकोट",
+      "village": "लेकवाड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 251,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुंगा",
+      "village": "डूंगा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 252,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदेर",
+      "village": "ककोड़ी (वीरान)",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 253,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली",
+      "village": "छोटेतोंडेबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 254,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "थुलथुली",
+      "village": "मांगडी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 255,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "थुलथुली",
+      "village": "हितुल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 256,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "छु सेली",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 257,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "मुरहापदर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 258,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "हरिमरका",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 259,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "ओरछाकोरई",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 260,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "कटुलनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 261,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "कारकनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 262,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "मंगबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 263,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "टेकामेटा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 264,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "कोढ़ू र",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 265,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "कोडोनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 266,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "मेटानार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 267,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "तुडको",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 268,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "टाहकाडोंड",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 269,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "ताड़ाबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 270,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "ब्रेहबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 271,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "कोडेगांव (वीरान)",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 272,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली उर्फ कस्तूरमेटा",
+      "village": "निरामेटा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 273,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली उर्फ कस्तूरमेटा",
+      "village": "हिकपाड़",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 274,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली उर्फ कस्तूरमेटा",
+      "village": "ऊकपाड़",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 275,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली उर्फ कस्तूरमेटा",
+      "village": "ताड़ोहुर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 276,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोडोली उर्फ कस्तूरमेटा",
+      "village": "दुमनार",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 277,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "धुरबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 278,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "कोकोड़ी",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 279,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "मटवाड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 280,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "जतलूर",
+      "village": "जतलूर",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 281,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "जतलूर",
+      "village": "बोटेल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 282,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "जतलूर",
+      "village": "गट्टाकल",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 283,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमे",
+      "village": "मुतेंटोड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 284,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धोधरबेड़ा",
+      "village": "धोंडरबेड़ा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 285,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "रेकावाया",
+      "village": "रेकावाया",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 286,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "रेकावाया",
+      "village": "कोमहू",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 287,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "रेकावाया",
+      "village": "कलहाजा",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 288,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "गेंगला",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 289,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "रोटाड",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 290,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "कोरमकोडो",
+      "officialStatus": "अप्रत्यक्ष प्रभावित"
+    },
+    {
+      "serial": 291,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कु धारगांव",
+      "village": "कु धारगांव",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 292,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "कु धारगांव",
+      "village": "गुलुमकोडो",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 293,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बागबेड़ा",
+      "village": "बागबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 294,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बेनूर",
+      "village": "बेनूर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 295,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बेनूर",
+      "village": "भिरागांव",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 296,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "भाटपाल",
+      "village": "भाटपाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 297,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "भाटपाल",
+      "village": "भुरवाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 298,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "बोरावंड",
+      "village": "बोरावंड",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 299,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "आमगांव",
+      "village": "मंडोकी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 300,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "चांदागांव",
+      "village": "सोनापाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 301,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "उदीदगांव",
+      "village": "उदीदगांव",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 302,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "उदीदगांव",
+      "village": "कु लनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 303,
+      "district": "नारायणपुर",
+      "block": "नारायणपुर",
+      "gramPanchayat": "खरगांव",
+      "village": "खरगांव",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 304,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "पांगूड़",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 305,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "बायोनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 306,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "कोडोनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 307,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "बटोर (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 308,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "मशपुर (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 309,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "ब्रेहबेड़ा (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 310,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "गुड़रापदर (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 311,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "कु सनार उर्फ बेलमारी (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 312,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "खोरपार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 313,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पांगूड़",
+      "village": "तोरनार (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 314,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "आदनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 315,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "ताड़ोगुण्डा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 316,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "छोटेबड़ेकोट",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 317,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "बड़ेबड़ेकोट",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 318,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "मेंजे",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 319,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "मालमेटा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 320,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "मसपी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 321,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "रावनदी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 322,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "मुरसुलनापा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 323,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "बोडु म (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 324,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदनार",
+      "village": "हिरंगेनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 325,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "सरगीपाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 326,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरनार",
+      "village": "थरपनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 327,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "मसपुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 328,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "होराडी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 329,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "दरदाध (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 330,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "रानीमरका",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 331,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "पालेमेटा (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 332,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "मुयंतोले (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 333,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "तुमेरडी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 334,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गारपा",
+      "village": "गुमचुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 335,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "घमंडी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 336,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "मुगबेड़ा (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 337,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "जटवार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 338,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "करकाबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 339,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "कोंगाली",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 340,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "हिकोनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 341,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "वाड़ापेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 342,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "परियाड़ी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 343,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "कु मचाल (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 344,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "पालेमेटा (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 345,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "पालेमेटा उर्फ बालेबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 346,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "गोडेलमरका",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 347,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "ओरछापार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 348,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "घमंडी",
+      "village": "गंडावार (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 349,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "कु रुषनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 350,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "नरिया (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 351,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कं दाड़ी",
+      "village": "के शहुर (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 352,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "झारावाही",
+      "village": "महकानार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 353,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "झारावाही",
+      "village": "धुमा (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 354,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "नेढ़नार",
+      "village": "गुरदाई उर्फ गुमियाबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 355,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "पदमकोट",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 356,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "कस्तूरमेटा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 357,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "नेलंगुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 358,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "मेटाबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 359,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "तोयामेटा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 360,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "उसेबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 361,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "बुरगुम (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 362,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "ओसमरका (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 363,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "पाखुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 364,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "मिचबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 365,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पदमकोट",
+      "village": "डोडमे",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 366,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कच्छपाल",
+      "village": "कच्छपाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 367,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु तुल",
+      "village": "गट्टाकल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 368,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु तुल",
+      "village": "कोडनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 369,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु तुल",
+      "village": "आलबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 370,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमागल",
+      "village": "कोहकापार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 371,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरुमवाड़ा",
+      "village": "मुरुमवाड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 372,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरुमवाड़ा",
+      "village": "दिवालूर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 373,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मुरुमवाड़ा",
+      "village": "रेकापाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 374,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "लंका",
+      "village": "लंका",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 375,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "लंका",
+      "village": "डोडीमरका",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 376,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "लंका",
+      "village": "पदमेटा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 377,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पिड़ियाकोट",
+      "village": "अड़समेटा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 378,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पिड़ियाकोट",
+      "village": "टाहकावाड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 379,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पिड़ियाकोट",
+      "village": "बिल्लेर (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 380,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदेर",
+      "village": "चालचेर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 381,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "आदेर",
+      "village": "ओरछामेटा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 382,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "थुलथुली",
+      "village": "थुलथुली",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 383,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "पोचावाड़ा",
+      "village": "रेंगाबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 384,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मंडाली",
+      "village": "कोस्टाडी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 385,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "बसिं ग",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 386,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कु ण्डला",
+      "village": "कु मनार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 387,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कलमनार",
+      "village": "इरपानार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 388,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "कोंगे",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 389,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "छिं दपुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 390,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "बिनागुण्डा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 391,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "हाचेकोटी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 392,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "झारावार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 393,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "मुसपारसी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 394,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "वाला",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 395,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "कोंगे",
+      "village": "ककहुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 396,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "वादेर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 397,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "धोधरीबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 398,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "पलारहुर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 399,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "मेटानार",
+      "village": "कोहबेड़ा (वीरान)",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 400,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "फरसबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 401,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "कोडतामडका",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 402,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "आदिमपार",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 403,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धुरबेड़ा",
+      "village": "गुमरका",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 404,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "जतलूर",
+      "village": "हरबेल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 405,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "जतलूर",
+      "village": "धोबे",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 406,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हिकु ल",
+      "village": "कोडोकल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 407,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "हिकु ल",
+      "village": "पिड़कापाल",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 408,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमे",
+      "village": "गोमे",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 409,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमे",
+      "village": "मरकाबेड़ा",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 410,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमे",
+      "village": "बिरुलेर",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 411,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमे",
+      "village": "मुतेनादी",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 412,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "गोमे",
+      "village": "बोगन",
+      "officialStatus": "अप्रभावित"
+    },
+    {
+      "serial": 413,
+      "district": "नारायणपुर",
+      "block": "ओरछा (अबूझमाड़)",
+      "gramPanchayat": "धोधरबेड़ा",
+      "village": "कु ड़मेल",
+      "officialStatus": "अप्रभावित"
+    }
+  ]
+}

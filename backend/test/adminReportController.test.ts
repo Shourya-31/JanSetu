@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import Fastify from 'fastify';
+import fastifyJwt from '@fastify/jwt';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import prisma from '../src/config/prisma';
+import { apiRoutes } from '../src/routes/api';
 import { getAnalyticsSummary } from '../src/controllers/adminController';
-import { getAdminSurveys } from '../src/controllers/adminReportController';
+import { getAdminGramStats, getAdminSurveys } from '../src/controllers/adminReportController';
 import { getAdminHierarchy } from '../src/controllers/hierarchyController';
 
 function replaceMethod(target: object, key: string, value: (...args: never[]) => unknown): () => void {
@@ -181,6 +184,196 @@ test('admin analytics returns safe empty percentages for an empty scope', async 
   assert.equal(summary.villageCompletionPercent, 0);
   assert.equal(summary.householdCompletionPercent, null);
   assert.equal(Number.isFinite(summary.villageCompletionPercent), true);
+});
+
+test('admin gram statistics include both-affected villages in both categories and exclude unaffected villages', async (t) => {
+  const block = {
+    id: 1,
+    nameHindi: 'ब्लॉक',
+    nameEnglish: 'Block',
+    totalVillages: 0,
+    totalHouseholds: 40,
+    householdsFilled: 12,
+    villageSurveysFilled: 0,
+    gramPanchayats: [{
+      id: 2,
+      nameHindi: 'पंचायत',
+      nameEnglish: 'Panchayat',
+      totalVillages: 0,
+      totalHouseholds: 40,
+      householdsFilled: 12,
+      villageSurveysFilled: 0,
+      villages: [
+        { id: 1, nameHindi: 'प्रत्यक्ष', affectedStatus: 'Direct Affected', isSurveyFilled: false, villageSurvey: { isCompleted: true }, totalHouseholds: 10, householdsFilled: 2 },
+        { id: 2, nameHindi: 'दोनों', affectedStatus: 'Direct and Indirect Both', isSurveyFilled: false, villageSurvey: { isCompleted: false }, totalHouseholds: 10, householdsFilled: 3 },
+        { id: 3, nameHindi: 'अप्रत्यक्ष', affectedStatus: 'Indirect Affected', isSurveyFilled: false, villageSurvey: null, totalHouseholds: 10, householdsFilled: 4 },
+        { id: 4, nameHindi: 'अप्रभावित', affectedStatus: 'Unaffected', isSurveyFilled: false, villageSurvey: { isCompleted: true }, totalHouseholds: 10, householdsFilled: 3 }
+      ]
+    }]
+  };
+  const restoreBlocks = replaceMethod(
+    prisma.block,
+    'findMany',
+    (async () => [block]) as (...args: never[]) => unknown
+  );
+  t.after(restoreBlocks);
+
+  let result: unknown;
+  const reply = {
+    send(payload: unknown) { result = payload; return payload; },
+    code() { return this; }
+  } as unknown as FastifyReply;
+  await getAdminGramStats({} as FastifyRequest, reply);
+
+  const payload = result as {
+    blocks: {
+      totalVillages: number;
+      directAffectedVillages: number;
+      indirectAffectedVillages: number;
+      unaffectedVillages: number;
+      directAffectedVillagesSurveyFilled: number;
+      indirectAffectedVillagesSurveyFilled: number;
+      panchayats: {
+        villages: {
+          affectedStatus: string;
+          isDirectAffected: boolean;
+          isIndirectAffected: boolean;
+        }[];
+      }[];
+    }[];
+    summary: {
+      totalVillages: number;
+      directAffectedVillages: number;
+      indirectAffectedVillages: number;
+      unaffectedVillages: number;
+    };
+  };
+  const blockStats = payload.blocks[0];
+  assert.equal(blockStats.totalVillages, 4);
+  assert.equal(blockStats.directAffectedVillages, 2);
+  assert.equal(blockStats.indirectAffectedVillages, 2);
+  assert.equal(blockStats.unaffectedVillages, 1);
+  assert.equal(blockStats.directAffectedVillagesSurveyFilled, 1);
+  assert.equal(blockStats.indirectAffectedVillagesSurveyFilled, 0);
+  assert.deepEqual(
+    blockStats.panchayats[0].villages.map((village) => [village.isDirectAffected, village.isIndirectAffected]),
+    [[true, false], [true, true], [false, true], [false, false]]
+  );
+  assert.deepEqual(
+    {
+      totalVillages: payload.summary.totalVillages,
+      directAffectedVillages: payload.summary.directAffectedVillages,
+      indirectAffectedVillages: payload.summary.indirectAffectedVillages,
+      unaffectedVillages: payload.summary.unaffectedVillages
+    },
+    { totalVillages: 4, directAffectedVillages: 2, indirectAffectedVillages: 2, unaffectedVillages: 1 }
+  );
+});
+
+test('statistical analysis endpoint is restricted to authenticated administrators', async (t) => {
+  const restoreBlocks = replaceMethod(
+    prisma.block,
+    'findMany',
+    (async () => []) as (...args: never[]) => unknown
+  );
+  const app = Fastify();
+  await app.register(fastifyJwt, { secret: 'a-test-secret-longer-than-thirty-two-characters' });
+  await app.register(apiRoutes);
+  await app.ready();
+  t.after(async () => {
+    restoreBlocks();
+    await app.close();
+  });
+
+  const anonymous = await app.inject({ method: 'GET', url: '/api/admin/statistical-analysis' });
+  assert.equal(anonymous.statusCode, 401);
+
+  const surveyorToken = app.jwt.sign({ role: 'surveyor' });
+  const surveyor = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis',
+    headers: { authorization: `Bearer ${surveyorToken}` }
+  });
+  assert.equal(surveyor.statusCode, 403);
+
+  const adminToken = app.jwt.sign({ role: 'admin' });
+  const admin = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis',
+    headers: { authorization: `Bearer ${adminToken}` }
+  });
+  assert.equal(admin.statusCode, 200);
+  assert.deepEqual(admin.json(), {
+    officialSource: {
+      sourceFile: 'total village List-2026_Hindi.pdf',
+      totalEntries: 413,
+      affectedEntries: 290,
+      counts: { directOnly: 130, both: 31, indirectOnly: 129, unaffected: 123 }
+    },
+    blocks: []
+  });
+});
+
+test('statistical analysis reports exclusive category counts and unaffected villages from persisted summaries', async (t) => {
+  const restoreBlocks = replaceMethod(
+    prisma.block,
+    'findMany',
+    (async () => [{
+      id: 2,
+      nameHindi: 'ओरछा',
+      nameEnglish: 'Orchha (Abhujmad)',
+      statisticalAnalysisSummary: {
+        totalVillages: 10,
+        unclassifiedVillages: 1,
+        directVillageCount: 6,
+        directVillageSurveysCompleted: 3,
+        indirectVillageCount: 2,
+        indirectVillageSurveysCompleted: 2,
+        directHouseholdInput: 4,
+        directHouseholdCompleted: 2,
+        directVillageHouseholdCompletionPercentSum: 50,
+        directVillageHouseholdCompletionPercentCount: 2,
+        indirectHouseholdInput: 2,
+        indirectHouseholdCompleted: 1,
+        indirectVillageHouseholdCompletionPercentSum: 50,
+        indirectVillageHouseholdCompletionPercentCount: 1,
+        isStale: false,
+        refreshedAt: null,
+        sourceUpdatedAt: null
+      },
+      statisticalAnalysisRefreshQueue: null
+    }]) as (...args: never[]) => unknown
+  );
+  const app = Fastify();
+  await app.register(fastifyJwt, { secret: 'a-test-secret-longer-than-thirty-two-characters' });
+  await app.register(apiRoutes);
+  await app.ready();
+  t.after(async () => {
+    restoreBlocks();
+    await app.close();
+  });
+
+  const adminToken = app.jwt.sign({ role: 'admin' });
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/admin/statistical-analysis',
+    headers: { authorization: `Bearer ${adminToken}` }
+  });
+  const body = response.json();
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(body.blocks[0].blockName, 'Orcha');
+  assert.equal(body.blocks[0].summary.totalVillages, 10);
+  assert.equal(body.blocks[0].summary.directVillageCount, 6);
+  assert.equal(body.blocks[0].summary.indirectVillageCount, 2);
+  assert.equal(body.blocks[0].summary.unaffectedVillageCount, 1);
+  assert.equal(
+    body.blocks[0].summary.totalVillages
+      - body.blocks[0].summary.directVillageCount
+      - body.blocks[0].summary.indirectVillageCount
+      - body.blocks[0].summary.unclassifiedVillages,
+    body.blocks[0].summary.unaffectedVillageCount
+  );
 });
 
 test('admin hierarchy exposes persisted village completion statuses', async (t) => {

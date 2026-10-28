@@ -1,12 +1,13 @@
 import dotenv from 'dotenv';
 import prisma from '../config/prisma';
+import type { VillageAction } from '../data/narayanpurHierarchy';
 
 dotenv.config();
 
 type SourceVillage = {
   nameHindi: string;
   nameEnglish: string;
-  action: string;
+  action: VillageAction;
   population: number;
 };
 

@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { withErrorContext } from '../utils/errors';
 import prisma from '../config/prisma';
 import { mergePhotoUrls } from '../utils/villagePhotos';
+import { affectedVillageCounts, isDirectlyAffected, isIndirectlyAffected } from '../utils/villageAffectedStatus';
 
 export async function getAdminSurveys(req: FastifyRequest, reply: FastifyReply) {
   try {
@@ -231,7 +232,9 @@ export async function getAdminGramStats(req: FastifyRequest, reply: FastifyReply
       include: {
         gramPanchayats: {
           include: {
-            villages: true
+            villages: {
+              include: { villageSurvey: { select: { isCompleted: true } } }
+            }
           }
         }
       }
@@ -240,28 +243,51 @@ export async function getAdminGramStats(req: FastifyRequest, reply: FastifyReply
     const responseBlocks = blocks.map(block => {
       const panchayats = block.gramPanchayats.map(panchayat => {
         const villages = panchayat.villages.map(village => {
-          const isDirect = village.affectedStatus === 'Direct Affected';
-          
+          const isDirect = isDirectlyAffected(village.affectedStatus);
+          const isIndirect = isIndirectlyAffected(village.affectedStatus);
+          const villageSurveyFilled = village.villageSurvey?.isCompleted === true;
+
           return {
             villageId: village.id.toString(),
             villageName: village.nameHindi,
+            affectedStatus: village.affectedStatus,
             isDirectAffected: isDirect,
-            villageSurveyFilled: village.isSurveyFilled,
+            isIndirectAffected: isIndirect,
+            villageSurveyFilled,
             totalHouseholds: village.totalHouseholds,
             householdsFilled: village.householdsFilled,
             householdsPending: Math.max(0, village.totalHouseholds - village.householdsFilled),
             completionPercent: village.totalHouseholds > 0 ? Math.round((village.householdsFilled / village.totalHouseholds) * 100) : 0
           };
         });
+        const affectedCounts = affectedVillageCounts(panchayat.villages.map((village) => village.affectedStatus));
+        const directAffectedVillagesSurveyFilled = panchayat.villages.filter(
+          (village) => isDirectlyAffected(village.affectedStatus) && village.villageSurvey?.isCompleted === true
+        ).length;
+        const indirectAffectedVillagesSurveyFilled = panchayat.villages.filter(
+          (village) => isIndirectlyAffected(village.affectedStatus) && village.villageSurvey?.isCompleted === true
+        ).length;
+        const villageSurveyFilled = panchayat.villages.filter(
+          (village) => village.villageSurvey?.isCompleted === true
+        ).length;
 
         return {
           panchayatId: panchayat.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           panchayatName: panchayat.nameHindi,
-          totalVillages: panchayat.totalVillages,
-          directAffectedVillages: panchayat.directAffectedVillages,
-          indirectAffectedVillages: panchayat.indirectAffectedVillages,
-          villageSurveyFilled: panchayat.villageSurveysFilled,
-          villageSurveyPending: Math.max(0, panchayat.totalVillages - panchayat.villageSurveysFilled),
+          totalVillages: affectedCounts.totalVillages,
+          directAffectedVillages: affectedCounts.directAffectedVillages,
+          indirectAffectedVillages: affectedCounts.indirectAffectedVillages,
+          unaffectedVillages: affectedCounts.unaffectedVillages,
+          directAffectedVillagesSurveyFilled,
+          indirectAffectedVillagesSurveyFilled,
+          directAffectedVillageCompletionPercent: affectedCounts.directAffectedVillages
+            ? Math.round((directAffectedVillagesSurveyFilled / affectedCounts.directAffectedVillages) * 100)
+            : 0,
+          indirectAffectedVillageCompletionPercent: affectedCounts.indirectAffectedVillages
+            ? Math.round((indirectAffectedVillagesSurveyFilled / affectedCounts.indirectAffectedVillages) * 100)
+            : 0,
+          villageSurveyFilled,
+          villageSurveyPending: Math.max(0, affectedCounts.totalVillages - villageSurveyFilled),
           totalHouseholds: panchayat.totalHouseholds,
           householdsFilled: panchayat.householdsFilled,
           householdsPending: Math.max(0, panchayat.totalHouseholds - panchayat.householdsFilled),
@@ -269,15 +295,40 @@ export async function getAdminGramStats(req: FastifyRequest, reply: FastifyReply
           villages
         };
       });
+      const affectedCounts = affectedVillageCounts(block.gramPanchayats.flatMap(
+        (panchayat) => panchayat.villages.map((village) => village.affectedStatus)
+      ));
+      const directAffectedVillagesSurveyFilled = block.gramPanchayats.reduce(
+        (count, panchayat) => count + panchayat.villages.filter(
+          (village) => isDirectlyAffected(village.affectedStatus) && village.villageSurvey?.isCompleted === true
+        ).length,
+        0
+      );
+      const indirectAffectedVillagesSurveyFilled = block.gramPanchayats.reduce(
+        (count, panchayat) => count + panchayat.villages.filter(
+          (village) => isIndirectlyAffected(village.affectedStatus) && village.villageSurvey?.isCompleted === true
+        ).length,
+        0
+      );
+      const villageSurveyFilled = panchayats.reduce((count, panchayat) => count + panchayat.villageSurveyFilled, 0);
 
       return {
         blockId: block.nameEnglish.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         blockName: block.nameHindi,
-        totalVillages: block.totalVillages,
-        directAffectedVillages: block.directAffectedVillages,
-        indirectAffectedVillages: block.indirectAffectedVillages,
-        villageSurveyFilled: block.villageSurveysFilled,
-        villageSurveyPending: Math.max(0, block.totalVillages - block.villageSurveysFilled),
+        totalVillages: affectedCounts.totalVillages,
+        directAffectedVillages: affectedCounts.directAffectedVillages,
+        indirectAffectedVillages: affectedCounts.indirectAffectedVillages,
+        unaffectedVillages: affectedCounts.unaffectedVillages,
+        directAffectedVillagesSurveyFilled,
+        indirectAffectedVillagesSurveyFilled,
+        directAffectedVillageCompletionPercent: affectedCounts.directAffectedVillages
+          ? Math.round((directAffectedVillagesSurveyFilled / affectedCounts.directAffectedVillages) * 100)
+          : 0,
+        indirectAffectedVillageCompletionPercent: affectedCounts.indirectAffectedVillages
+          ? Math.round((indirectAffectedVillagesSurveyFilled / affectedCounts.indirectAffectedVillages) * 100)
+          : 0,
+        villageSurveyFilled,
+        villageSurveyPending: Math.max(0, affectedCounts.totalVillages - villageSurveyFilled),
         totalHouseholds: block.totalHouseholds,
         householdsFilled: block.householdsFilled,
         householdsPending: Math.max(0, block.totalHouseholds - block.householdsFilled),
@@ -290,6 +341,9 @@ export async function getAdminGramStats(req: FastifyRequest, reply: FastifyReply
       acc.totalVillages += b.totalVillages;
       acc.directAffectedVillages += b.directAffectedVillages;
       acc.indirectAffectedVillages += b.indirectAffectedVillages;
+      acc.unaffectedVillages += b.unaffectedVillages;
+      acc.directAffectedVillagesSurveyFilled += b.directAffectedVillagesSurveyFilled;
+      acc.indirectAffectedVillagesSurveyFilled += b.indirectAffectedVillagesSurveyFilled;
       acc.villageSurveyFilled += b.villageSurveyFilled;
       acc.villageSurveyPending += b.villageSurveyPending;
       acc.totalHouseholds += b.totalHouseholds;
@@ -300,17 +354,28 @@ export async function getAdminGramStats(req: FastifyRequest, reply: FastifyReply
       totalVillages: 0,
       directAffectedVillages: 0,
       indirectAffectedVillages: 0,
+      unaffectedVillages: 0,
+      directAffectedVillagesSurveyFilled: 0,
+      indirectAffectedVillagesSurveyFilled: 0,
       villageSurveyFilled: 0,
       villageSurveyPending: 0,
       totalHouseholds: 0,
       householdsFilled: 0,
       householdsPending: 0,
-      overallCompletionPercent: 0
+      overallCompletionPercent: 0,
+      directAffectedVillageCompletionPercent: 0,
+      indirectAffectedVillageCompletionPercent: 0
     });
 
     if (summary.totalHouseholds > 0) {
       summary.overallCompletionPercent = Math.round((summary.householdsFilled / summary.totalHouseholds) * 100);
     }
+    summary.directAffectedVillageCompletionPercent = summary.directAffectedVillages
+      ? Math.round((summary.directAffectedVillagesSurveyFilled / summary.directAffectedVillages) * 100)
+      : 0;
+    summary.indirectAffectedVillageCompletionPercent = summary.indirectAffectedVillages
+      ? Math.round((summary.indirectAffectedVillagesSurveyFilled / summary.indirectAffectedVillages) * 100)
+      : 0;
 
     return reply.send({
       blocks: responseBlocks,

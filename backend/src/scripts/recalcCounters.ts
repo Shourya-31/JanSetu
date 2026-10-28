@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import prisma from '../config/prisma';
+import { isDirectlyAffected, isIndirectlyAffected } from '../utils/villageAffectedStatus';
 
 dotenv.config();
 
@@ -25,7 +26,8 @@ async function run() {
       let gpHouseholdsFilled = 0;
 
       for (const village of gp.villages) {
-        const isDirect = village.affectedStatus === 'Direct Affected';
+        const isDirect = isDirectlyAffected(village.affectedStatus);
+        const isIndirect = isIndirectlyAffected(village.affectedStatus);
         const isSurveyFilled = !!village.villageSurvey?.isCompleted;
         const totalHouseholds = village.villageSurvey?.totalHouseholds || 0;
         const householdsFilled = village.households.filter(h => h.isCompleted).length;
@@ -41,7 +43,7 @@ async function run() {
 
         gpTotalVillages++;
         if (isDirect) gpDirectAffected++;
-        else gpIndirectAffected++;
+        if (isIndirect) gpIndirectAffected++;
         if (isSurveyFilled) gpVillageSurveyFilled++;
         gpTotalHouseholds += totalHouseholds;
         gpHouseholdsFilled += householdsFilled;

@@ -31,6 +31,7 @@ function formatVillageRecord(v: any, surveyedHouseholds = 0) {
     villageName: v.nameHindi,
     block: v.gramPanchayat?.block?.nameHindi || 'Unknown',
     panchayat: v.gramPanchayat?.nameHindi || 'Unknown',
+    affectedStatus: v.affectedStatus,
     totalPopulation: vs.totalPopulation || 0,
     totalHouseholds: vs.totalHouseholds || 0,
     scCount: vs.scPopulation || 0,

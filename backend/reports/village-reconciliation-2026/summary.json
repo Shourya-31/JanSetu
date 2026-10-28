@@ -1,0 +1,59 @@
+{
+  "officialEntries": 413,
+  "exactDatabaseMatches": 120,
+  "whitespaceNormalizedMatches": 11,
+  "classificationsToChange": 0,
+  "alreadyCorrectlyClassified": 131,
+  "safeVillagesToCreate": 106,
+  "unresolvedOfficialEntries": 176,
+  "missingBlocks": 0,
+  "ambiguousBlocks": 0,
+  "missingGramPanchayats": 176,
+  "ambiguousGramPanchayats": 0,
+  "ambiguousVillages": 0,
+  "duplicateOfficialEntries": 0,
+  "existingDatabaseVillagesAbsentFromOfficialPdf": 159,
+  "countersNeedingReconciliation": 108,
+  "counterReconciliationBlockedByUnresolvedMatches": true,
+  "applyReady": false,
+  "generatedAt": "2026-10-28T10:55:41.941Z",
+  "mode": "dry-run",
+  "sourceFile": "total village List-2026_Hindi.pdf",
+  "sourceSha256": "e54917ee258ea3610a5218cc212e13865f1cc065cf57706e1f154793a6afe882",
+  "databaseFingerprint": "c58f9a4441f58a0a3f6cbc379d6672728544127c0210da974f98aac856632d84",
+  "validation": {
+    "expectedEntryCount": 413,
+    "actualEntryCount": 413,
+    "sourceCounts": {
+      "प्रत्यक्ष प्रभावित": 130,
+      "प्रत्यक्ष एवं अप्रत्यक्ष दोनों": 31,
+      "अप्रत्यक्ष प्रभावित": 129,
+      "अप्रभावित": 123
+    },
+    "serialsUniqueAndComplete": true,
+    "sourceCountsMatchOfficialTotals": true
+  },
+  "reasonCategories": {
+    "matched": 120,
+    "matched-whitespace-normalized": 11,
+    "missing-gram-panchayat": 176,
+    "safe-to-create": 106
+  },
+  "unmatchedDatabaseVillageCount": 159,
+  "diagnostics": {
+    "unresolvedWithParentNameSuggestions": 176,
+    "unresolvedWithSameBlockVillageNameCandidate": 69,
+    "unresolvedWithNoNormalizedVillageNameCandidate": 107,
+    "topParentNameSimilarityAtLeast90": 10,
+    "topParentNameSimilarity80To89": 77,
+    "topParentNameSimilarity60To79": 79,
+    "topParentNameSimilarityBelow60": 10,
+    "unmatchedDatabaseWithSameBlockOfficialVillageNameCandidate": 63,
+    "unmatchedDatabaseWithNoNormalizedOfficialVillageNameCandidate": 96,
+    "candidateMatchesAreSuggestionsOnly": true
+  },
+  "aliasMatchesConfirmed": 0,
+  "aliasMatchesNote": "No alias source or verified alias mapping was present; candidates are suggestions only.",
+  "hierarchyCorrectionsConfirmed": 0,
+  "hierarchyCorrectionsNote": "No parent relationship was changed or inferred."
+}

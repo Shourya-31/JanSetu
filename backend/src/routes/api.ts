@@ -5,6 +5,7 @@ import { getHouseholdSurveys, createHouseholdSlots, saveHouseholdSurvey, patchHo
 import { queryAdminHouseholds, getAnalyticsSummary } from '../controllers/adminController';
 import { exportHouseholdsCsv } from '../controllers/exportController';
 import { getAdminSurveys, getAdminGramStats } from '../controllers/adminReportController';
+import { getStatisticalAnalysis } from '../controllers/statisticalAnalysisController';
 import { getAdminHierarchy, getHierarchy } from '../controllers/hierarchyController';
 import { getSurveyAuditLogs } from '../controllers/auditController';
 import { uploadImage } from '../controllers/uploadController';
@@ -284,6 +285,11 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
       })
     }
   }, getAnalyticsSummary);
+
+  fastify.get('/api/admin/statistical-analysis', {
+    ...adminOnly,
+    schema: { querystring: emptyQuerySchema }
+  }, getStatisticalAnalysis);
   fastify.get('/api/admin/audit-logs', {
     ...adminOnly,
     schema: {

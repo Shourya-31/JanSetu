@@ -5,6 +5,8 @@
 // the admin workflow. Replace the mock data/API layer without changing the UI.
 // ============================================================================
 
+import type { VillageAction } from '../data/narayanpurHierarchy';
+
 export interface GapMatrixRow {
   current: number;
   functional: number;
@@ -18,6 +20,7 @@ export interface VillageRecord {
   block: string;
   panchayat: string;
   villageName: string;
+  affectedStatus: VillageAction;
   totalPopulation: number;
   totalHouseholds: number;
   scCount: number;

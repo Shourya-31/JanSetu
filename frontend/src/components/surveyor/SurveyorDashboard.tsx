@@ -11,13 +11,6 @@ import { CheckCircle2, LogOut, ArrowLeft } from "lucide-react";
 
 
 import {
-
-
-
-  CENSUS_HIERARCHY,
-
-
-
   type Block,
 
 
@@ -38,6 +31,7 @@ import { VillageSurveyForm } from "./village-survey/VillageSurveyForm";
 import {
   fetchHouseholdSurveys,
   initializeHouseholdSlots,
+  fetchHierarchy,
   fetchAllVillageProfiles,
   fetchVillageProfile,
   saveHouseholdSurvey,
@@ -162,17 +156,28 @@ export const SurveyorDashboard: React.FC<SurveyorDashboardProps> = ({
 
 
 
-  // LOCAL HIERARCHY
+  const [hierarchy, setHierarchy] = useState<Block[]>([]);
+  const [hierarchyLoading, setHierarchyLoading] = useState(true);
+  const [hierarchyError, setHierarchyError] = useState("");
 
-
-
-  // Backend की जरूरत नहीं
-
-
-
-
-
-  const hierarchy: Block[] = CENSUS_HIERARCHY;
+  useEffect(() => {
+    let active = true;
+    void fetchHierarchy()
+      .then((blocks) => {
+        if (active) setHierarchy(blocks);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setHierarchyError(error instanceof Error ? error.message : "ग्राम सूची लोड नहीं हो सकी।");
+        }
+      })
+      .finally(() => {
+        if (active) setHierarchyLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
 
@@ -1199,12 +1204,24 @@ useEffect(() => {
             {/* SELECTION FIELDS */}
             <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
 
+              {hierarchyLoading && (
+                <p role="status" className="text-sm text-slate-500 sm:col-span-2">
+                  ग्राम सूची लोड हो रही है…
+                </p>
+              )}
+              {hierarchyError && (
+                <p role="alert" className="text-sm text-rose-700 sm:col-span-2">
+                  ग्राम सूची लोड नहीं हो सकी: {hierarchyError}
+                </p>
+              )}
+
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">
                   विकासखंड *
                 </label>
 
                 <select
+                  disabled={hierarchyLoading || Boolean(hierarchyError)}
                   value={selectedBlockId}
                   onChange={handleBlockChange}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-medium text-slate-800 outline-none transition-all hover:border-blue-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
@@ -1225,7 +1242,7 @@ useEffect(() => {
                 </label>
 
                 <select
-                  disabled={!selectedBlock}
+                  disabled={!selectedBlock || hierarchyLoading || Boolean(hierarchyError)}
                   value={selectedPanchayatId}
                   onChange={handlePanchayatChange}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-medium text-slate-800 outline-none transition-all hover:border-blue-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
@@ -1423,7 +1440,9 @@ useEffect(() => {
                       ? "प्रत्यक्ष प्रभावित"
                       : village.action === "Indirect Affected"
                       ? "अप्रत्यक्ष प्रभावित"
-                      : "प्रत्यक्ष एवं अप्रत्यक्ष प्रभावित"
+                      : village.action === "Direct and Indirect Both"
+                      ? "प्रत्यक्ष एवं अप्रत्यक्ष प्रभावित"
+                      : "अप्रभावित"
                     )}
                   </div>
 

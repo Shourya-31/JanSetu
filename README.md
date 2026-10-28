@@ -480,6 +480,9 @@ This project currently uses `prisma db push` for schema synchronization rather t
 | `npm run db:init` | Push the Prisma schema and apply PostgreSQL tuning, indexes, extensions, and the analytics materialized view |
 | `npm run db:install-audit-protection` | Install the project’s audit-protection database objects |
 | `npm run db:seed-hierarchy` | Seed Narayanpur’s Block, Gram Panchayat, and Village hierarchy |
+| `npm run db:import-village-affected-areas -- --report <path>` | Validate the official 2026 PDF-derived village classifications and write a read-only dry-run report |
+| `npm run db:reconcile-village-affected-areas` | Read-only reconciliation; writes official-entry CSV, unmatched-database CSV, JSON report, and summary under `backend/reports/village-reconciliation-2026/` |
+| `npm run db:rebuild-statistical-analysis` | Rebuild persisted Statistical Analysis summaries from current survey records |
 | `npm run db:seed-users` | Upsert initial database users from `INITIAL_USERS_JSON` |
 | `npm run db:backup` | Create a PostgreSQL dump using `pg_dump` |
 
@@ -492,6 +495,21 @@ npm run db:backup
 ```
 
 The backup script uses `DATABASE_URL`, or the `PGUSER`/`PGDATABASE` variables and PostgreSQL client defaults when applicable. Store generated dumps securely because they contain survey data.
+
+The official 2026 village classification source is preserved in `backend/src/data/officialVillageAffectedAreas2026.json` with the PDF serial number and complete district, block, Gram Panchayat, village, and status for every entry. The importer is dry-run-only by default and rejects incomplete or ambiguous mappings. Review the report and create a verified backup before applying:
+
+```powershell
+cd backend
+npm run db:import-village-affected-areas -- --report .\reports\village-classification-review.json
+npm run db:backup
+npm run db:import-village-affected-areas -- --apply --reviewed-report .\reports\village-classification-review.json --backup <verified-backup-path>
+```
+
+Applying requires that every PDF entry and existing database village is accounted for, the reviewed database fingerprint is unchanged, and the backup has a matching verification manifest. The importer changes only village classifications, creates only entries with an exact existing block and Gram Panchayat parent, and reconciles affected-village counters in the same transaction. The canonical `affectedStatus` values are `Direct Affected`, `Direct and Indirect Both`, `Indirect Affected`, and `Unaffected`.
+
+The reconciliation command never applies changes. Its candidate matches are ranked suggestions based on Unicode/whitespace-normalized village names and block/Gram Panchayat identity; they are not verified aliases or permission to change parent relationships or create records.
+
+The admin Statistical Analysis page reads persisted PostgreSQL block summaries. Apply the `20261028160000_add_statistical_analysis_summaries` migration through the reviewed deployment procedure, then run `npm run db:rebuild-statistical-analysis`. The backend refresh worker processes a database-backed queue; source-table triggers mark affected blocks stale for village, village-survey completion, household-input/completion, and administrative hierarchy changes. Failed refreshes preserve the last valid summary and remain visible as stale until retried. Household completion is completed household records divided by entered records; Average % is the arithmetic mean of village-level household completion percentages for villages with entered records.
 
 A typical PostgreSQL restore uses `pg_restore` for a custom-format dump:
 
