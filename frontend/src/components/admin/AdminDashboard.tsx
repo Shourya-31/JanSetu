@@ -232,37 +232,39 @@ export function AdminDashboard({
             <StatisticalAnalysisPage />
           ) : page === "survey-analysis" ? (
             <section
-              aria-labelledby="survey-analysis-title"
+              aria-label="Survey Analysis"
               className="space-y-5"
             >
-              <div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPage("analytics");
-                    setSurveyType(null);
-                  }}
-                  className="mb-4 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-indigo-700"
-                >
-                  <ArrowLeft size={16} aria-hidden="true" />
-                  वापस Analytics पर जाएँ
-                </button>
+              {surveyType === null && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPage("analytics");
+                      setSurveyType(null);
+                    }}
+                    className="mb-4 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-indigo-700"
+                  >
+                    <ArrowLeft size={16} aria-hidden="true" />
+                    वापस Analytics पर जाएँ
+                  </button>
 
-                <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                  ADMIN WORKSPACE
-                </p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
+                    ADMIN WORKSPACE
+                  </p>
 
-                <h2
-                  id="survey-analysis-title"
-                  className="mt-1 text-3xl font-bold tracking-tight text-slate-900"
-                >
-                  Survey Analysis
-                </h2>
+                  <h2
+                    id="survey-analysis-title"
+                    className="mt-1 text-3xl font-bold tracking-tight text-slate-900"
+                  >
+                    Survey Analysis
+                  </h2>
 
-                <p className="mt-1.5 text-sm leading-6 text-slate-600">
-                  विश्लेषण शुरू करने के लिए सर्वे का प्रकार चुनें।
-                </p>
-              </div>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                    विश्लेषण शुरू करने के लिए सर्वे का प्रकार चुनें।
+                  </p>
+                </div>
+              )}
 
               {surveyType === "household" ? (
                 <HouseholdAnalysisConnection

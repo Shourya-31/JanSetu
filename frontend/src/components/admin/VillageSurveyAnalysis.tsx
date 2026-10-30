@@ -2,10 +2,33 @@ import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   ChevronRight,
-  FileQuestion,
   MapPinned,
-  Search,
-  Layers3,
+  Building2,
+  House,
+  Store,
+  Signal,
+  Zap,
+  Route,
+  Droplets,
+  Toilet,
+  Stethoscope,
+  ClipboardList,
+  Baby,
+  GraduationCap,
+  School,
+  HeartPulse,
+  BriefcaseBusiness,
+  Users,
+  Trash2,
+  HandCoins,
+  Construction,
+  Accessibility,
+  Pill,
+  Sun,
+  Landmark,
+  Waves,
+  HeartHandshake,
+  FileText,
 } from "lucide-react";
 
 type QuestionType = "count" | "yesno" | "choice" | "text";
@@ -32,477 +55,319 @@ const sections: Section[] = [
     id: "general",
     number: 1,
     title: "ग्राम की सामान्य जानकारी",
-    subtitle: "परिवार, जनसंख्या एवं भूमि",
+    subtitle: "आवास एवं ग्राम की बुनियादी सुविधाओं में कमी",
     questions: [
-      { key: "totalHouseholds", label: "ग्राम में कुल घर / परिवारों की संख्या कितनी है?", type: "count" },
-      { key: "totalPopulation", label: "ग्राम की कुल जनसंख्या कितनी है?", type: "count" },
-      { key: "scPopulation", label: "अनुसूचित जाति की जनसंख्या कितनी है?", type: "count" },
-      { key: "stPopulation", label: "अनुसूचित जनजाति की जनसंख्या कितनी है?", type: "count" },
-      { key: "totalAgriculturalLand", label: "कुल कृषि भूमि कितनी है?", type: "text" },
-      { key: "puccaHouses", label: "पक्के मकानों की संख्या", type: "count" },
-      { key: "rawHouses", label: "कच्चे मकानों की संख्या", type: "count" },
-      { key: "completedHouses", label: "पूर्ण आवासों की संख्या", type: "count" },
-      { key: "pendingHouses", label: "लंबित आवासों की संख्या", type: "count" },
-      { key: "housingNotSanctioned", label: "आवास स्वीकृत नहीं हुए ऐसे परिवार", type: "count" },
-      { key: "totalAnganwadi", label: "ग्राम में कुल आंगनबाड़ी केंद्र", type: "count" },
-      { key: "totalSchools", label: "ग्राम में कुल विद्यालय", type: "count" },
-      { key: "totalHostels", label: "ग्राम में कुल आश्रम / छात्रावास", type: "count" },
-      { key: "totalHealthFacilities", label: "ग्राम में कुल स्वास्थ्य सुविधाएँ / केंद्र", type: "count" },
-      { key: "fairPriceShop", label: "क्या उचित मूल्य की दुकान उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "mobileNetwork", label: "क्या मोबाइल नेटवर्क उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "electricity", label: "क्या बिजली उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "road", label: "क्या सड़क सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "roadconnectivity", label: "क्या ग्राम सड़क से जुड़ा हुआ है?", type: "yesno", options: yesNo },
-      { key: "roadReasons", label: "सड़क सुविधा नहीं होने के कारण", type: "text" },
-      { key: "tapWater", label: "क्या नल जल सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "tapWaterExcludedFamilies", label: "नल जल से वंचित परिवारों की संख्या", type: "count" },
-      { key: "ponds", label: "ग्राम में तालाबों की संख्या", type: "count" },
-      { key: "odf", label: "क्या ग्राम खुले में शौच से मुक्त (ODF) है?", type: "yesno", options: yesNo },
-      { key: "shopDistance", label: "उचित मूल्य की दुकान की दूरी", type: "text" },
-      { key: "networkDistance", label: "नेटवर्क सुविधा की दूरी / स्थिति", type: "text" },
-      { key: "solarLight", label: "सोलर लाइट से संबंधित जानकारी", type: "text" },
-      { key: "rainCutoff", label: "वर्षा के कारण संपर्क बाधित होने की जानकारी", type: "text" },
-      { key: "vet", label: "क्या पशु चिकित्सा सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "banking", label: "क्या बैंकिंग सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "irrigatedLand", label: "सिंचित भूमि की जानकारी", type: "text" },
+      { key: "fairPriceShop", label: "कितने ग्रामों में शासकीय उचित मूल्य की दुकान संचालित नहीं है?", type: "yesno", options: yesNo },
+      { key: "mobileNetwork", label: "कितने ग्रामों में मोबाइल नेटवर्क की सुविधा उपलब्ध नहीं है?", type: "yesno", options: yesNo },
+      { key: "electricity", label: "कितने ग्रामों में बिजली की सुविधा उपलब्ध नहीं है?", type: "yesno", options: yesNo },
+      { key: "road", label: "कितने ग्राम ब्लॉक से पक्की सड़क से जुड़े नहीं हैं?", type: "yesno", options: yesNo },
+      { key: "odf", label: "कितने ग्राम ODF स्थिति में नहीं हैं?", type: "choice", options: ["ODF", "ODF+", "ODF++", "Not ODF"] },
+      { key: "vet", label: "कितने ग्रामों में पशु चिकित्सक नहीं आते हैं?", type: "yesno", options: yesNo },
+      { key: "rainCutoff", label: "कितने ग्रामों का संपर्क बारिश के कारण कट जाता है?", type: "yesno", options: yesNo },
     ],
   },
   {
     id: "anganwadi",
     number: 2,
     title: "आंगनबाड़ी",
-    subtitle: "आंगनबाड़ी केंद्र एवं सुविधाएँ",
+    subtitle: "केंद्रों में बुनियादी सुविधाओं एवं सेवाओं की कमी",
     questions: [
-      { key: "anganwadiCount", label: "कुल आंगनबाड़ी केंद्र कितने हैं?", type: "count" },
-      { key: "anganwadiBuilding", label: "क्या केंद्र के लिए भवन उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "anganwadiWater", label: "क्या पेयजल सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "anganwadiToilet", label: "क्या शौचालय उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "anganwadiNutrition", label: "क्या पोषण संबंधी सेवाएँ उपलब्ध हैं?", type: "yesno", options: yesNo },
+      { key: "buildingAvailability", label: "कितने आंगनबाड़ी केंद्रों में अपना भवन उपलब्ध नहीं है?", type: "choice" },
+      { key: "buildingCondition", label: "कितने आंगनबाड़ी केंद्रों के भवन की स्थिति खराब है?", type: "choice" },
+      { key: "operation", label: "कितने आंगनबाड़ी केंद्र नियमित रूप से संचालित नहीं होते हैं?", type: "choice" },
+      { key: "nutritionServices", label: "कितने आंगनबाड़ी केंद्रों में पोषण आहार एवं अन्य सेवाएँ पर्याप्त नहीं हैं?", type: "choice" },
+      { key: "toiletCondition", label: "कितने आंगनबाड़ी केंद्रों में उपयोग योग्य शौचालय नहीं है?", type: "choice" },
+      { key: "drinkingWater", label: "कितने आंगनबाड़ी केंद्रों में पेयजल सुविधा उपलब्ध नहीं है?", type: "choice" },
+      { key: "watersupply", label: "कितने आंगनबाड़ी केंद्रों में चालू जलापूर्ति नहीं है?", type: "choice" },
+      { key: "electricity", label: "कितने आंगनबाड़ी केंद्रों में बिजली सुविधा उपलब्ध नहीं है?", type: "choice" },
+    ],
+  },
+  {
+    id: "children",
+    number: 3,
+    title: "बच्चे एवं शिक्षा",
+    subtitle: "बच्चों के दस्तावेज़ एवं शिक्षा से जुड़ी कमियाँ",
+    questions: [
+      { key: "childrenWithoutAadhaar", label: "कितने बच्चों के पास आधार कार्ड नहीं है?", type: "count" },
+      { key: "childrenWithoutAPAAR", label: "कितने बच्चों के पास APAAR ID नहीं है?", type: "count" },
+      { key: "childrenNotAttendingSchool", label: "6–18 वर्ष के कितने बच्चे विद्यालय नहीं जाते हैं?", type: "count" },
+      { key: "dropoutChildren", label: "कितने बच्चों ने विद्यालय छोड़ दिया है?", type: "count" },
     ],
   },
   {
     id: "school",
-    number: 3,
-    title: "विद्यालय एवं शिक्षा",
-    subtitle: "विद्यालयों की उपलब्धता एवं कमियाँ",
+    number: 4,
+    title: "विद्यालय की बुनियादी सुविधाएँ",
+    subtitle: "विद्यालयों में आधारभूत सुविधाओं की कमी",
     questions: [
-      { key: "schoolCount", label: "ग्राम में विद्यालयों की संख्या", type: "count" },
-      { key: "schoolBuilding", label: "क्या विद्यालय का भवन उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "teacherShortage", label: "क्या शिक्षकों की कमी है?", type: "yesno", options: yesNo },
-      { key: "schoolToilet", label: "क्या विद्यालय में शौचालय उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "schoolDrinkingWater", label: "क्या विद्यालय में पेयजल उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "schoolElectricity", label: "क्या विद्यालय में बिजली उपलब्ध है?", type: "yesno", options: yesNo },
+      { key: "building", label: "कितने विद्यालयों का अपना भवन नहीं है?", type: "choice" },
+      { key: "buildingCondition", label: "कितने विद्यालयों के भवन की स्थिति खराब है?", type: "choice" },
+      { key: "toilets", label: "कितने विद्यालयों में बालक-बालिका के अलग उपयोग योग्य शौचालय नहीं हैं?", type: "choice" },
+      { key: "drinkingWater", label: "कितने विद्यालयों में पेयजल सुविधा उपलब्ध नहीं है?", type: "choice" },
+      { key: "electricity", label: "कितने विद्यालयों में बिजली सुविधा उपलब्ध नहीं है?", type: "choice" },
+      { key: "ramp", label: "कितने विद्यालयों में दिव्यांग बच्चों के लिए रैंप नहीं है?", type: "choice" },
     ],
   },
   {
     id: "hostel",
-    number: 4,
+    number: 5,
     title: "आश्रम / छात्रावास",
-    subtitle: "छात्रावास एवं बुनियादी सुविधाएँ",
+    subtitle: "छात्रावासों की स्थिति एवं मूलभूत सुविधाएँ",
     questions: [
-      { key: "hostelCount", label: "कुल आश्रम / छात्रावासों की संख्या", type: "count" },
-      { key: "hostelBuilding", label: "क्या भवन की सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "hostelWater", label: "क्या पेयजल उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "hostelToilet", label: "क्या शौचालय उपलब्ध है?", type: "yesno", options: yesNo },
+      { key: "condition", label: "कितने आश्रम / छात्रावासों की स्थिति जर्जर है या नए भवन की आवश्यकता है?", type: "choice" },
+      { key: "washrooms", label: "कितने आश्रम / छात्रावासों में उपयोग योग्य शौचालय नहीं हैं?", type: "choice" },
     ],
   },
   {
     id: "health",
-    number: 5,
+    number: 6,
     title: "स्वास्थ्य एवं पोषण",
-    subtitle: "स्वास्थ्य सेवाएँ एवं उपलब्धता",
+    subtitle: "स्वास्थ्य केंद्रों की उपलब्धता एवं सेवाओं में कमी",
     questions: [
-      { key: "healthCenterCount", label: "स्वास्थ्य केंद्रों की संख्या", type: "count" },
-      { key: "healthWorkerAvailable", label: "क्या स्वास्थ्य कार्यकर्ता उपलब्ध हैं?", type: "yesno", options: yesNo },
-      { key: "ambulanceAvailable", label: "क्या एम्बुलेंस सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "medicineAvailable", label: "क्या आवश्यक दवाएँ उपलब्ध हैं?", type: "yesno", options: yesNo },
+      { key: "healthCenterType", label: "कितने ग्रामों में स्वास्थ्य केंद्र उपलब्ध नहीं है?", type: "choice" },
+      { key: "regularOperation", label: "कितने स्वास्थ्य केंद्र नियमित रूप से संचालित नहीं होते हैं?", type: "choice" },
+      { key: "medicinesEquipment", label: "कितने स्वास्थ्य केंद्रों में आवश्यक दवाइयाँ एवं उपकरण उपलब्ध नहीं हैं?", type: "choice" },
+      { key: "medicalStaff", label: "कितने स्वास्थ्य केंद्रों में चिकित्सा कर्मचारी नियमित उपलब्ध नहीं हैं?", type: "choice" },
     ],
   },
   {
     id: "water",
-    number: 6,
+    number: 7,
     title: "पेयजल सुविधा",
-    subtitle: "जल स्रोत एवं पेयजल संबंधी समस्याएँ",
+    subtitle: "पेयजल की उपलब्धता एवं गुणवत्ता संबंधी समस्याएँ",
     questions: [
-      { key: "waterSource", label: "पेयजल के मुख्य स्रोत कौन-कौन से हैं?", type: "choice", options: ["हैंडपंप", "नल जल", "कुआँ", "बोरवेल", "अन्य"] },
-      { key: "waterAvailability", label: "क्या पर्याप्त पेयजल उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "waterQuality", label: "क्या पेयजल की गुणवत्ता संतोषजनक है?", type: "yesno", options: yesNo },
-      { key: "waterProblem", label: "पेयजल से संबंधित प्रमुख समस्या", type: "text" },
+      { key: "tapWaterAvailability", label: "कितने ग्रामों में नल-जल योजना से कार्यशील नल द्वारा पेयजल उपलब्ध नहीं है?", type: "choice" },
+      { key: "summerWaterCondition", label: "कितने ग्रामों में गर्मियों के दौरान पेयजल की गंभीर समस्या या पूर्ण अनुपलब्धता है?", type: "choice" },
+      { key: "drinkingQuality", label: "कितने ग्रामों में उपलब्ध पेयजल पीने योग्य नहीं है?", type: "choice" },
+      { key: "waterQualityProblem", label: "कितने ग्रामों में पेयजल की गुणवत्ता संबंधी समस्या दर्ज है?", type: "choice" },
     ],
   },
   {
     id: "livelihood",
-    number: 7,
+    number: 8,
     title: "रोजगार, आजीविका एवं पलायन",
-    subtitle: "रोजगार के अवसर एवं कौशल विकास",
+    subtitle: "बेरोजगारी, पलायन एवं कौशल प्रशिक्षण की स्थिति",
     questions: [
-      { key: "employmentAvailability", label: "क्या पर्याप्त रोजगार के अवसर उपलब्ध हैं?", type: "yesno", options: yesNo },
-      { key: "migration", label: "क्या रोजगार के लिए पलायन होता है?", type: "yesno", options: yesNo },
-      { key: "skillTraining", label: "क्या कौशल विकास प्रशिक्षण उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "livelihoodProblem", label: "रोजगार एवं आजीविका की प्रमुख समस्या", type: "text" },
+      { key: "unemployedYouth", label: "ग्राम में 18–45 वर्ष के कितने युवा बेरोजगार हैं?", type: "count" },
+      { key: "migration", label: "कितने ग्रामों में रोजगार के लिए पलायन होता है?", type: "choice" },
+      { key: "migrantPersons", label: "रोजगार के लिए पलायन करने वाले व्यक्तियों की संख्या कितनी है?", type: "count" },
+      { key: "skillTraining", label: "कितने ग्रामों में कौशल प्रशिक्षण की सुविधा उपलब्ध नहीं है?", type: "choice" },
+      { key: "employmentAfterTraining", label: "कितने प्रशिक्षित युवाओं को प्रशिक्षण के बाद रोजगार नहीं मिला है?", type: "choice" },
     ],
   },
   {
     id: "ladies",
-    number: 8,
-    title: "महिला स्वयं सहायता समूह",
-    subtitle: "महिला SHG एवं वित्तीय समावेशन",
+    number: 9,
+    title: "महिला स्वयं सहायता समूह एवं वित्तीय समावेशन",
+    subtitle: "महिला समूहों की सक्रियता एवं बैंकिंग सुविधा",
     questions: [
-      { key: "shgAvailable", label: "क्या महिला स्वयं सहायता समूह उपलब्ध हैं?", type: "yesno", options: yesNo },
-      { key: "shgCount", label: "महिला स्वयं सहायता समूहों की संख्या", type: "count" },
-      { key: "bankingAccess", label: "क्या महिलाओं को बैंकिंग सुविधाएँ उपलब्ध हैं?", type: "yesno", options: yesNo },
-      { key: "womenFinancialProblem", label: "महिलाओं की वित्तीय सुविधा से संबंधित समस्या", type: "text" },
+      { key: "shgOperated", label: "कितने ग्रामों में महिला स्वयं सहायता समूह संचालित नहीं हैं?", type: "choice" },
+      { key: "totalSHG", label: "महिला स्वयं सहायता समूहों की कुल संख्या कितनी है?", type: "count" },
+      { key: "activeSHG", label: "सक्रिय महिला स्वयं सहायता समूहों की संख्या कितनी है?", type: "count" },
+      { key: "bankingFacility", label: "कितने ग्रामों में बैंकिंग सुविधा उपलब्ध नहीं है?", type: "choice" },
     ],
   },
   {
     id: "cleanliness",
-    number: 9,
+    number: 10,
     title: "स्वच्छता एवं अपशिष्ट प्रबंधन",
-    subtitle: "सफाई, शौचालय एवं कचरा प्रबंधन",
+    subtitle: "शौचालय, कचरा प्रबंधन एवं जल निकासी की कमियाँ",
     questions: [
-      { key: "publicCleanliness", label: "क्या ग्राम में नियमित साफ-सफाई होती है?", type: "yesno", options: yesNo },
-      { key: "wasteManagement", label: "क्या कचरा प्रबंधन की व्यवस्था है?", type: "yesno", options: yesNo },
-      { key: "drainage", label: "क्या उचित नाली एवं जल निकासी व्यवस्था है?", type: "yesno", options: yesNo },
-      { key: "cleanlinessProblem", label: "स्वच्छता से संबंधित प्रमुख समस्या", type: "text" },
+      { key: "solidWasteManagement", label: "कितने ग्रामों में ठोस अपशिष्ट संग्रह एवं निपटान की नियमित व्यवस्था नहीं है?", type: "choice" },
+      { key: "drainageSystem", label: "कितने ग्रामों में पर्याप्त नाली एवं जल निकासी व्यवस्था नहीं है?", type: "choice" },
     ],
   },
   {
     id: "pension",
-    number: 10,
+    number: 11,
     title: "पेंशन एवं सामाजिक सुरक्षा",
-    subtitle: "पात्र लाभार्थी एवं पेंशन योजनाएँ",
+    subtitle: "पात्र लाभार्थी जिन्हें पेंशन नहीं मिल रही है",
     questions: [
-      { key: "pensionAwareness", label: "क्या लोगों को पेंशन योजनाओं की जानकारी है?", type: "yesno", options: yesNo },
-      { key: "pensionBeneficiaries", label: "पेंशन प्राप्त करने वाले लाभार्थियों की संख्या", type: "count" },
-      { key: "pensionIssues", label: "क्या पेंशन प्राप्त करने में समस्या आती है?", type: "yesno", options: yesNo },
-      { key: "pensionProblem", label: "पेंशन से संबंधित प्रमुख समस्या", type: "text" },
+      { key: "disabledNotReceiving", label: "कितने पात्र दिव्यांग व्यक्तियों को पेंशन नहीं मिल रही है?", type: "count" },
+      { key: "widowNotReceiving", label: "कितनी पात्र विधवा महिलाओं को पेंशन नहीं मिल रही है?", type: "count" },
+      { key: "elderlyNotReceiving", label: "कितने पात्र वृद्ध व्यक्तियों को पेंशन नहीं मिल रही है?", type: "count" },
     ],
   },
   {
     id: "development",
-    number: 11,
+    number: 12,
     title: "ग्राम की विकास आवश्यकताएँ",
-    subtitle: "आधारभूत सुविधाएँ एवं विकास कार्य",
+    subtitle: "आवश्यक आधारभूत विकास कार्य",
     questions: [
-      { key: "roadAvailability", label: "क्या उचित सड़क सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "electricityAvailability", label: "क्या बिजली की सुविधा उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "internetAvailability", label: "क्या इंटरनेट / मोबाइल नेटवर्क उपलब्ध है?", type: "yesno", options: yesNo },
-      { key: "developmentNeeds", label: "ग्राम की प्रमुख विकास आवश्यकताएँ", type: "text" },
+      { key: "handpumpRequirement", label: "कितने नए हैंडपंपों की आवश्यकता है?", type: "count" },
+      { key: "borewellRequirement", label: "कितने नए बोरवेल / नलकूपों की आवश्यकता है?", type: "count" },
+      { key: "solarPumpRequirement", label: "कितने नए सोलर पंपों की आवश्यकता है?", type: "count" },
+      { key: "solarStreetLightRequirement", label: "कितनी सोलर स्ट्रीट लाइटों की आवश्यकता है?", type: "count" },
+      { key: "roadRequirement", label: "कितने सड़क निर्माण / मरम्मत कार्यों की आवश्यकता है?", type: "count" },
+      { key: "otherInfrastructureRequirement", label: "अन्य कितने आधारभूत विकास कार्यों की आवश्यकता है?", type: "count" },
     ],
   },
 ];
 
-export type VillageSurveyRecord = Record<string, unknown> & {
-  blockName?: string;
-  panchayatName?: string;
-  villageName?: string;
-  affectedStatus?: string;
-  formData?: Record<string, unknown>;
-  data?: Record<string, unknown>;
+const questionIcons: Record<string, React.ElementType> = {
+  fairPriceShop: Store,
+  mobileNetwork: Signal,
+  electricity: Zap,
+  road: Route,
+  odf: Toilet,
+  vet: Stethoscope,
+  rainCutoff: Route,
+  buildingAvailability: House,
+  buildingCondition: House,
+  operation: ClipboardList,
+  nutritionServices: Baby,
+  toiletCondition: Toilet,
+  drinkingWater: Droplets,
+  watersupply: Droplets,
+  childrenWithoutAadhaar: FileText,
+  childrenWithoutAPAAR: FileText,
+  childrenNotAttendingSchool: GraduationCap,
+  dropoutChildren: GraduationCap,
+  building: School,
+  toilets: Toilet,
+  ramp: Accessibility,
+  condition: Building2,
+  washrooms: Toilet,
+  healthCenterType: HeartPulse,
+  regularOperation: ClipboardList,
+  medicinesEquipment: Pill,
+  medicalStaff: Stethoscope,
+  tapWaterAvailability: Droplets,
+  summerWaterCondition: Sun,
+  drinkingQuality: Droplets,
+  waterQualityProblem: Droplets,
+  unemployedYouth: BriefcaseBusiness,
+  migration: Route,
+  migrantPersons: Users,
+  skillTraining: GraduationCap,
+  employmentAfterTraining: BriefcaseBusiness,
+  shgOperated: Users,
+  totalSHG: Users,
+  activeSHG: Users,
+  bankingFacility: Landmark,
+  solidWasteManagement: Trash2,
+  drainageSystem: Waves,
+  disabledNotReceiving: Accessibility,
+  widowNotReceiving: HeartHandshake,
+  elderlyNotReceiving: HandCoins,
+  handpumpRequirement: Droplets,
+  borewellRequirement: Droplets,
+  solarPumpRequirement: Sun,
+  solarStreetLightRequirement: Sun,
+  roadRequirement: Construction,
+  otherInfrastructureRequirement: ClipboardList,
 };
 
-type Props = {
-  surveys?: VillageSurveyRecord[];
-};
+type Level = "block" | "panchayat" | "village";
 
-const BLOCKS = ["नारायणपुर", "ओरछा"];
-
-const textValue = (value: unknown) =>
-  value == null ? "" : String(value).trim();
-
-const normalizeBlock = (value: unknown) => {
-  const normalized = textValue(value).toLocaleLowerCase("hi");
-
-  if (["नारायणपुर", "narayanpur"].includes(normalized)) {
-    return "नारायणपुर";
-  }
-
-  if (["ओरछा", "orchha", "orcha"].includes(normalized)) {
-    return "ओरछा";
-  }
-
-  return textValue(value);
-};
-
-const getValue = (
-  record: VillageSurveyRecord,
-  key: string
-): unknown => {
-  if (Object.prototype.hasOwnProperty.call(record, key)) {
-    return record[key];
-  }
-
-  if (
-    record.formData &&
-    Object.prototype.hasOwnProperty.call(record.formData, key)
-  ) {
-    return record.formData[key];
-  }
-
-  if (
-    record.data &&
-    Object.prototype.hasOwnProperty.call(record.data, key)
-  ) {
-    return record.data[key];
-  }
-
-  return undefined;
-};
-
-const getAffectedStatus = (record: VillageSurveyRecord) => {
-  const value =
-    record.affectedStatus ??
-    record.formData?.affectedStatus ??
-    record.data?.affectedStatus;
-
-  const status = textValue(value).toLocaleLowerCase("hi");
-
-  if (status.includes("indirect") || status.includes("अप्रत्यक्ष")) {
-    return "indirect";
-  }
-
-  if (status.includes("direct") || status.includes("प्रत्यक्ष")) {
-    return "direct";
-  }
-
-  return "unknown";
-};
-
-const isAnsweredValue = (value: unknown) =>
-  Array.isArray(value) ? value.length > 0 : textValue(value) !== "";
-
-const numericValue = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-};
-export default function VillageSurveyAnalysis({
-  surveys = [],
-}: Props) {
-  const [search, setSearch] = useState("");
-  const [selectedSectionId, setSelectedSectionId] = useState("all");
+export default function VillageSurveyAnalysis() {
   const [selectedQuestion, setSelectedQuestion] = useState<{
     section: Section;
     question: Question;
   } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [selectedPanchayat, setSelectedPanchayat] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const allQuestions = useMemo(
     () =>
       sections.flatMap((section) =>
-        section.questions.map((question) => ({
-          section,
-          question,
-        }))
+        section.questions.map((question) => ({ section, question }))
       ),
     []
   );
 
+  // Keep sections together and spread the larger sections across more pages.
   const sectionPages = [
     ["general"],
-    ["anganwadi", "school", "hostel"],
-    ["health", "water", "livelihood"],
+    ["anganwadi"],
+    ["children"],
+    ["school"],
+    ["hostel", "health"],
+    ["water", "livelihood"],
     ["ladies", "cleanliness"],
     ["pension", "development"],
   ];
 
-  const filteredQuestions = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase("hi");
-
-    return allQuestions.filter(({ section, question }) => {
-      const matchesSection =
-        selectedSectionId === "all" ||
-        section.id === selectedSectionId;
-
-      const matchesSearch =
-        !term ||
-        question.label.toLocaleLowerCase("hi").includes(term) ||
-        section.title.toLocaleLowerCase("hi").includes(term);
-
-      return matchesSection && matchesSearch;
-    });
-  }, [allQuestions, search, selectedSectionId]);
-
   const visibleSections = sections
-    .filter((section) =>
-      sectionPages[currentPage - 1]?.includes(section.id)
-    )
-    .filter(
-      (section) =>
-        selectedSectionId === "all" ||
-        section.id === selectedSectionId
-    )
+    .filter((section) => sectionPages[currentPage - 1]?.includes(section.id))
     .map((section) => ({
       section,
-      questions: filteredQuestions.filter(
-        (item) => item.section.id === section.id
-      ),
-    }))
-    .filter(({ questions }) => questions.length > 0);
+      questions: section.questions,
+    }));
 
-  const totalPages = 5;
+  const totalPages = sectionPages.length;
 
-  const openQuestion = (
-    section: Section,
-    question: Question
-  ) => {
+  const openQuestion = (section: Section, question: Question) => {
     setSelectedQuestion({ section, question });
     setSelectedBlock(null);
+    setSelectedPanchayat(null);
   };
 
   const goBack = () => {
-    if (selectedBlock) {
-      setSelectedBlock(null);
-    } else {
-      setSelectedQuestion(null);
-    }
+    if (selectedPanchayat) setSelectedPanchayat(null);
+    else if (selectedBlock) setSelectedBlock(null);
+    else setSelectedQuestion(null);
   };
 
-  // Count question: answers ka sum.
-  // Yes/No question: Yes aur No responses ki sankhya.
-  // Choice/Text: har distinct answer ki frequency.
-  const summarize = (
-    records: VillageSurveyRecord[],
-    question: Question
-  ): string => {
-    const values = records.map((record) =>
-      getValue(record, question.key)
-    );
+  // Frontend-only sample hierarchy. Replace this with API data later.
+  const hierarchy = [
+    { block: "अभनपुर", panchayats: [
+      { name: "पंचायत - कुर्रा", villages: [{ name: "कुर्रा", affectedStatus: "Direct Affected" }, { name: "खोरपा", affectedStatus: "Indirect Affected" }] },
+      { name: "पंचायत - नवागांव", villages: [{ name: "नवागांव", affectedStatus: "Direct Affected" }, { name: "पचेड़ा", affectedStatus: "Indirect Affected" }] },
+    ]},
+    { block: "आरंग", panchayats: [
+      { name: "पंचायत - भिलाई", villages: [{ name: "भिलाई", affectedStatus: "Direct Affected" }, { name: "गुल्लू", affectedStatus: "Indirect Affected" }] },
+      { name: "पंचायत - चंदखुरी", villages: [{ name: "चंदखुरी", affectedStatus: "Direct Affected" }, { name: "समोदा", affectedStatus: "Indirect Affected" }] },
+    ]},
+    { block: "तिल्दा", panchayats: [
+      { name: "पंचायत - सिलयारी", villages: [{ name: "सिलयारी", affectedStatus: "Direct Affected" }, { name: "मोहदा", affectedStatus: "Indirect Affected" }] },
+      { name: "पंचायत - खरोरा", villages: [{ name: "खरोरा", affectedStatus: "Direct Affected" }, { name: "माठ", affectedStatus: "Indirect Affected" }] },
+    ]},
+  ];
 
-    const answeredValues = values.filter(isAnsweredValue);
-
-    if (question.type === "count") {
-      const numbers = values
-        .map(numericValue)
-        .filter((number): number is number => number !== null);
-
-      return numbers.length
-        ? numbers
-            .reduce((sum, number) => sum + number, 0)
-            .toLocaleString("en-IN")
-        : "—";
-    }
-
-    if (question.type === "yesno") {
-      const normalizeYesNo = (value: unknown) => {
-        const answer = textValue(value).toLocaleLowerCase("hi");
-        if (["हाँ", "हां", "yes", "true", "1"].includes(answer)) return "yes";
-        if (["नहीं", "नही", "no", "false", "0"].includes(answer)) return "no";
-        return "unknown";
-      };
-
-      const yes = values.filter((value) => normalizeYesNo(value) === "yes").length;
-      const no = values.filter((value) => normalizeYesNo(value) === "no").length;
-
-      return answeredValues.length
-        ? `हाँ: ${yes} · नहीं: ${no}`
-        : "—";
-    }
-
-    if (question.type === "choice") {
-      if (!answeredValues.length) return "—";
-
-      // Har configured option show hoga, chahe uska count 0 hi kyon na ho.
-      const frequencies = new Map<string, number>(
-        (question.options ?? []).map((option) => [option, 0])
-      );
-
-      answeredValues.forEach((value) => {
-        const answers = Array.isArray(value) ? value : [value];
-
-        answers.forEach((answer) => {
-          const label = textValue(answer);
-          if (label) {
-            frequencies.set(label, (frequencies.get(label) ?? 0) + 1);
-          }
-        });
-      });
-
-      return frequencies.size
-        ? Array.from(frequencies.entries())
-            .map(([answer, count]) => `${answer}: ${count}`)
-            .join(" · ")
-        : "—";
-    }
-
-    return answeredValues.length
-      ? `${answeredValues.length} उत्तर`
-      : "—";
+  const sampleAnswer = (villageIndex: number) => {
+    const keySeed = selectedQuestion?.question.key
+      .split("")
+      .reduce((sum, char) => sum + char.charCodeAt(0), 0) ?? 0;
+    const value = (keySeed + villageIndex * 7) % 18;
+    return selectedQuestion?.question.type === "count" ? value + 1 : value % 2 === 0 ? "हाँ" : "नहीं";
   };
 
-  const getCategorySummary = (
-    records: VillageSurveyRecord[],
-    question: Question
-  ) => ({
-    direct: summarize(
-      records.filter(
-        (record) => getAffectedStatus(record) === "direct"
-      ),
-      question
-    ),
-    indirect: summarize(
-      records.filter(
-        (record) => getAffectedStatus(record) === "indirect"
-      ),
-      question
-    ),
-  });
+  // Count answers separately for Direct Affected and Indirect Affected villages.
+  // For count-type questions, add the numeric answers. For yes/no/choice questions,
+  // count villages that have a recorded answer (the actual answer remains visible at village level).
+  const allVillageNames = hierarchy.flatMap((block) =>
+    block.panchayats.flatMap((panchayat) => panchayat.villages.map((village) => village.name))
+  );
 
-  const blockRows = selectedQuestion
-    ? BLOCKS.map((block) => {
-        const records = surveys.filter(
-          (record) => normalizeBlock(record.blockName) === block
-        );
+  const getAnswerCount = (
+    villages: { name: string; affectedStatus: string }[],
+    status: string
+  ) => {
+    const matchingVillages = villages.filter((village) => village.affectedStatus === status);
 
-        return {
-          block,
-          ...getCategorySummary(
-            records,
-            selectedQuestion.question
-          ),
-        };
-      })
-    : [];
+    if (selectedQuestion?.question.type === "count") {
+      return matchingVillages.reduce((total, village) => {
+        const answerIndex = allVillageNames.indexOf(village.name);
+        const answer = sampleAnswer(answerIndex);
+        return total + (typeof answer === "number" ? answer : 0);
+      }, 0);
+    }
 
-  // Block select karne par us block ke har panchayat ke saare gaon ek table mein dikhte hain.
-  const villageRows =
-    selectedBlock && selectedQuestion
-      ? Array.from(
-          new Map(
-            surveys
-              .filter(
-                (record) => normalizeBlock(record.blockName) === selectedBlock
-              )
-              .filter((record) => textValue(record.panchayatName) && textValue(record.villageName))
-              .map((record) => [
-                `${textValue(record.panchayatName)}::${textValue(record.villageName)}`,
-                {
-                  panchayat: textValue(record.panchayatName),
-                  village: textValue(record.villageName),
-                },
-              ])
-          ).values()
-        ).map(({ panchayat, village }) => {
-          const records = surveys.filter(
-            (record) =>
-              normalizeBlock(record.blockName) === selectedBlock &&
-              textValue(record.panchayatName) === panchayat &&
-              textValue(record.villageName) === village
-          );
+    // Yes/No and choice questions: count only negative ("नहीं") answers.
+    return matchingVillages.reduce((total, village) => {
+      const answerIndex = allVillageNames.indexOf(village.name);
+      return total + (sampleAnswer(answerIndex) === "नहीं" ? 1 : 0);
+    }, 0);
+  };
 
-          return {
-            panchayat,
-            village,
-            answer: summarize(records, selectedQuestion.question),
-          };
-        })
-      : [];
-
-  const hasAnyFilteredQuestions = filteredQuestions.length > 0;
+  const selectedBlockData = hierarchy.find((item) => item.block === selectedBlock);
+  const selectedPanchayatData = selectedBlockData?.panchayats.find(
+    (item) => item.name === selectedPanchayat
+  );
+  const currentLevel: Level = selectedPanchayat ? "village" : selectedBlock ? "panchayat" : "block";
+  const levelTitle = currentLevel === "block" ? "ब्लॉक-वार विवरण" : currentLevel === "panchayat" ? "ग्राम पंचायत-वार विवरण" : "ग्राम-वार विवरण";
 
   return (
     <div className="space-y-5 text-slate-900">
@@ -513,16 +378,13 @@ export default function VillageSurveyAnalysis({
               <MapPinned className="h-4 w-4" />
               ग्राम सर्वेक्षण विश्लेषण
             </div>
-
             <h1 className="text-2xl font-bold tracking-tight">
               Village Survey Analysis
             </h1>
-
             <p className="mt-1 text-sm text-slate-500">
-              प्रश्न चुनें और ब्लॉक से ग्राम पंचायत एवं गाँव-वार उत्तरों का विश्लेषण देखें।
+              प्रश्न चुनें और ब्लॉक से ग्राम स्तर तक विश्लेषण देखें।
             </p>
           </div>
-
           {selectedQuestion && (
             <button
               type="button"
@@ -530,165 +392,75 @@ export default function VillageSurveyAnalysis({
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
             >
               <ArrowLeft className="h-4 w-4" />
-              वापस जाएँ
+              सभी प्रश्न
             </button>
           )}
         </div>
       </header>
-
-      {!selectedQuestion ? (
+            {!selectedQuestion ? (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border bg-white p-4">
-              <Layers3 className="mb-3 h-5 w-5 text-blue-600" />
-              <p className="text-sm text-slate-500">सर्वे अनुभाग</p>
-              <p className="mt-1 text-2xl font-bold">
-                {sections.length}
-              </p>
-            </div>
-
-            <div className="rounded-xl border bg-white p-4">
-              <FileQuestion className="mb-3 h-5 w-5 text-violet-600" />
-              <p className="text-sm text-slate-500">प्रश्न सूची</p>
-              <p className="mt-1 text-2xl font-bold">
-                {allQuestions.length}
-              </p>
-            </div>
-
-            <div className="rounded-xl border bg-white p-4">
-              <MapPinned className="mb-3 h-5 w-5 text-emerald-600" />
-              <p className="text-sm text-slate-500">विश्लेषण स्तर</p>
-              <p className="mt-1 text-2xl font-bold">2</p>
-            </div>
-          </div>
-
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_260px]">
-              <label className="relative block">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-
-                <input
-                  value={search}
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="प्रश्न खोजें..."
-                  className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </label>
-
-              <select
-                value={selectedSectionId}
-                onChange={(event) => {
-                  const sectionId = event.target.value;
-                  setSelectedSectionId(sectionId);
-
-                  const matchingPage = sectionPages.findIndex(
-                    (ids) => ids.includes(sectionId)
-                  );
-
-                  setCurrentPage(
-                    sectionId === "all" ? 1 : matchingPage + 1
-                  );
-                }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm outline-none focus:border-blue-500"
-              >
-                <option value="all">सभी अनुभाग</option>
-
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.number}. {section.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mt-5 space-y-6">
+            <div className="space-y-6">
               {visibleSections.map(({ section, questions }) => (
                 <div key={section.id}>
                   <div className="mb-3 flex items-start gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-blue-700">
                       {section.number}
                     </div>
-
                     <div>
                       <h2 className="font-bold">{section.title}</h2>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {section.subtitle}
-                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">{section.subtitle}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    {questions.map(({ question }) => (
-                      <button
-                        key={question.key}
-                        type="button"
-                        onClick={() =>
-                          openQuestion(section, question)
-                        }
-                        className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-blue-300 hover:bg-blue-50/50"
-                      >
-                        <FileQuestion className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-blue-600" />
-
-                        <span className="min-w-0 flex-1 text-sm font-medium">
-                          {question.label}
-                        </span>
-
-                        <span className="hidden rounded-md bg-slate-100 px-2 py-1 text-[10px] text-slate-500 sm:inline">
-                          {question.type === "count"
-                            ? "संख्या"
-                            : question.type === "yesno"
-                              ? "हाँ / नहीं"
-                              : question.type === "choice"
-                                ? "विकल्प"
-                                : "विवरण"}
-                        </span>
-
-                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {questions.map((question) => {
+                      const Icon = questionIcons[question.key] ?? ClipboardList;
+                      return (
+                        <button
+                          key={question.key}
+                          type="button"
+                          onClick={() => openQuestion(section, question)}
+                          className="group flex min-h-[96px] items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/50"
+                        >
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium leading-6 text-slate-800">{question.label}</p>
+                            <span className="mt-1 inline-flex items-center gap-1 text-sm text-blue-600">
+                              विवरण देखें
+                              <ChevronRight className="h-4 w-4" />
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
-                            {hasAnyFilteredQuestions && visibleSections.length === 0 && (
-                <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
-                  इस पेज पर कोई प्रश्न नहीं मिला। दूसरे पेज पर जाएँ या खोज बदलें।
-                </div>
-              )}
 
-              {hasAnyFilteredQuestions && (
+              {allQuestions.length > 0 && (
                 <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-slate-500">
-                    पेज {currentPage} / {totalPages} · कुल{" "}
-                    {filteredQuestions.length} प्रश्न
+                    पेज {currentPage} / {totalPages} · कुल {allQuestions.length} प्रश्न · अनुभाग पूरे रखे गए हैं
                   </p>
-
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2" aria-label="Question pages">
                     <button
                       type="button"
-                      onClick={() =>
-                        setCurrentPage((page) => Math.max(1, page - 1))
-                      }
+                      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                       disabled={currentPage === 1}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:opacity-40"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       पिछला
                     </button>
-
-                    {Array.from(
-                      { length: totalPages },
-                      (_, index) => index + 1
-                    ).map((page) => (
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                       <button
                         key={page}
                         type="button"
+                        aria-current={currentPage === page ? "page" : undefined}
                         onClick={() => setCurrentPage(page)}
-                        aria-current={
-                          currentPage === page ? "page" : undefined
-                        }
-                        className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold ${
+                        className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
                           currentPage === page
                             ? "bg-blue-600 text-white"
                             : "border border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -697,32 +469,15 @@ export default function VillageSurveyAnalysis({
                         {page}
                       </button>
                     ))}
-
                     <button
                       type="button"
-                      onClick={() =>
-                        setCurrentPage((page) =>
-                          Math.min(totalPages, page + 1)
-                        )
-                      }
+                      onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                       disabled={currentPage === totalPages}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:opacity-40"
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       अगला
                     </button>
                   </div>
-                </div>
-              )}
-
-              {!hasAnyFilteredQuestions && (
-                <div className="rounded-xl border border-dashed p-8 text-center">
-                  <Search className="mx-auto h-7 w-7 text-slate-300" />
-                  <p className="mt-3 font-semibold">
-                    कोई प्रश्न नहीं मिला
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    खोज का शब्द बदलें या दूसरा अनुभाग चुनें।
-                  </p>
                 </div>
               )}
             </div>
@@ -731,95 +486,95 @@ export default function VillageSurveyAnalysis({
       ) : (
         <section className="space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <button
-              type="button"
-              onClick={goBack}
-              className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-700"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {selectedBlock
-                ? "ब्लॉक सूची पर वापस जाएँ"
-                : "सभी प्रश्नों पर वापस जाएँ"}
-            </button>
-
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
               {selectedQuestion.section.title}
             </p>
-
-            <h2 className="mt-2 text-lg font-bold leading-7">
-              {selectedQuestion.question.label}
-            </h2>
-
-            <p className="mt-2 text-sm text-slate-500">
-              {selectedBlock
-                ? `ब्लॉक ${selectedBlock} की ग्राम पंचायत और गाँव-वार जानकारी`
-                : "Direct और Indirect के अनुसार उत्तर"}
-            </p>
+            <h2 className="mt-2 text-lg font-bold leading-7">{selectedQuestion.question.label}</h2>
+            <p className="mt-2 text-xs text-amber-700">डेमो डेटा · यह केवल frontend navigation दिखाने के लिए है।</p>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-            <table className="w-full min-w-[600px] border-collapse text-left text-sm">
-              <thead className="bg-slate-50">
-                {selectedBlock ? (
-                  <tr>
-                    <th className="border-b px-5 py-3 font-semibold">ग्राम पंचायत</th>
-                    <th className="border-b px-5 py-3 font-semibold">गाँव</th>
-                    <th className="border-b px-5 py-3 font-semibold">उत्तर</th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th className="border-b px-5 py-3 font-semibold">ब्लॉक</th>
-                    <th className="border-b px-5 py-3 font-semibold">Direct</th>
-                    <th className="border-b px-5 py-3 font-semibold">Indirect</th>
-                    <th className="border-b px-5 py-3 text-right font-semibold">विवरण</th>
-                  </tr>
-                )}
-              </thead>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+            <button onClick={() => { setSelectedBlock(null); setSelectedPanchayat(null); }} className={`font-semibold ${!selectedBlock ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>सभी ब्लॉक</button>
+            {selectedBlock && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => setSelectedPanchayat(null)} className={`font-semibold ${!selectedPanchayat ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedBlock}</button></>}
+            {selectedPanchayat && <><ChevronRight className="h-4 w-4 text-slate-400" /><span className="font-semibold text-blue-700">{selectedPanchayat}</span></>}
+          </div>
 
-              <tbody>
-                {selectedBlock ? (
-                  villageRows.length > 0 ? (
-                    villageRows.map((row) => (
-                      <tr key={`${row.panchayat}-${row.village}`} className="hover:bg-slate-50">
-                        <td className="border-b px-5 py-3 font-medium">{row.panchayat}</td>
-                        <td className="border-b px-5 py-3">{row.village}</td>
-                        <td className="border-b px-5 py-3">{row.answer}</td>
-                      </tr>
-                    ))
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-1 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900">{levelTitle}</h3>
+                <p className="mt-1 text-xs text-slate-500">{currentLevel === "block" ? "किस ब्लॉक में कितने गाँव प्रभावित हैं" : currentLevel === "panchayat" ? "चुने गए ब्लॉक की ग्राम पंचायतों का विवरण" : "चुनी गई ग्राम पंचायत के गाँवों के उत्तर"}</p>
+              </div>
+              <span className="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{currentLevel === "block" ? "3 ब्लॉक" : currentLevel === "panchayat" ? "2 ग्राम पंचायत" : "2 गाँव"}</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  {currentLevel === "block" ? (
+                    <tr><th className="px-5 py-3 font-semibold">ब्लॉक का नाम</th><th className="px-5 py-3 font-semibold">प्रत्यक्ष प्रभावित</th><th className="px-5 py-3 font-semibold">अप्रत्यक्ष प्रभावित</th><th className="px-5 py-3 text-right font-semibold">विवरण</th></tr>
+                  ) : currentLevel === "panchayat" ? (
+                    <tr><th className="px-5 py-3 font-semibold">ग्राम पंचायत</th><th className="px-5 py-3 font-semibold">प्रत्यक्ष प्रभावित</th><th className="px-5 py-3 font-semibold">अप्रत्यक्ष प्रभावित</th><th className="px-5 py-3 text-right font-semibold">विवरण</th></tr>
                   ) : (
-                    <tr>
-                      <td colSpan={3} className="px-5 py-8 text-center text-slate-500">
-                        इस ब्लॉक के लिए ग्राम पंचायत और गाँव का survey data उपलब्ध नहीं है।
-                      </td>
+                    <tr><th className="px-5 py-3 font-semibold">गाँव का नाम</th><th className="px-5 py-3 font-semibold">प्रभावित श्रेणी</th><th className="px-5 py-3 font-semibold">उत्तर / संख्या</th></tr>
+                  )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {currentLevel === "block" && hierarchy.map((item) => {
+                    const villages = item.panchayats.flatMap((panchayat) => panchayat.villages);
+                    return (
+                      <tr key={item.block} onClick={() => setSelectedBlock(item.block)} className="cursor-pointer transition hover:bg-blue-50/60">
+                        <td className="px-5 py-4 font-semibold text-slate-800">{item.block}</td>
+                        <td className="px-5 py-4 font-bold text-rose-600">{getAnswerCount(villages, "Direct Affected")}</td>
+                        <td className="px-5 py-4 font-bold text-amber-600">{getAnswerCount(villages, "Indirect Affected")}</td>
+                        <td className="px-5 py-4 text-right"><span className="inline-flex items-center gap-1 font-semibold text-blue-700">खोलें <ChevronRight className="h-4 w-4" /></span></td>
+                      </tr>
+                    );
+                  })}
+                  {currentLevel === "panchayat" && selectedBlockData?.panchayats.map((item) => (
+                    <tr key={item.name} onClick={() => setSelectedPanchayat(item.name)} className="cursor-pointer transition hover:bg-blue-50/60">
+                      <td className="px-5 py-4 font-semibold text-slate-800">{item.name}</td>
+                      <td className="px-5 py-4 font-bold text-rose-600">{getAnswerCount(item.villages, "Direct Affected")}</td>
+                      <td className="px-5 py-4 font-bold text-amber-600">{getAnswerCount(item.villages, "Indirect Affected")}</td>
+                      <td className="px-5 py-4 text-right"><span className="inline-flex items-center gap-1 font-semibold text-blue-700">खोलें <ChevronRight className="h-4 w-4" /></span></td>
                     </tr>
-                  )
-                ) : (
-                  blockRows.map((row) => (
-                    <tr key={row.block} className="hover:bg-slate-50">
-                      <td className="border-b px-5 py-3 font-semibold">{row.block}</td>
-                      <td className="border-b px-5 py-3">{row.direct}</td>
-                      <td className="border-b px-5 py-3">{row.indirect}</td>
-                      <td className="border-b px-5 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedBlock(row.block)}
-                          className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
-                        >
-                          ग्राम पंचायत देखें
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                  {currentLevel === "village" && selectedPanchayatData?.villages
+                    .filter((village) => {
+                      const answerIndex =
+                        hierarchy.findIndex((item) => item.block === selectedBlock) * 4 +
+                        (selectedBlockData?.panchayats.indexOf(selectedPanchayatData) ?? 0) * 2 +
+                        selectedPanchayatData.villages.indexOf(village);
+                      const answer = sampleAnswer(answerIndex);
+                      return selectedQuestion.question.type === "count" || answer === "नहीं";
+                    })
+                    .map((village, index) => {
+                    const globalIndex =
+                      hierarchy.findIndex((item) => item.block === selectedBlock) * 4 +
+                      (selectedBlockData?.panchayats.indexOf(selectedPanchayatData) ?? 0) * 2 +
+                      index;
+                    return (
+                      <tr key={village.name} className="hover:bg-slate-50">
+                        <td className="px-5 py-4 font-semibold text-slate-800">{village.name}</td>
+                        <td className="px-5 py-4">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${village.affectedStatus === "Direct Affected" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}>
+                            प्रत्यक्ष प्रभावित
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 font-bold text-slate-800">
+                          {sampleAnswer(globalIndex)}{selectedQuestion.question.type === "count" ? " व्यक्ति / कार्य" : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {currentLevel !== "village" && <p className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">पूरी row पर क्लिक करके अगले स्तर का विवरण खोलें।</p>}
           </div>
-
-          <p className="text-xs text-slate-500">
-            परिणाम उपलब्ध frontend survey data से calculate होंगे।
-            डेटा उपलब्ध न होने पर अनुमानित संख्या नहीं दिखाई जाएगी।
-          </p>
+          <button type="button" onClick={goBack} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <ArrowLeft className="h-4 w-4" /> {selectedPanchayat ? "ग्राम पंचायत सूची" : selectedBlock ? "ब्लॉक सूची" : "प्रश्न सूची"} पर वापस जाएँ
+          </button>
         </section>
       )}
     </div>

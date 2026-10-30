@@ -1,10 +1,44 @@
 
 import { useMemo, useState } from "react";
-import { ChevronRight, FileQuestion, ArrowLeft } from "lucide-react";
+import {
+  ChevronRight,
+  MapPinned,
+  FileQuestion,
+  ArrowLeft,
+  CreditCard,
+  Fingerprint,
+  BadgeCheck,
+  Vote,
+  BriefcaseBusiness,
+  Landmark,
+  Sprout,
+  HeartHandshake,
+  Accessibility,
+  HeartPulse,
+  Baby,
+  Syringe,
+  School,
+  GraduationCap,
+  House,
+  Toilet,
+  Droplets,
+  Lightbulb,
+  Sun,
+  Stethoscope,
+  Pill,
+  Users,
+  HandHeart,
+  FileText,
+  Banknote,
+  ClipboardList,
+  type LucideIcon,
+} from "lucide-react";
 
 type HouseholdRecord = Record<string, unknown> & {
+  id?: string;
   houseNumber?: number | string;
   headName?: string;
+  mobile?: string;
   mobileNumber?: string;
   villageName?: string;
   blockName?: string;
@@ -12,6 +46,15 @@ type HouseholdRecord = Record<string, unknown> & {
   totalMembers?: number | string;
   direct?: number | string;
   indirect?: number | string;
+  affectedStatus?: string;
+  village?: {
+    nameHindi?: string;
+    affectedStatus?: string;
+    gramPanchayat?: {
+      nameHindi?: string;
+      block?: { nameHindi?: string };
+    };
+  };
 };
 
 type Props = {
@@ -34,6 +77,7 @@ type Group = {
 type Page = {
   title: string;
   subtitle: string;
+  icon: LucideIcon;
   groups: Group[];
 };
 
@@ -42,106 +86,71 @@ const eligible = ["हाँ", "नहीं", "पात्रता नही�
 
 const pages: Page[] = [
   {
-    title: "सामान्य जानकारी एवं जनसांख्यिकी",
-    subtitle: "परिवार की पहचान और सदस्य संख्या",
-    groups: [
-      {
-        title: "परिवार की सामान्य जानकारी",
-        metrics: [
-          { key: "headName", label: "परिवार के मुखिया का नाम", kind: "text" },
-          { key: "surveyDate", label: "सर्वेक्षण की तारीख", kind: "text" },
-          { key: "surveyorName", label: "सर्वेक्षक का नाम", kind: "text" },
-        ],
-      },
-      {
-        title: "परिवार की जनसांख्यिकी",
-        metrics: [
-          {
-            key: "caste",
-            label: "जाति के अनुसार परिवार",
-            kind: "choice",
-            options: [
-              "सामान्य",
-              "अन्य पिछड़ा वर्ग",
-              "अनुसूचित जाति",
-              "अनुसूचित जनजाति",
-              "अबूझमाड़िया अनुसूचित जनजाति",
-            ],
-          },
-          { key: "isBpl", label: "BPL परिवार", kind: "choice", options: yesNo },
-          { key: "totalMembers", label: "परिवार के कुल सदस्य", kind: "count" },
-          { key: "elderly", label: "बुजुर्ग सदस्यों की संख्या", kind: "count" },
-          { key: "children", label: "बच्चों की संख्या", kind: "count" },
-          { key: "women", label: "महिला सदस्यों की संख्या", kind: "count" },
-        ],
-      },
-    ],
-  },
-  {
-    title: "दस्तावेज़ एवं दिव्यांग सहायता",
+    title: "दस्तावेज़ एवं शासकीय योजनाएँ",
+    icon: FileText,
     subtitle: "दस्तावेज़ और शासकीय योजनाओं का विवरण",
     groups: [
       {
         title: "दस्तावेज़ एवं शासकीय योजनाएँ",
         metrics: [
-          { key: "rationCard", label: "राशन कार्ड उपलब्धता", kind: "choice", options: yesNo },
-          { key: "noAadhaarMembers", label: "आधार कार्ड नहीं रखने वाले सदस्य", kind: "count" },
-          { key: "aadhaarEkyc", label: "राशन कार्ड के सभी सदस्यों का आधार e-KYC", kind: "choice", options: yesNo },
-          { key: "noCasteCertificateMembers", label: "जाति प्रमाण-पत्र नहीं रखने वाले सदस्य", kind: "count" },
-          { key: "noAyushmanMembers", label: "आयुष्मान कार्ड नहीं रखने वाले सदस्य", kind: "count" },
-          { key: "noVoterIdMembers", label: "18+ आयु में वोटर ID नहीं रखने वाले सदस्य", kind: "count" },
-          { key: "mnregaJobCard", label: "वीबी–जी राम जी जॉब कार्ड", kind: "choice", options: yesNo },
-          { key: "noShramikCardMembers", label: "पात्र 18–40 वर्ष के श्रमिक कार्ड नहीं रखने वाले सदस्य", kind: "count" },
-          { key: "janDhanAccount", label: "जन-धन खाता उपलब्धता", kind: "choice", options: yesNo },
-          { key: "bankName", label: "जन-धन खाते का बैंक", kind: "text" },
-          { key: "kcc", label: "किसान क्रेडिट कार्ड (KCC)", kind: "choice", options: eligible },
-          { key: "forestRightsPatta", label: "व्यक्तिगत वनाधिकार पट्टा", kind: "choice", options: eligible },
-          { key: "marriagecertificate", label: "विवाह प्रमाण-पत्र उपलब्धता", kind: "choice", options: yesNo },
+          { key: "rationCard", label: "कितने परिवारों के पास राशन कार्ड नहीं है?", kind: "choice", options: yesNo },
+          { key: "noAadhaarMembers", label: "कितने सदस्यों के पास आधार कार्ड नहीं है?", kind: "count" },
+          { key: "aadhaarEkyc", label: "कितने राशन कार्ड धारक परिवारों में सभी सदस्यों का आधार e-KYC नहीं हुआ है?", kind: "choice", options: yesNo },
+          { key: "noCasteCertificateMembers", label: "कितने सदस्यों के पास जाति प्रमाण-पत्र नहीं है?", kind: "count" },
+          { key: "noAyushmanMembers", label: "कितने पात्र सदस्यों के पास आयुष्मान कार्ड नहीं है?", kind: "count" },
+          { key: "noVoterIdMembers", label: "कितने 18 वर्ष या उससे अधिक आयु के सदस्यों के पास वोटर ID नहीं है?", kind: "count" },
+          { key: "mnregaJobCard", label: "कितने पात्र परिवारों के पास बीवी-जी राम जी जॉब कार्ड नहीं है?", kind: "choice", options: yesNo },
+          { key: "noShramikCardMembers", label: "कितने पात्र 18–40 वर्ष के सदस्यों के पास श्रमिक कार्ड नहीं है?", kind: "count" },
+          { key: "janDhanAccount", label: "कितने पात्र सदस्यों का जन-धन बैंक खाता नहीं है?", kind: "choice", options: yesNo },
+          { key: "bankName", label: "जन-धन खाता किस बैंक में है?", kind: "text" },
+          { key: "kcc", label: "कितने पात्र किसानों के पास किसान क्रेडिट कार्ड (KCC) नहीं है?", kind: "choice", options: eligible },
+          { key: "forestRightsPatta", label: "कितने पात्र परिवारों को व्यक्तिगत वनाधिकार पट्टा नहीं मिला है?", kind: "choice", options: eligible },
+          { key: "marriagecertificate", label: "कितने विवाहित सदस्यों के पास विवाह प्रमाण-पत्र नहीं है?", kind: "choice", options: yesNo },
         ],
       },
+    ],
+  },
+  {
+    title: "दिव्यांगता एवं अन्य सहायता",
+    icon: Accessibility,
+    subtitle: "दिव्यांग सहायता, मृत्यु प्रमाण-पत्र और राशन सुविधा का विवरण",
+    groups: [
       {
         title: "दिव्यांगता एवं अन्य सहायता",
         metrics: [
-          { key: "needsAssistiveDevice", label: "सहायक उपकरण / विशेष सहायता की जरूरत", kind: "choice", options: yesNo },
+          { key: "needsAssistiveDevice", label: "कितने दिव्यांग सदस्यों को आवश्यक सहायक उपकरण / विशेष सहायता नहीं मिली है?", kind: "choice", options: yesNo },
           {
             key: "assistanceTypes",
-            label: "आवश्यक सहायता के प्रकार",
+            label: "किस प्रकार के सहायक उपकरण / विशेष सहायता की आवश्यकता है?",
             kind: "multi",
             options: ["बैसाखी / छड़ी", "व्हीलचेयर", "श्रवण यंत्र", "ट्राइसाइकिल", "कृत्रिम अंग", "दृष्टि सहायक उपकरण", "अन्य"],
           },
-          { key: "deathInLastYear", label: "पिछले 1 वर्ष में परिवार में मृत्यु", kind: "choice", options: yesNo },
-          { key: "deathCertificateReceived", label: "मृत्यु प्रमाण-पत्र प्राप्त हुआ", kind: "choice", options: yesNo },
-          { key: "pmGaribKalyanRation", label: "PM गरीब कल्याण योजना के तहत निःशुल्क राशन", kind: "choice", options: eligible },
+          { key: "deathInLastYear", label: "कितने परिवारों में पिछले 1 वर्ष में मृत्यु हुई है?", kind: "choice", options: yesNo },
+          { key: "deathCertificateReceived", label: "कितने परिवारों में मृत्यु होने के बाद भी मृत्यु प्रमाण-पत्र प्राप्त नहीं हुआ है?", kind: "choice", options: yesNo },
+          { key: "pmGaribKalyanRation", label: "कितने पात्र परिवारों को PM गरीब कल्याण योजना के तहत निःशुल्क राशन नहीं मिल रहा है?", kind: "choice", options: eligible },
         ],
       },
     ],
   },
   {
     title: "शिक्षा एवं रोजगार",
+    icon: GraduationCap,
     subtitle: "बच्चों की शिक्षा और परिवार की आजीविका",
     groups: [
       {
         title: "बच्चे एवं शिक्षा",
         metrics: [
-          { key: "childrenWithoutBirthCertificate", label: "जन्म प्रमाण-पत्र नहीं रखने वाले बच्चे", kind: "count" },
-          { key: "vaccinationStatus", label: "0–5 वर्ष के बच्चों का टीकाकरण", kind: "choice", options: ["सभी", "आंशिक", "नहीं", "लागू नहीं"] },
-          { key: "anganwadiMeal", label: "3–5 वर्ष के बच्चों को आंगनवाड़ी में पका भोजन", kind: "choice", options: ["हाँ", "नहीं", "लागू नहीं"] },
-          { key: "childrenSchoolStatus", label: "परिवार के बच्चों का स्कूल जाना", kind: "choice", options: ["सभी", "कुछ", "कोई नहीं", "लागू नहीं"] },
-          { key: "schoolNotGoingReason", label: "स्कूल नहीं जाने के कारण", kind: "multi", options: ["दूरी", "अध्यापक की कमी", "गरीबी", "घर के काम/धंधे में सहयोग", "अन्य"] },
-          { key: "otherSchoolReason", label: "स्कूल नहीं जाने का अन्य कारण", kind: "text" },
+          { key: "childrenWithoutBirthCertificate", label: "कितने बच्चों के पास जन्म प्रमाण-पत्र नहीं है?", kind: "count" },
+          { key: "vaccinationStatus", label: "कितने 0–5 वर्ष के बच्चों का पूर्ण टीकाकरण नहीं हुआ है?", kind: "choice", options: ["सभी", "आंशिक", "नहीं", "लागू नहीं"] },
+          { key: "anganwadiMeal", label: "कितने 3–5 वर्ष के बच्चों को आंगनवाड़ी से पका भोजन नहीं मिल रहा है?", kind: "choice", options: ["हाँ", "नहीं", "लागू नहीं"] },
+          { key: "childrenSchoolStatus", label: "कितने बच्चे स्कूल नहीं जाते हैं?", kind: "choice", options: ["सभी", "कुछ", "कोई नहीं", "लागू नहीं"] },
         ],
       },
       {
         title: "कृषि एवं रोजगार",
         metrics: [
-          { key: "unemployedMembers", label: "18–45 वर्ष के बेरोजगार सदस्य", kind: "count" },
-          { key: "pmKisan", label: "पिछले वर्ष PM-KISAN की राशि मिली", kind: "choice", options: eligible },
-          { key: "miningEmployment", label: "परिवार का कोई सदस्य खनन में कार्यरत", kind: "choice", options: yesNo },
-          { key: "annualIncome", label: "परिवार की कुल वार्षिक आय (₹)", kind: "count" },
-          { key: "mainIncomeSource", label: "परिवार की आय का मुख्य स्रोत", kind: "text" },
-          { key: "livestockSource", label: "आजीविका पशुपालन से जुड़ी है", kind: "choice", options: yesNo },
-          { key: "otherLivestockSource", label: "पशुपालन का विवरण", kind: "text" },
-          { key: "animalEmployment", label: "पशु-आधारित कार्य से रोजगार", kind: "choice", options: eligible },
+          { key: "unemployedMembers", label: "18–45 वर्ष के कितने सदस्य बेरोजगार हैं?", kind: "count" },
+          { key: "pmKisan", label: "कितने पात्र किसानों को पिछले वर्ष PM-KISAN की राशि नहीं मिली?", kind: "choice", options: eligible },
         ],
       },
     ],
@@ -149,57 +158,53 @@ const pages: Page[] = [
 
   {
     title: "आवास, पानी एवं स्वास्थ्य",
+    icon: House,
     subtitle: "परिवार की मूलभूत सुविधाएँ",
     groups: [
       {
         title: "आवास एवं बुनियादी सुविधाएँ",
         metrics: [
-          { key: "houseType", label: "मकान का प्रकार", kind: "choice", options: ["कच्चा", "अर्ध-पक्का", "पक्का", "अन्य"] },
-          { key: "housingSchemeBenefit", label: "आवास योजना का लाभ मिला", kind: "choice", options: eligible },
-          { key: "toiletStatus", label: "घर में शौचालय उपलब्धता", kind: "choice", options: yesNo },
-          { key: "tapWaterConnection", label: "नल से जल कनेक्शन उपलब्धता", kind: "choice", options: yesNo },
-          { key: "drinkingWaterSource", label: "पीने के पानी का मुख्य स्रोत", kind: "choice", options: ["नल", "हैंडपंप", "कुआँ", "बोरवेल", "नदी/तालाब", "अन्य"] },
-          { key: "electricityConnection", label: "बिजली कनेक्शन उपलब्धता", kind: "choice", options: yesNo },
-          { key: "solarEnergy", label: "सौर ऊर्जा की सुविधा", kind: "choice", options: yesNo },
+          { key: "houseType", label: "कितने परिवार कच्चे या अर्ध-पक्के मकानों में रहते हैं?", kind: "choice", options: ["कच्चा", "अर्ध-पक्का", "पक्का", "अन्य"] },
+          { key: "housingSchemeBenefit", label: "कितने पात्र परिवारों को आवास योजना का लाभ नहीं मिला है?", kind: "choice", options: eligible },
+          { key: "toiletStatus", label: "कितने परिवारों के घर में शौचालय नहीं है या शौचालय उपयोग में नहीं है?", kind: "choice", options: ["हाँ, उपयोग में", "हाँ, उपयोग में नहीं", "नहीं"] },
+          { key: "tapWaterConnection", label: "कितने परिवारों के घर में नल से जल कनेक्शन नहीं है?", kind: "choice", options: yesNo },
+          { key: "electricityConnection", label: "कितने परिवारों के घर में बिजली कनेक्शन नहीं है?", kind: "choice", options: yesNo },
         ],
       },
       {
         title: "स्वास्थ्य सुविधाएँ",
         metrics: [
-          { key: "familyDisease", label: "परिवार में किसी सदस्य को गंभीर बीमारी", kind: "choice", options: yesNo },
-          { key: "freeMedicines", label: "निःशुल्क दवाइयाँ प्राप्त होती हैं", kind: "choice", options: eligible },
+          { key: "familyDisease", label: "कितने परिवारों में कोई सदस्य खाँसी, दमा, TB आदि रोग से ग्रसित है?", kind: "choice", options: yesNo },
+          { key: "freeMedicines", label: "कितने परिवारों को गाँव के पास अस्पताल / स्वास्थ्य केंद्र से निःशुल्क दवाइयाँ नहीं मिलती हैं?", kind: "choice", options: ["हाँ", "कभी-कभी", "नहीं"] },
         ],
       },
     ],
   },
   {
-    title: "महिला, SHG एवं प्राथमिक जरूरतें",
-    subtitle: "महिला कल्याण, पेंशन और अन्य आवश्यकताएँ",
+    title: "महिला एवं सामाजिक सुरक्षा योजनाएँ",
+    icon: HeartHandshake,
+    subtitle: "महिला कल्याण, मातृत्व और पेंशन योजनाओं का विवरण",
     groups: [
       {
         title: "महिला एवं मातृत्व योजनाएँ",
         metrics: [
-          { key: "jsy", label: "जननी सुरक्षा योजना का लाभ", kind: "choice", options: eligible },
-          { key: "pmmvy", label: "प्रधानमंत्री मातृ वंदना योजना का लाभ", kind: "choice", options: eligible },
-          { key: "mahtariVandana", label: "महतारी वंदन योजना का लाभ", kind: "choice", options: eligible },
+          { key: "jsy", label: "कितनी पात्र महिलाओं को जननी सुरक्षा योजना (JSY) का लाभ नहीं मिला है?", kind: "choice", options: eligible },
+          { key: "pmmvy", label: "कितनी पात्र महिलाओं को प्रधानमंत्री मातृ वंदना योजना (PMMVY) का लाभ नहीं मिला है?", kind: "choice", options: eligible },
+          { key: "mahtariVandana", label: "कितनी पात्र महिलाओं को महतारी वंदन योजना की राशि नहीं मिली है?", kind: "choice", options: eligible },
         ],
       },
       {
-        title: "पेंशन एवं स्व-सहायता समूह",
+        title: "पेंशन योजनाएँ",
         metrics: [
-          { key: "widowPension", label: "विधवा पेंशन का लाभ", kind: "choice", options: eligible },
-          { key: "disabilityPension", label: "दिव्यांग पेंशन का लाभ", kind: "choice", options: eligible },
-          { key: "shgMember", label: "परिवार की महिला SHG की सदस्य है", kind: "choice", options: yesNo },
+          { key: "widowPension", label: "कितनी पात्र विधवा महिलाओं को विधवा पेंशन नहीं मिल रही है?", kind: "choice", options: eligible },
+          { key: "disabilityPension", label: "कितने पात्र दिव्यांग व्यक्तियों को दिव्यांग पेंशन नहीं मिल रही है?", kind: "choice", options: eligible },
         ],
       },
       {
-        title: "प्राथमिक जरूरतें एवं योजनाएँ",
+        title: "अन्य शासकीय योजनाएँ",
         metrics: [
-          { key: "priorityNeed1", label: "प्राथमिक आवश्यकता 1", kind: "text" },
-          { key: "priorityNeed2", label: "प्राथमिक आवश्यकता 2", kind: "text" },
-          { key: "priorityNeed3", label: "प्राथमिक आवश्यकता 3", kind: "text" },
-          { key: "eligibleSchemeNotReceived", label: "पात्र होने पर भी योजना का लाभ नहीं मिला", kind: "choice", options: yesNo },
-          { key: "schemeBenefitName", label: "जिस योजना का लाभ नहीं मिला उसका नाम", kind: "text" },
+          { key: "eligibleSchemeNotReceived", label: "कितने पात्र परिवारों को किसी सरकारी योजना का लाभ नहीं मिल रहा है?", kind: "choice", options: yesNo },
+          { key: "schemeBenefitName", label: "किन सरकारी योजनाओं का लाभ पात्र परिवारों को नहीं मिला है?", kind: "text" },
         ],
       },
     ],
@@ -209,101 +214,56 @@ const pages: Page[] = [
 const asText = (value: unknown): string =>
   value == null ? "" : String(value).trim();
 
-const isAnswered = (value: unknown): boolean =>
-  Array.isArray(value) ? value.length > 0 : asText(value) !== "";
 
-// UI testing ke liye sample records.
-// Ye asli survey data nahi hain.
-const SAMPLE_HOUSEHOLDS: HouseholdRecord[] = [
-  {
-    blockName: "ओरछा",
-    panchayatName: "ओरछा ग्राम पंचायत",
-    villageName: "ओरछा",
-    houseNumber: "001",
-    headName: "मंगू राम",
-    mobileNumber: "9000000001",
-    totalMembers: 5,
-    direct: 12,
-    indirect: 8,
-    noAadhaarMembers: 3,
-    noCasteCertificateMembers: 2,
-    noAyushmanMembers: 1,
-    noVoterIdMembers: 2,
-    noShramikCardMembers: 1,
-  },
-  {
-    blockName: "ओरछा",
-    panchayatName: "ओरछा ग्राम पंचायत",
-    villageName: "ओरछा",
-    houseNumber: "002",
-    headName: "सोमरी बाई",
-    mobileNumber: "9000000002",
-    totalMembers: 4,
-    noAadhaarMembers: 1,
-    noCasteCertificateMembers: 0,
-    noAyushmanMembers: 2,
-    noVoterIdMembers: 1,
-    noShramikCardMembers: 2,
-  },
-  {
-    blockName: "ओरछा",
-    panchayatName: "धनोरा ग्राम पंचायत",
-    villageName: "धनोरा",
-    houseNumber: "003",
-    headName: "लखमा राम",
-    mobileNumber: "9000000003",
-    totalMembers: 6,
-    noAadhaarMembers: 2,
-    noCasteCertificateMembers: 1,
-    noAyushmanMembers: 3,
-    noVoterIdMembers: 2,
-    noShramikCardMembers: 1,
-  },
-  {
-    blockName: "नारायणपुर",
-    panchayatName: "बेनूर ग्राम पंचायत",
-    villageName: "बेनूर",
-    houseNumber: "001",
-    headName: "राम सिंह",
-    mobileNumber: "9000000004",
-    totalMembers: 5,
-    direct: 18,
-    indirect: 9,
-    noAadhaarMembers: 2,
-    noCasteCertificateMembers: 1,
-    noAyushmanMembers: 2,
-    noVoterIdMembers: 1,
-    noShramikCardMembers: 2,
-  },
-  {
-    blockName: "नारायणपुर",
-    panchayatName: "बेनूर ग्राम पंचायत",
-    villageName: "बेनूर",
-    houseNumber: "002",
-    headName: "कमला बाई",
-    mobileNumber: "9000000005",
-    totalMembers: 3,
-    noAadhaarMembers: 1,
-    noCasteCertificateMembers: 1,
-    noAyushmanMembers: 1,
-    noVoterIdMembers: 0,
-    noShramikCardMembers: 1,
-  },
-  {
-    blockName: "नारायणपुर",
-    panchayatName: "छोटेडोंगर ग्राम पंचायत",
-    villageName: "छोटेडोंगर",
-    houseNumber: "003",
-    headName: "भीमा राम",
-    mobileNumber: "9000000006",
-    totalMembers: 7,
-    noAadhaarMembers: 4,
-    noCasteCertificateMembers: 2,
-    noAyushmanMembers: 3,
-    noVoterIdMembers: 2,
-    noShramikCardMembers: 3,
-  },
-];
+const questionIcons: Record<string, LucideIcon> = {
+  rationCard: CreditCard,
+  noAadhaarMembers: Fingerprint,
+  aadhaarEkyc: BadgeCheck,
+  noCasteCertificateMembers: FileText,
+  noAyushmanMembers: HeartPulse,
+  noVoterIdMembers: Vote,
+  mnregaJobCard: BriefcaseBusiness,
+  noShramikCardMembers: Accessibility,
+  janDhanAccount: Landmark,
+  bankName: Banknote,
+  kcc: Sprout,
+  forestRightsPatta: Sprout,
+  marriagecertificate: FileText,
+  needsAssistiveDevice: Accessibility,
+  assistanceTypes: Accessibility,
+  deathInLastYear: HeartPulse,
+  deathCertificateReceived: FileText,
+  pmGaribKalyanRation: HandHeart,
+
+  childrenWithoutBirthCertificate: Baby,
+  vaccinationStatus: Syringe,
+  anganwadiMeal: HandHeart,
+  childrenSchoolStatus: School,
+  schoolNotGoingReason: GraduationCap,
+  otherSchoolReason: FileText,
+  unemployedMembers: BriefcaseBusiness,
+  pmKisan: Sprout,
+
+  houseType: House,
+  housingSchemeBenefit: House,
+  toiletStatus: Toilet,
+  tapWaterConnection: Droplets,
+  electricityConnection: Lightbulb,
+  familyDisease: Stethoscope,
+  freeMedicines: Pill,
+
+  jsy: Baby,
+  pmmvy: Baby,
+  mahtariVandana: HandHeart,
+  widowPension: HandHeart,
+  disabilityPension: Accessibility,
+  shgMember: Users,
+  priorityNeed1: ClipboardList,
+  priorityNeed2: ClipboardList,
+  priorityNeed3: ClipboardList,
+  eligibleSchemeNotReceived: FileText,
+  schemeBenefitName: FileText,
+};
 
 function QuestionRow({
   metric,
@@ -312,267 +272,400 @@ function QuestionRow({
   metric: Metric;
   onClick: () => void;
 }) {
+  const Icon = questionIcons[metric.key] ?? FileQuestion;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50"
+      title={metric.label}
+      className="group flex min-h-[76px] w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-3 text-left transition hover:border-blue-300 hover:bg-blue-50"
     >
-      <span className="flex min-w-0 items-center gap-3">
-        <FileQuestion className="h-5 w-5 shrink-0 text-blue-600" />
-        <span className="font-medium text-gray-800">{metric.label}</span>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition group-hover:bg-blue-100">
+        <Icon className="h-5 w-5" />
       </span>
-      <span className="flex shrink-0 items-center gap-2 text-sm text-blue-600">
-        विवरण देखें
-        <ChevronRight className="h-4 w-4" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium leading-5 text-gray-800">
+          {metric.label}
+        </span>
+        <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-blue-600">
+          विवरण देखें
+          <ChevronRight className="h-3.5 w-3.5" />
+        </span>
       </span>
     </button>
   );
 }
 
-function QuestionDetailPage({
-  metric,
-  households,
-  isSampleData,
-  onBack,
-}: {
-  metric: Metric;
-  households: HouseholdRecord[];
-  isSampleData: boolean;
-  onBack: () => void;
-}) {
-  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
-  const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
-  const [selectedPanchayat, setSelectedPanchayat] = useState<string | null>(null);
+const getLocation = (household: HouseholdRecord) => {
+  const village = asText(household.villageName || household.village?.nameHindi);
+  const panchayat = asText(
+    household.panchayatName || household.village?.gramPanchayat?.nameHindi
+  );
+  const block = asText(
+    household.blockName || household.village?.gramPanchayat?.block?.nameHindi
+  );
+  const affectedStatus = asText(
+    household.affectedStatus || household.village?.affectedStatus
+  ).toLowerCase();
 
-  const blocks = ["नारायणपुर", "ओरछा"];
+  return {
+    block: block || "ब्लॉक उपलब्ध नहीं",
+    panchayat: panchayat || "ग्राम पंचायत उपलब्ध नहीं",
+    village: village || "गाँव उपलब्ध नहीं",
+    affectedStatus: (
+      affectedStatus.includes("indirect") || affectedStatus.includes("अप्रत्यक्ष")
+        ? "indirect"
+        : "direct"
+    ) as "direct" | "indirect",
+  };
+};
 
-  const blockHouseholds = households.filter(
-    (household) => asText(household.blockName) === selectedBlock
+const isDeficiencyAnswer = (metric: Metric, value: unknown) => {
+  if (value === null || value === undefined || value === "") return false;
+
+  if (metric.kind === "count") {
+    return Number(value) > 0;
+  }
+
+  const answer = asText(value).toLowerCase();
+
+  if (metric.kind === "choice") {
+    if (["नहीं", "no"].includes(answer)) return true;
+    // These options indicate a partial or missing service in this survey.
+    if (
+      metric.key === "vaccinationStatus" &&
+      ["आंशिक", "partial"].includes(answer)
+    ) return true;
+    if (
+      metric.key === "childrenSchoolStatus" &&
+      ["कुछ", "some"].includes(answer)
+    ) return true;
+    if (
+      metric.key === "toiletStatus" &&
+      answer.includes("उपयोग में नहीं")
+    ) return true;
+    if (
+      metric.key === "freeMedicines" &&
+      ["कभी-कभी", "sometimes"].includes(answer)
+    ) return true;
+    return false;
+  }
+
+  // Text and multi-select responses are descriptive, not deficiency flags.
+  return false;
+};
+
+const getDeficiencyContribution = (metric: Metric, value: unknown) => {
+  if (!isDeficiencyAnswer(metric, value)) return 0;
+  // Numeric answers represent affected people/children, while yes/no answers
+  // represent one affected household.
+  return metric.kind === "count" ? Math.max(0, Number(value) || 0) : 1;
+};
+
+// Demo-only household records are used only when the API sends an empty list.
+const buildSampleHouseholds = (): HouseholdRecord[] => {
+  const locations = [
+    ["अभनपुर", "पंचायत - कुर्रा", "कुर्रा", "Direct Affected"],
+    ["अभनपुर", "पंचायत - कुर्रा", "खोरपा", "Indirect Affected"],
+    ["अभनपुर", "पंचायत - नवागांव", "नवागांव", "Direct Affected"],
+    ["अभनपुर", "पंचायत - नवागांव", "पचेड़ा", "Indirect Affected"],
+    ["आरंग", "पंचायत - भिलाई", "भिलाई", "Direct Affected"],
+    ["आरंग", "पंचायत - भिलाई", "गुल्लू", "Indirect Affected"],
+    ["आरंग", "पंचायत - चंदखुरी", "चंदखुरी", "Direct Affected"],
+    ["आरंग", "पंचायत - चंदखुरी", "समोदा", "Indirect Affected"],
+    ["तिल्दा", "पंचायत - सिलयारी", "सिलयारी", "Direct Affected"],
+    ["तिल्दा", "पंचायत - सिलयारी", "मोहदा", "Indirect Affected"],
+    ["तिल्दा", "पंचायत - खरोरा", "खरोरा", "Direct Affected"],
+    ["तिल्दा", "पंचायत - खरोरा", "माठ", "Indirect Affected"],
+  ];
+
+  const metrics = pages.flatMap((page) =>
+    page.groups.flatMap((group) => group.metrics)
   );
 
-  const villageRows = useMemo(() => {
-    if (!selectedBlock) return [];
+  return locations.map(([blockName, panchayatName, villageName, affectedStatus], index) => {
+    const record: HouseholdRecord = {
+      id: `demo-household-${index + 1}`,
+      houseNumber: `${index + 1}0${index + 1}`,
+      headName: ["रामलाल नेताम", "सीता बाई", "मोहन मरकाम", "कमला कश्यप"][index % 4],
+      mobile: `9${String(876543210 + index).slice(0, 9)}`,
+      totalMembers: 4 + (index % 3),
+      blockName,
+      panchayatName,
+      villageName,
+      affectedStatus,
+    };
 
-    const pairs = new Map<
-      string,
-      { panchayat: string; village: string; count: number }
-    >();
-
-    blockHouseholds.forEach((household) => {
-      const panchayat = asText(household.panchayatName);
-      const village = asText(household.villageName);
-
-      if (!panchayat || !village) return;
-
-      const key = `${panchayat}__${village}`;
-      const existing = pairs.get(key);
-
-      if (existing) {
-        existing.count += 1;
-      } else {
-        pairs.set(key, { panchayat, village, count: 1 });
+    metrics.forEach((metric, metricIndex) => {
+      if (metric.kind === "count") {
+        record[metric.key] = (index + metricIndex) % 5 === 0 ? 0 : ((index + metricIndex) % 4) + 1;
+      } else if (metric.kind === "choice") {
+        if (metric.key === "freeMedicines") {
+          record[metric.key] = index % 3 === 0 ? "कभी-कभी" : index % 2 === 0 ? "नहीं" : "हाँ";
+        } else {
+          record[metric.key] = (index + metricIndex) % 3 === 0 ? "हाँ" : "नहीं";
+        }
       }
     });
 
-    return Array.from(pairs.values());
-  }, [blockHouseholds, selectedBlock]);
+    return record;
+  });
+};
 
-  const villageHouseholds = blockHouseholds.filter(
-    (household) =>
-      asText(household.villageName) === selectedVillage &&
-      asText(household.panchayatName) === selectedPanchayat
+function QuestionDetailPage({
+  metric,
+  households,
+  onBack,
+  isDemo,
+}: {
+  metric: Metric;
+  households: HouseholdRecord[];
+  onBack: () => void;
+  isDemo: boolean;
+}) {
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [selectedPanchayat, setSelectedPanchayat] = useState<string | null>(null);
+  const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
+
+  const deficiencyHouseholds = useMemo(
+    () => households.filter((household) =>
+      getDeficiencyContribution(metric, household[metric.key]) > 0
+    ),
+    [households, metric]
+  );
+
+  const blockRows = useMemo(() => {
+    const grouped = new Map<string, { direct: number; indirect: number }>();
+    deficiencyHouseholds.forEach((household) => {
+      const location = getLocation(household);
+      const row = grouped.get(location.block) ?? { direct: 0, indirect: 0 };
+      row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
+      grouped.set(location.block, row);
+    });
+    return Array.from(grouped, ([name, counts]) => ({ name, ...counts }))
+      .sort((a, b) => a.name.localeCompare(b.name, "hi"));
+  }, [deficiencyHouseholds, metric]);
+
+  const panchayatRows = useMemo(() => {
+    if (!selectedBlock) return [];
+    const grouped = new Map<string, {
+      name: string; direct: number; indirect: number;
+    }>();
+    deficiencyHouseholds.forEach((household) => {
+      const location = getLocation(household);
+      if (location.block !== selectedBlock) return;
+      const key = location.panchayat;
+      const row = grouped.get(key) ?? { name: key, direct: 0, indirect: 0 };
+      row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
+      grouped.set(key, row);
+    });
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "hi")
+    );
+  }, [deficiencyHouseholds, selectedBlock, metric]);
+
+  const blockVillageRows = useMemo(() => {
+    if (!selectedBlock) return [];
+    const grouped = new Map<string, {
+      panchayat: string; village: string; direct: number; indirect: number;
+    }>();
+
+    deficiencyHouseholds.forEach((household) => {
+      const location = getLocation(household);
+      if (location.block !== selectedBlock) return;
+      const key = `${location.panchayat}__${location.village}`;
+      const row = grouped.get(key) ?? {
+        panchayat: location.panchayat,
+        village: location.village,
+        direct: 0,
+        indirect: 0,
+      };
+      row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
+      grouped.set(key, row);
+    });
+
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.panchayat.localeCompare(b.panchayat, "hi") ||
+      a.village.localeCompare(b.village, "hi")
+    );
+  }, [deficiencyHouseholds, selectedBlock, metric]);
+
+  const villageRows = useMemo(() => {
+    if (!selectedBlock || !selectedPanchayat) return [];
+    const grouped = new Map<string, {
+      name: string; direct: number; indirect: number;
+    }>();
+    deficiencyHouseholds.forEach((household) => {
+      const location = getLocation(household);
+      if (
+        location.block !== selectedBlock ||
+        location.panchayat !== selectedPanchayat
+      ) return;
+      const key = location.village;
+      const row = grouped.get(key) ?? { name: key, direct: 0, indirect: 0 };
+      row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
+      grouped.set(key, row);
+    });
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "hi")
+    );
+  }, [deficiencyHouseholds, selectedBlock, selectedPanchayat, metric]);
+
+  const villageHouseholds = useMemo(
+    () => deficiencyHouseholds.filter((household) => {
+      const location = getLocation(household);
+      return location.block === selectedBlock &&
+        location.panchayat === selectedPanchayat &&
+        location.village === selectedVillage;
+    }),
+    [deficiencyHouseholds, selectedBlock, selectedPanchayat, selectedVillage]
   );
 
   const goBack = () => {
-    if (selectedVillage !== null) {
-      setSelectedVillage(null);
-      setSelectedPanchayat(null);
-    } else if (selectedBlock !== null) {
-      setSelectedBlock(null);
-    } else {
-      onBack();
-    }
+    if (selectedVillage !== null) setSelectedVillage(null);
+    else if (selectedPanchayat !== null) setSelectedPanchayat(null);
+    else if (selectedBlock !== null) setSelectedBlock(null);
+    else onBack();
   };
 
   const heading = selectedVillage
     ? `गाँव: ${selectedVillage}`
-    : selectedBlock
-      ? `ब्लॉक: ${selectedBlock}`
-      : metric.label;
+    : selectedPanchayat
+      ? `ग्राम पंचायत: ${selectedPanchayat}`
+      : selectedBlock
+        ? `ब्लॉक: ${selectedBlock}`
+        : metric.label;
 
-  const formatCount = (household: HouseholdRecord) => {
+  const displayCount = (household: HouseholdRecord) => {
     const value = household[metric.key];
-
-    if (value === null || value === undefined || value === "") {
-      return "—";
-    }
-
-    return asText(value);
+    return value == null || value === "" ? "—" : asText(value);
   };
 
-  return (
-    <div className="space-y-5">
-      <button
-        type="button"
-        onClick={goBack}
-        className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {selectedVillage
-          ? "गाँव की टेबल पर वापस जाएँ"
-          : selectedBlock
-            ? "ब्लॉक की टेबल पर वापस जाएँ"
-            : "प्रश्नों पर वापस जाएँ"}
-      </button>
+  const totalCount = (row: { direct: number; indirect: number }) =>
+    row.direct + row.indirect;
 
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">{heading}</h2>
-        {(selectedBlock || selectedVillage) && (
-          <p className="mt-1 text-sm text-gray-500">{metric.label}</p>
-        )}
-        {isSampleData && (
-          <p className="mt-2 text-sm text-orange-600">
-            यह केवल UI जाँचने के लिए sample data है, वास्तविक सर्वेक्षण डेटा नहीं।
-          </p>
-        )}
+  return (
+    <div className="space-y-5 text-slate-900">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="mb-2 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              Household Survey Analysis
+            </p>
+            <h2 className="text-xl font-bold text-slate-900">{heading}</h2>
+            <p className="mt-1 text-sm text-slate-500">{metric.label}</p>
+            <p className="mt-2 text-xs text-amber-700">
+              {isDemo ? "डेमो डेटा · वास्तविक डेटा उपलब्ध होने पर वही दिखेगा।" : "केवल कमी दर्शाने वाले उत्तर दिखाए जा रहे हैं।"}
+            </p>
+          </div>
+          <button type="button" onClick={goBack} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <ArrowLeft className="h-4 w-4" />
+            {selectedVillage ? "गाँव सूची" : selectedPanchayat ? "ग्राम पंचायत सूची" : selectedBlock ? "ब्लॉक सूची" : "प्रश्न सूची"} पर वापस जाएँ
+          </button>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+        <button onClick={() => { setSelectedBlock(null); setSelectedPanchayat(null); setSelectedVillage(null); }} className={`font-semibold ${!selectedBlock ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>सभी ब्लॉक</button>
+        {selectedBlock && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => { setSelectedPanchayat(null); setSelectedVillage(null); }} className={`font-semibold ${!selectedPanchayat ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedBlock}</button></>}
+        {selectedPanchayat && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => setSelectedVillage(null)} className={`font-semibold ${!selectedVillage ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedPanchayat}</button></>}
+        {selectedVillage && <><ChevronRight className="h-4 w-4 text-slate-400" /><span className="font-semibold text-blue-700">{selectedVillage}</span></>}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table className="w-full border-collapse text-left">
-          <thead className="bg-gray-50">
-            {selectedVillage ? (
-              <tr>
-                <th className="border-b px-5 py-3 font-semibold">मकान नंबर</th>
-                <th className="border-b px-5 py-3 font-semibold">
-                  परिवार के मुखिया का नाम
-                </th>
-                <th className="border-b px-5 py-3 font-semibold">मोबाइल नंबर</th>
-                <th className="border-b px-5 py-3 font-semibold">काउंट</th>
-              </tr>
-            ) : selectedBlock ? (
-              <tr>
-                <th className="border-b px-5 py-3 font-semibold">ग्राम पंचायत</th>
-                <th className="border-b px-5 py-3 font-semibold">गाँव</th>
-                <th className="border-b px-5 py-3 font-semibold">काउंट</th>
-              </tr>
-            ) : (
-              <tr>
-                <th className="border-b px-5 py-3 font-semibold">ब्लॉक</th>
-                <th className="border-b px-5 py-3 font-semibold">Direct</th>
-                <th className="border-b px-5 py-3 font-semibold">Indirect</th>
-                <th className="border-b px-5 py-3 text-right font-semibold">
-                  विवरण
-                </th>
-              </tr>
-            )}
-          </thead>
-
-          <tbody>
-            {selectedVillage ? (
-              villageHouseholds.length > 0 ? (
-                villageHouseholds.map((household, index) => (
-                  <tr
-                    key={`${asText(household.houseNumber)}-${index}`}
-                    className="hover:bg-gray-50"
-                  >
-                    <td className="border-b px-5 py-3">
-                      {asText(household.houseNumber) || "—"}
-                    </td>
-                    <td className="border-b px-5 py-3">
-                      {asText(household.headName) || "—"}
-                    </td>
-                    <td className="border-b px-5 py-3">
-                      {asText(household.mobileNumber) || "—"}
-                    </td>
-                    <td className="border-b px-5 py-3">
-                      {formatCount(household)}
-                    </td>
-                  </tr>
-                ))
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-1 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-bold text-slate-900">{selectedVillage ? "परिवार-वार विवरण" : selectedPanchayat ? "ग्राम-वार विवरण" : selectedBlock ? "ग्राम पंचायत एवं गाँव-वार विवरण" : "ब्लॉक-वार विवरण"}</h3>
+            <p className="mt-1 text-xs text-slate-500">चयनित प्रश्न के अनुसार कमी वाले उत्तरों का विवरण</p>
+          </div>
+          <span className="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+            {selectedVillage ? `${villageHouseholds.length} परिवार` : selectedPanchayat ? `${villageRows.length} गाँव` : selectedBlock ? `${blockVillageRows.length} गाँव` : `${blockRows.length} ब्लॉक`}
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] border-collapse text-left text-sm">
+            <thead className="bg-slate-50 text-xs text-slate-500">
+              {selectedVillage ? (
+                <tr>
+                  <th className="px-5 py-3 font-semibold">मकान नंबर</th>
+                  <th className="px-5 py-3 font-semibold">परिवार के मुखिया का नाम</th>
+                  <th className="px-5 py-3 font-semibold">मोबाइल नंबर</th>
+                  <th className="px-5 py-3 font-semibold">उत्तर / कमी की संख्या</th>
+                </tr>
+              ) : selectedPanchayat ? (
+                <tr>
+                  <th className="px-5 py-3 font-semibold">गाँव</th>
+                  <th className="px-5 py-3 font-semibold">उत्तर / कमी की संख्या</th>
+                  <th className="px-5 py-3 text-right font-semibold">विवरण</th>
+                </tr>
+              ) : selectedBlock ? (
+                <tr>
+                  <th className="px-5 py-3 font-semibold">ग्राम पंचायत</th>
+                  <th className="px-5 py-3 font-semibold">गाँव</th>
+                  <th className="px-5 py-3 font-semibold">उत्तर / कमी की संख्या</th>
+                  <th className="px-5 py-3 text-right font-semibold">विवरण</th>
+                </tr>
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-500">
-                    इस गाँव के मकान रिकॉर्ड उपलब्ध नहीं हैं।
-                  </td>
+                  <th className="px-5 py-3 font-semibold">ब्लॉक</th>
+                  <th className="px-5 py-3 font-semibold">उत्तर / कमी की संख्या</th>
+                  <th className="px-5 py-3 text-right font-semibold">विवरण</th>
                 </tr>
-              )
-            ) : selectedBlock ? (
-              villageRows.length > 0 ? (
-                villageRows.map((row) => (
-                  <tr
-                    key={`${row.panchayat}-${row.village}`}
-                    className="hover:bg-gray-50"
-                  >
-                    <td className="border-b px-5 py-3">{row.panchayat}</td>
-                    <td className="border-b px-5 py-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedPanchayat(row.panchayat);
-                          setSelectedVillage(row.village);
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        {row.village}
-                      </button>
-                    </td>
-                    <td className="border-b px-5 py-3">{row.count}</td>
+              )}
+            </thead>
+            <tbody>
+              {selectedVillage ? (
+                villageHouseholds.length ? villageHouseholds.map((household, index) => (
+                  <tr key={asText(household.id) || `${asText(household.houseNumber)}-${index}`} className="transition hover:bg-blue-50/60">
+                    <td className="px-5 py-4">{asText(household.houseNumber) || "—"}</td>
+                    <td className="px-5 py-4">{asText(household.headName) || "—"}</td>
+                    <td className="px-5 py-4">{asText(household.mobile || household.mobileNumber) || "—"}</td>
+                    <td className="px-5 py-4 font-semibold">{displayCount(household)}</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">
-                    इस ब्लॉक के रिकॉर्ड उपलब्ध नहीं हैं।
-                  </td>
-                </tr>
-              )
-            ) : (
-              blocks.map((block) => {
-                const records = households.filter(
-                  (household) => asText(household.blockName) === block
-                );
-
-                const sumField = (field: "direct" | "indirect") => {
-                  const values = records
-                    .map((household) => household[field])
-                    .filter(
-                      (value) =>
-                        value !== undefined &&
-                        value !== null &&
-                        value !== ""
-                    );
-
-                  if (values.length === 0) return "—";
-
-                  return values.reduce(
-                    (sum, value) => sum + (Number(value) || 0),
-                    0
-                  );
-                };
-
-                return (
-                  <tr key={block} className="hover:bg-gray-50">
-                    <td className="border-b px-5 py-3 font-medium">
-                      ब्लॉक: {block}
-                    </td>
-                    <td className="border-b px-5 py-3">{sumField("direct")}</td>
-                    <td className="border-b px-5 py-3">{sumField("indirect")}</td>
-                    <td className="border-b px-5 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedBlock(block)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        विवरण देखें →
-                      </button>
+                )) : (
+                  <tr><td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-500">इस गाँव में इस प्रश्न से संबंधित कमी का रिकॉर्ड नहीं है।</td></tr>
+                )
+              ) : selectedPanchayat ? (
+                villageRows.length ? villageRows.map((row) => (
+                  <tr key={row.name} className="transition hover:bg-blue-50/60">
+                    <td className="px-5 py-4">{row.name}</td>
+                    <td className="px-5 py-4 font-semibold">{totalCount(row)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <button type="button" onClick={() => setSelectedVillage(row.name)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                )) : (
+                  <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">इस ग्राम पंचायत में कोई संबंधित कमी दर्ज नहीं है।</td></tr>
+                )
+              ) : selectedBlock ? (
+                blockVillageRows.length ? blockVillageRows.map((row) => (
+                  <tr key={`${row.panchayat}-${row.village}`} className="transition hover:bg-blue-50/60">
+                    <td className="px-5 py-4 font-medium">{row.panchayat}</td>
+                    <td className="px-5 py-4">{row.village}</td>
+                    <td className="px-5 py-4 font-semibold">{totalCount(row)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <button type="button" onClick={() => { setSelectedPanchayat(row.panchayat); setSelectedVillage(row.village); }} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-500">इस ब्लॉक में कोई संबंधित कमी दर्ज नहीं है।</td></tr>
+                )
+              ) : blockRows.length ? blockRows.map((row) => (
+                <tr key={row.name} className="transition hover:bg-blue-50/60">
+                  <td className="px-5 py-4 font-semibold text-slate-800">{row.name}</td>
+                  <td className="px-5 py-4 font-semibold">{totalCount(row)}</td>
+                  <td className="px-5 py-4 text-right">
+                    <button type="button" onClick={() => setSelectedBlock(row.name)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
+                  </td>
+                </tr>
+              )) : (
+                <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">इस प्रश्न के लिए कोई कमी वाला रिकॉर्ड उपलब्ध नहीं है।</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {!selectedVillage && <p className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">ग्राम पंचायत और गाँव के सामने दिए गए विवरण बटन से संबंधित परिवारों के उत्तर देखें।</p>}
       </div>
     </div>
   );
@@ -583,54 +676,19 @@ export default function HouseholdSurveyAnalysis({
   onBack,
 }: Props) {
   const [pageIndex, setPageIndex] = useState(0);
-  const [search, setSearch] = useState("");
   const [selectedMetric, setSelectedMetric] = useState<Metric | null>(null);
 
-  const safeHouseholds = Array.isArray(households) ? households : [];
-
-  const filteredHouseholds = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) return safeHouseholds;
-
-    return safeHouseholds.filter((household) =>
-      [
-        household.headName,
-        household.houseNumber,
-        household.villageName,
-        household.panchayatName,
-        household.blockName,
-        household.mobileNumber,
-      ].some((value) => asText(value).toLowerCase().includes(query))
-    );
-  }, [safeHouseholds, search]);
-
+  const isDemo = !Array.isArray(households) || households.length === 0;
+  const safeHouseholds = isDemo ? buildSampleHouseholds() : households;
   const currentPage = pages[pageIndex];
 
-  const recordedHouseholds = safeHouseholds.filter(
-    (household) =>
-      isAnswered(household.headName) ||
-      isAnswered(household.totalMembers)
-  ).length;
-
   if (selectedMetric) {
-    const useSampleData = safeHouseholds.length === 0;
-
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Survey Analysis
-          </h1>
-          <p className="mt-1 text-gray-500">
-            विश्लेषण शुरू करने के लिए सर्वे प्रश्न चुनें।
-          </p>
-        </div>
-
         <QuestionDetailPage
           metric={selectedMetric}
-          households={useSampleData ? SAMPLE_HOUSEHOLDS : safeHouseholds}
-          isSampleData={useSampleData}
+          households={safeHouseholds}
+          isDemo={isDemo}
           onBack={() => setSelectedMetric(null)}
         />
       </div>
@@ -639,140 +697,43 @@ export default function HouseholdSurveyAnalysis({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Survey Analysis
-          </h1>
-          <p className="mt-1 text-gray-500">
-            विश्लेषण शुरू करने के लिए सर्वे का प्रकार चुनें।
-          </p>
-        </div>
-
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
-          >
-            ← वापस जाएँ
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <p className="text-sm text-gray-500">कुल परिवार रिकॉर्ड</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {safeHouseholds.length}
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <p className="text-sm text-gray-500">दर्ज परिवार</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {recordedHouseholds}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <label
-          htmlFor="household-search"
-          className="mb-2 block text-sm font-medium text-gray-700"
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 px-3 text-sm font-semibold text-slate-600 transition hover:text-blue-700"
         >
-          परिवार खोजें
-        </label>
+          <ArrowLeft className="h-4 w-4" />
+          सर्वे प्रकार चुनें
+        </button>
+      )}
 
-        <input
-          id="household-search"
-          type="text"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="मुखिया, मकान नंबर, मोबाइल, गाँव या ब्लॉक खोजें..."
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-
-        <p className="mt-2 text-sm text-gray-500">
-          मिले हुए रिकॉर्ड: {filteredHouseholds.length}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-700">
+          <MapPinned className="h-4 w-4" />
+          परिवार सर्वेक्षण विश्लेषण
+        </div>
+        <h1 className="mt-3 text-2xl font-bold text-slate-900">
+          Household Survey Analysis
+        </h1>
+        <p className="mt-1 text-gray-500">
+          प्रश्न चुनें और ब्लॉक से ग्राम स्तर तक विश्लेषण देखें।
         </p>
-
-        {filteredHouseholds.length > 0 ? (
-          <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full border-collapse text-left">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="border-b px-4 py-3">मकान नंबर</th>
-                  <th className="border-b px-4 py-3">मुखिया का नाम</th>
-                  <th className="border-b px-4 py-3">मोबाइल नंबर</th>
-                  <th className="border-b px-4 py-3">ब्लॉक</th>
-                  <th className="border-b px-4 py-3">ग्राम पंचायत</th>
-                  <th className="border-b px-4 py-3">गाँव</th>
-                  <th className="border-b px-4 py-3">सदस्य</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredHouseholds.map((household, index) => (
-                  <tr key={`${asText(household.houseNumber)}-${index}`}>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.houseNumber) || "—"}
-                    </td>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.headName) || "—"}
-                    </td>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.mobileNumber) || "—"}
-                    </td>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.blockName) || "—"}
-                    </td>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.panchayatName) || "—"}
-                    </td>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.villageName) || "—"}
-                    </td>
-                    <td className="border-b px-4 py-3">
-                      {asText(household.totalMembers) || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="py-8 text-center text-sm text-gray-500">
-            कोई परिवार रिकॉर्ड उपलब्ध नहीं है।
-          </p>
-        )}
-      </div>
+      </section>
 
       <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            {currentPage.title}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            {currentPage.subtitle}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {pages.map((page, index) => (
-            <button
-              key={page.title}
-              type="button"
-              onClick={() => setPageIndex(index)}
-              className={`rounded-lg border px-3 py-2 text-sm transition ${
-                pageIndex === index
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {index + 1}. {page.title}
-            </button>
-          ))}
+        <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-700">
+            {pageIndex + 1}
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {currentPage.title}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {currentPage.subtitle}
+            </p>
+          </div>
         </div>
 
         {currentPage.groups.map((group) => (
@@ -782,7 +743,7 @@ export default function HouseholdSurveyAnalysis({
           >
             <h3 className="font-semibold text-gray-800">{group.title}</h3>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {group.metrics.map((metric) => (
                 <QuestionRow
                   key={metric.key}
