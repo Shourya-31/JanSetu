@@ -104,6 +104,48 @@ test('household updates persist total members and retain answers omitted from a 
   );
 });
 
+test('new household drafts leave an unknown total member count null', async (t) => {
+  let persistedCreate: Record<string, unknown> | undefined;
+  const tx = {
+    $executeRaw: async () => 1,
+    village: {
+      findFirst: async () => ({ id: 12, nameHindi: 'Test village' })
+    },
+    villageSurvey: {
+      findUnique: async () => ({ surveyData: { householdSurveyCount: 1 } })
+    },
+    householdSurvey: {
+      findUnique: async () => null,
+      upsert: async ({ create }: { create: Record<string, unknown> }) => {
+        persistedCreate = create;
+        return { id: 'household-new', ...create };
+      }
+    },
+    surveyAuditLog: {
+      create: async () => ({})
+    }
+  };
+  const restoreTransaction = replaceMethod(
+    prisma,
+    '$transaction',
+    (async (callback: (transaction: typeof tx) => Promise<unknown>) => callback(tx)) as (...args: never[]) => unknown
+  );
+  t.after(restoreTransaction);
+
+  const response = createReply();
+  await saveHouseholdSurvey({
+    body: {
+      villageName: 'Test village',
+      houseNumber: 1,
+      data: { headName: 'Draft family' }
+    },
+    user: { id: 'surveyor-1' }
+  } as FastifyRequest, response.reply);
+
+  assert.equal(response.result.response?.statusCode, 200);
+  assert.equal(persistedCreate?.totalMembers, null);
+});
+
 test('household GET restores the persisted total in its form answers', async (t) => {
   const savedRecord = {
     id: 'household-1',

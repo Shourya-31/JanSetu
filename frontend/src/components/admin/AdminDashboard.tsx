@@ -19,9 +19,7 @@ import {
 
 import { AdminSurveyWorkspace } from "./AdminSurveyWorkspace";
 
-import HouseholdSurveyAnalysis, {
-  type HouseholdAnalysisRecord,
-} from "./HouseholdSurveyAnalysis";
+import HouseholdSurveyAnalysis from "./HouseholdSurveyAnalysis";
 
 import { StatisticalAnalysisPage } from "./StatisticalAnalysisPage";
 
@@ -39,25 +37,6 @@ type DashboardPage =
   | "survey-analysis";
 
 type SurveyType = "household" | "village";
-
-function HouseholdAnalysisConnection({
-  onBack,
-}: {
-  service: AdminReportService;
-  onBack: () => void;
-}) {
-  // Dashboard navigation/render integration.
-  // Records are intentionally not mocked; connect the existing all-records
-  // data source here when it is available.
-  const households: HouseholdAnalysisRecord[] = [];
-
-  return (
-    <HouseholdSurveyAnalysis
-      households={households}
-      onBack={onBack}
-    />
-  );
-}
 
 /** Dashboard page में render error आने पर recovery UI दिखाता है। */
 class DashboardErrorBoundary extends Component<
@@ -128,7 +107,7 @@ export function AdminDashboard({
   onLogout: () => void;
   service?: AdminReportService;
 }) {
-  const [page, setPage] = useState<DashboardPage>("analytics");
+  const [page, setPage] = useState<DashboardPage>("survey-analysis");
   const [surveyType, setSurveyType] = useState<SurveyType | null>(null);
 
   const tabs: {
@@ -137,14 +116,14 @@ export function AdminDashboard({
     Icon: typeof BarChart3;
   }[] = [
     {
-      id: "analytics",
-      label: "Analytics",
-      Icon: BarChart3,
-    },
-    {
       id: "survey-analysis",
       label: "Survey Analysis",
       Icon: House,
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      Icon: BarChart3,
     },
     {
       id: "statistical-analysis",
@@ -265,10 +244,7 @@ export function AdminDashboard({
               </div>
 
               {surveyType === "household" ? (
-                <HouseholdAnalysisConnection
-                  service={service}
-                  onBack={() => setSurveyType(null)}
-                />
+                <HouseholdSurveyAnalysis onBack={() => setSurveyType(null)} />
               ) : surveyType === "village" ? (
                 <section className="space-y-4">
                   <button

@@ -232,6 +232,11 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
         payloadData = existing
           ? { ...toHouseholdSurveyAnswers(existing), ...rawPayloadData }
           : rawPayloadData;
+        const totalMembers = payloadData.totalMembers === undefined
+          || payloadData.totalMembers === null
+          || payloadData.totalMembers === ''
+          ? null
+          : Number(payloadData.totalMembers);
 
         const survey = await tx.householdSurvey.upsert({
           where: {
@@ -249,7 +254,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             surveyorName: payloadData.surveyorName || '',
             caste: payloadData.caste || '',
             isBpl: payloadData.isBpl || payloadData.isBPL || '',
-            totalMembers: Number(payloadData.totalMembers || 0),
+            totalMembers,
             eldersCount: parseInt(String(payloadData.elderly || payloadData.eldersCount || 0).replace(/[^0-9]/g,"")) || 0,
             childrenCount: parseInt(String(payloadData.children || payloadData.childrenCount || 0).replace(/[^0-9]/g,"")) || 0,
             womenCount: parseInt(String(payloadData.women || payloadData.womenCount || 0).replace(/[^0-9]/g,"")) || 0,
@@ -321,7 +326,7 @@ export async function saveHouseholdSurvey(req: FastifyRequest, reply: FastifyRep
             surveyorName: payloadData.surveyorName || '',
             caste: payloadData.caste || '',
             isBpl: payloadData.isBpl || payloadData.isBPL || '',
-            totalMembers: Number(payloadData.totalMembers || 0),
+            totalMembers,
             eldersCount: parseInt(String(payloadData.elderly || payloadData.eldersCount || 0).replace(/[^0-9]/g,"")) || 0,
             childrenCount: parseInt(String(payloadData.children || payloadData.childrenCount || 0).replace(/[^0-9]/g,"")) || 0,
             womenCount: parseInt(String(payloadData.women || payloadData.womenCount || 0).replace(/[^0-9]/g,"")) || 0,

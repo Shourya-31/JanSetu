@@ -291,7 +291,7 @@ model HouseholdSurvey {
   // ── Demography (HouseholdDemography.tsx) ──────────────────
   caste       String  @default("")
   isBpl       String  @default("") @map("is_bpl")        // हाँ / नहीं
-  totalMembers Int    @default(0) @map("total_members")
+  totalMembers Int?   @map("total_members")
   eldersCount Int     @default(0) @map("elders_count")    // बुजुर्ग
   childrenCount Int   @default(0) @map("children_count")
   womenCount  Int     @default(0) @map("women_count")

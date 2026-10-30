@@ -1,21 +1,23 @@
 
 import { useMemo, useState } from "react";
 import { ChevronRight, FileQuestion, ArrowLeft } from "lucide-react";
+import { SurveyAnalysisControls } from "./SurveyAnalysisControls";
+import { useAdminSurveyAnalysis } from "./useAdminSurveyAnalysis";
 
 type HouseholdRecord = Record<string, unknown> & {
+  id?: string;
+  isCompleted?: boolean;
+  completed?: boolean;
   houseNumber?: number | string;
   headName?: string;
   mobileNumber?: string;
   villageName?: string;
   blockName?: string;
   panchayatName?: string;
-  totalMembers?: number | string;
-  direct?: number | string;
-  indirect?: number | string;
+  totalMembers?: number | string | null;
 };
 
 type Props = {
-  households: HouseholdRecord[];
   onBack?: () => void;
 };
 
@@ -212,99 +214,6 @@ const asText = (value: unknown): string =>
 const isAnswered = (value: unknown): boolean =>
   Array.isArray(value) ? value.length > 0 : asText(value) !== "";
 
-// UI testing ke liye sample records.
-// Ye asli survey data nahi hain.
-const SAMPLE_HOUSEHOLDS: HouseholdRecord[] = [
-  {
-    blockName: "ओरछा",
-    panchayatName: "ओरछा ग्राम पंचायत",
-    villageName: "ओरछा",
-    houseNumber: "001",
-    headName: "मंगू राम",
-    mobileNumber: "9000000001",
-    totalMembers: 5,
-    direct: 12,
-    indirect: 8,
-    noAadhaarMembers: 3,
-    noCasteCertificateMembers: 2,
-    noAyushmanMembers: 1,
-    noVoterIdMembers: 2,
-    noShramikCardMembers: 1,
-  },
-  {
-    blockName: "ओरछा",
-    panchayatName: "ओरछा ग्राम पंचायत",
-    villageName: "ओरछा",
-    houseNumber: "002",
-    headName: "सोमरी बाई",
-    mobileNumber: "9000000002",
-    totalMembers: 4,
-    noAadhaarMembers: 1,
-    noCasteCertificateMembers: 0,
-    noAyushmanMembers: 2,
-    noVoterIdMembers: 1,
-    noShramikCardMembers: 2,
-  },
-  {
-    blockName: "ओरछा",
-    panchayatName: "धनोरा ग्राम पंचायत",
-    villageName: "धनोरा",
-    houseNumber: "003",
-    headName: "लखमा राम",
-    mobileNumber: "9000000003",
-    totalMembers: 6,
-    noAadhaarMembers: 2,
-    noCasteCertificateMembers: 1,
-    noAyushmanMembers: 3,
-    noVoterIdMembers: 2,
-    noShramikCardMembers: 1,
-  },
-  {
-    blockName: "नारायणपुर",
-    panchayatName: "बेनूर ग्राम पंचायत",
-    villageName: "बेनूर",
-    houseNumber: "001",
-    headName: "राम सिंह",
-    mobileNumber: "9000000004",
-    totalMembers: 5,
-    direct: 18,
-    indirect: 9,
-    noAadhaarMembers: 2,
-    noCasteCertificateMembers: 1,
-    noAyushmanMembers: 2,
-    noVoterIdMembers: 1,
-    noShramikCardMembers: 2,
-  },
-  {
-    blockName: "नारायणपुर",
-    panchayatName: "बेनूर ग्राम पंचायत",
-    villageName: "बेनूर",
-    houseNumber: "002",
-    headName: "कमला बाई",
-    mobileNumber: "9000000005",
-    totalMembers: 3,
-    noAadhaarMembers: 1,
-    noCasteCertificateMembers: 1,
-    noAyushmanMembers: 1,
-    noVoterIdMembers: 0,
-    noShramikCardMembers: 1,
-  },
-  {
-    blockName: "नारायणपुर",
-    panchayatName: "छोटेडोंगर ग्राम पंचायत",
-    villageName: "छोटेडोंगर",
-    houseNumber: "003",
-    headName: "भीमा राम",
-    mobileNumber: "9000000006",
-    totalMembers: 7,
-    noAadhaarMembers: 4,
-    noCasteCertificateMembers: 2,
-    noAyushmanMembers: 3,
-    noVoterIdMembers: 2,
-    noShramikCardMembers: 3,
-  },
-];
-
 function QuestionRow({
   metric,
   onClick,
@@ -333,19 +242,19 @@ function QuestionRow({
 function QuestionDetailPage({
   metric,
   households,
-  isSampleData,
   onBack,
 }: {
   metric: Metric;
   households: HouseholdRecord[];
-  isSampleData: boolean;
   onBack: () => void;
 }) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [selectedVillage, setSelectedVillage] = useState<string | null>(null);
   const [selectedPanchayat, setSelectedPanchayat] = useState<string | null>(null);
 
-  const blocks = ["नारायणपुर", "ओरछा"];
+  const blocks = Array.from(
+    new Set(households.map((household) => asText(household.blockName)).filter(Boolean)),
+  );
 
   const blockHouseholds = households.filter(
     (household) => asText(household.blockName) === selectedBlock
@@ -431,11 +340,9 @@ function QuestionDetailPage({
         {(selectedBlock || selectedVillage) && (
           <p className="mt-1 text-sm text-gray-500">{metric.label}</p>
         )}
-        {isSampleData && (
-          <p className="mt-2 text-sm text-orange-600">
-            यह केवल UI जाँचने के लिए sample data है, वास्तविक सर्वेक्षण डेटा नहीं।
-          </p>
-        )}
+        <p className="mt-2 text-sm text-slate-500">
+          प्रश्न का सारांश वर्तमान सर्वर-पेज के वास्तविक रिकॉर्ड पर आधारित है।
+        </p>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
@@ -459,8 +366,8 @@ function QuestionDetailPage({
             ) : (
               <tr>
                 <th className="border-b px-5 py-3 font-semibold">ब्लॉक</th>
-                <th className="border-b px-5 py-3 font-semibold">Direct</th>
-                <th className="border-b px-5 py-3 font-semibold">Indirect</th>
+                <th className="border-b px-5 py-3 font-semibold">उत्तर वाले परिवार</th>
+                <th className="border-b px-5 py-3 font-semibold">इस पेज के रिकॉर्ड</th>
                 <th className="border-b px-5 py-3 text-right font-semibold">
                   विवरण
                 </th>
@@ -532,32 +439,17 @@ function QuestionDetailPage({
                 const records = households.filter(
                   (household) => asText(household.blockName) === block
                 );
-
-                const sumField = (field: "direct" | "indirect") => {
-                  const values = records
-                    .map((household) => household[field])
-                    .filter(
-                      (value) =>
-                        value !== undefined &&
-                        value !== null &&
-                        value !== ""
-                    );
-
-                  if (values.length === 0) return "—";
-
-                  return values.reduce(
-                    (sum, value) => sum + (Number(value) || 0),
-                    0
-                  );
-                };
+                const answered = records.filter((household) =>
+                  isAnswered(household[metric.key]),
+                ).length;
 
                 return (
                   <tr key={block} className="hover:bg-gray-50">
                     <td className="border-b px-5 py-3 font-medium">
                       ब्लॉक: {block}
                     </td>
-                    <td className="border-b px-5 py-3">{sumField("direct")}</td>
-                    <td className="border-b px-5 py-3">{sumField("indirect")}</td>
+                    <td className="border-b px-5 py-3">{answered}</td>
+                    <td className="border-b px-5 py-3">{records.length}</td>
                     <td className="border-b px-5 py-3 text-right">
                       <button
                         type="button"
@@ -579,43 +471,83 @@ function QuestionDetailPage({
 }
 
 export default function HouseholdSurveyAnalysis({
-  households,
   onBack,
 }: Props) {
   const [pageIndex, setPageIndex] = useState(0);
-  const [search, setSearch] = useState("");
   const [selectedMetric, setSelectedMetric] = useState<Metric | null>(null);
-
-  const safeHouseholds = Array.isArray(households) ? households : [];
-
-  const filteredHouseholds = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) return safeHouseholds;
-
-    return safeHouseholds.filter((household) =>
-      [
-        household.headName,
-        household.houseNumber,
-        household.villageName,
-        household.panchayatName,
-        household.blockName,
-        household.mobileNumber,
-      ].some((value) => asText(value).toLowerCase().includes(query))
-    );
-  }, [safeHouseholds, search]);
+  const analysis = useAdminSurveyAnalysis<HouseholdRecord>("households");
+  const safeHouseholds = analysis.result?.records ?? [];
+  const stats = analysis.result?.stats;
 
   const currentPage = pages[pageIndex];
-
-  const recordedHouseholds = safeHouseholds.filter(
-    (household) =>
-      isAnswered(household.headName) ||
-      isAnswered(household.totalMembers)
-  ).length;
+  const filters = (
+    <SurveyAnalysisControls
+      kind="households"
+      {...analysis}
+      onRefresh={analysis.retry}
+    />
+  );
+  const retryMessage = analysis.error || analysis.hierarchyError;
+  const statusView = (
+    <>
+      {retryMessage && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+        >
+          <span>{retryMessage}</span>
+          <button
+            type="button"
+            onClick={analysis.retry}
+            className="rounded-md border border-rose-300 px-3 py-1.5 font-semibold hover:bg-white"
+          >
+            फिर कोशिश करें
+          </button>
+        </div>
+      )}
+      {analysis.loading && (
+        <p role="status" className="text-sm text-slate-500">
+          परिवार सर्वे रिकॉर्ड लोड हो रहे हैं...
+        </p>
+      )}
+      {!analysis.loading && !analysis.error && safeHouseholds.length === 0 && (
+        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-slate-500">
+          चुने गए फ़िल्टर में कोई परिवार सर्वे रिकॉर्ड नहीं मिला।
+        </p>
+      )}
+    </>
+  );
+  const pagination = (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+      <p className="text-sm text-slate-500">
+        कुल {analysis.result?.total ?? 0} रिकॉर्ड · पेज{" "}
+        {analysis.page} / {Math.max(analysis.result?.totalPages ?? 0, 1)}
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={analysis.page <= 1 || analysis.loading}
+          onClick={() => analysis.setPage(analysis.page - 1)}
+          className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+        >
+          पिछला
+        </button>
+        <button
+          type="button"
+          disabled={
+            analysis.page >= (analysis.result?.totalPages ?? 0) ||
+            analysis.loading
+          }
+          onClick={() => analysis.setPage(analysis.page + 1)}
+          className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+        >
+          अगला
+        </button>
+      </div>
+    </div>
+  );
 
   if (selectedMetric) {
-    const useSampleData = safeHouseholds.length === 0;
-
     return (
       <div className="space-y-6">
         <div>
@@ -626,13 +558,14 @@ export default function HouseholdSurveyAnalysis({
             विश्लेषण शुरू करने के लिए सर्वे प्रश्न चुनें।
           </p>
         </div>
-
+        {filters}
+        {statusView}
         <QuestionDetailPage
           metric={selectedMetric}
-          households={useSampleData ? SAMPLE_HOUSEHOLDS : safeHouseholds}
-          isSampleData={useSampleData}
+          households={safeHouseholds}
           onBack={() => setSelectedMetric(null)}
         />
+        {pagination}
       </div>
     );
   }
@@ -642,10 +575,10 @@ export default function HouseholdSurveyAnalysis({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Survey Analysis
+            Household Analysis
           </h1>
           <p className="mt-1 text-gray-500">
-            विश्लेषण शुरू करने के लिए सर्वे का प्रकार चुनें।
+            प्रश्न चुनें और ब्लॉक से ग्राम पंचायत, गाँव एवं परिवार-वार उत्तरों का विश्लेषण देखें।
           </p>
         </div>
 
@@ -660,44 +593,42 @@ export default function HouseholdSurveyAnalysis({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {filters}
+      {statusView}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <p className="text-sm text-gray-500">कुल परिवार रिकॉर्ड</p>
           <p className="mt-2 text-2xl font-bold text-gray-900">
-            {safeHouseholds.length}
+            {stats?.total ?? 0}
           </p>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <p className="text-sm text-gray-500">दर्ज परिवार</p>
+          <p className="text-sm text-gray-500">पूर्ण सर्वेक्षण</p>
           <p className="mt-2 text-2xl font-bold text-gray-900">
-            {recordedHouseholds}
+            {stats?.completed ?? 0}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <p className="text-sm text-gray-500">अपूर्ण सर्वेक्षण</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">
+            {stats?.incomplete ?? 0}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <p className="text-sm text-gray-500">पूर्णता प्रतिशत</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">
+            {stats?.completionPercent ?? 0}%
           </p>
         </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <label
-          htmlFor="household-search"
-          className="mb-2 block text-sm font-medium text-gray-700"
-        >
-          परिवार खोजें
-        </label>
-
-        <input
-          id="household-search"
-          type="text"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="मुखिया, मकान नंबर, मोबाइल, गाँव या ब्लॉक खोजें..."
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
-
-        <p className="mt-2 text-sm text-gray-500">
-          मिले हुए रिकॉर्ड: {filteredHouseholds.length}
+        <p className="text-sm text-gray-500">
+          इस पेज पर रिकॉर्ड: {safeHouseholds.length}
         </p>
-
-        {filteredHouseholds.length > 0 ? (
+        {safeHouseholds.length > 0 && (
           <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full border-collapse text-left">
               <thead className="bg-gray-50">
@@ -709,12 +640,13 @@ export default function HouseholdSurveyAnalysis({
                   <th className="border-b px-4 py-3">ग्राम पंचायत</th>
                   <th className="border-b px-4 py-3">गाँव</th>
                   <th className="border-b px-4 py-3">सदस्य</th>
+                  <th className="border-b px-4 py-3">स्थिति</th>
                 </tr>
               </thead>
 
               <tbody>
-                {filteredHouseholds.map((household, index) => (
-                  <tr key={`${asText(household.houseNumber)}-${index}`}>
+                {safeHouseholds.map((household, index) => (
+                  <tr key={household.id ?? `${asText(household.houseNumber)}-${index}`}>
                     <td className="border-b px-4 py-3">
                       {asText(household.houseNumber) || "—"}
                     </td>
@@ -736,16 +668,16 @@ export default function HouseholdSurveyAnalysis({
                     <td className="border-b px-4 py-3">
                       {asText(household.totalMembers) || "—"}
                     </td>
+                    <td className="border-b px-4 py-3">
+                      {household.isCompleted ? "पूर्ण" : "अपूर्ण"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
-          <p className="py-8 text-center text-sm text-gray-500">
-            कोई परिवार रिकॉर्ड उपलब्ध नहीं है।
-          </p>
         )}
+        {pagination}
       </div>
 
       <div className="space-y-4">

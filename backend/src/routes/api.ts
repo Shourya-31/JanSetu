@@ -7,6 +7,7 @@ import { exportHouseholdsCsv } from '../controllers/exportController';
 import { getAdminSurveys, getAdminGramStats } from '../controllers/adminReportController';
 import { getStatisticalAnalysis } from '../controllers/statisticalAnalysisController';
 import { getStatisticalAnalysisDetails } from '../controllers/statisticalAnalysisDetailsController';
+import { getHouseholdSurveyAnalysis, getVillageSurveyAnalysis } from '../controllers/surveyAnalysisController';
 import { getAdminHierarchy, getHierarchy } from '../controllers/hierarchyController';
 import { getSurveyAuditLogs } from '../controllers/auditController';
 import { uploadImage } from '../controllers/uploadController';
@@ -271,6 +272,26 @@ export async function apiRoutes(fastify: FastifyInstance, options: FastifyPlugin
     ...adminOnly,
     schema: { querystring: emptyQuerySchema }
   }, getAdminGramStats);
+
+  const surveyAnalysisQuery = (sortByValues: string[]) => querySchema({
+    blockId: { type: 'string', pattern: '^[1-9][0-9]{0,7}$' },
+    panchayatId: { type: 'string', pattern: '^[1-9][0-9]{0,7}$' },
+    villageId: { type: 'string', pattern: '^[1-9][0-9]{0,9}$' },
+    page: { type: 'integer', minimum: 1, maximum: 1000000 },
+    pageSize: { type: 'integer', minimum: 1, maximum: 100 },
+    search: { type: 'string', maxLength: 200 },
+    status: { type: 'string', enum: ['all', 'completed', 'incomplete', 'pending'] },
+    sortBy: { type: 'string', enum: sortByValues },
+    sortOrder: { type: 'string', enum: ['asc', 'desc'] }
+  });
+  fastify.get('/api/admin/survey-analysis/villages', {
+    ...adminOnly,
+    schema: { querystring: surveyAnalysisQuery(['name', 'affectedStatus']) }
+  }, getVillageSurveyAnalysis);
+  fastify.get('/api/admin/survey-analysis/households', {
+    ...adminOnly,
+    schema: { querystring: surveyAnalysisQuery(['houseNumber', 'headName', 'submittedAt', 'status']) }
+  }, getHouseholdSurveyAnalysis);
   
   fastify.post('/api/admin/query', {
     ...adminOnly,

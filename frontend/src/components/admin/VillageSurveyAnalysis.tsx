@@ -5,8 +5,9 @@ import {
   FileQuestion,
   MapPinned,
   Search,
-  Layers3,
 } from "lucide-react";
+import { SurveyAnalysisControls } from "./SurveyAnalysisControls";
+import { useAdminSurveyAnalysis } from "./useAdminSurveyAnalysis";
 
 type QuestionType = "count" | "yesno" | "choice" | "text";
 
@@ -193,19 +194,20 @@ const sections: Section[] = [
 ];
 
 export type VillageSurveyRecord = Record<string, unknown> & {
+  id?: number;
+  blockId?: number;
+  panchayatId?: number;
+  villageId?: number;
   blockName?: string;
   panchayatName?: string;
   villageName?: string;
   affectedStatus?: string;
+  surveyStatus?: "completed" | "incomplete" | "pending";
+  isCompleted?: boolean;
+  progress?: number;
   formData?: Record<string, unknown>;
   data?: Record<string, unknown>;
 };
-
-type Props = {
-  surveys?: VillageSurveyRecord[];
-};
-
-const BLOCKS = ["नारायणपुर", "ओरछा"];
 
 const textValue = (value: unknown) =>
   value == null ? "" : String(value).trim();
@@ -279,10 +281,10 @@ const numericValue = (value: unknown): number | null => {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 };
-export default function VillageSurveyAnalysis({
-  surveys = [],
-}: Props) {
-  const [search, setSearch] = useState("");
+export default function VillageSurveyAnalysis() {
+  const analysis = useAdminSurveyAnalysis<VillageSurveyRecord>("villages");
+  const surveys = analysis.result?.records ?? [];
+  const [questionSearch, setQuestionSearch] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState("all");
   const [selectedQuestion, setSelectedQuestion] = useState<{
     section: Section;
@@ -311,7 +313,7 @@ export default function VillageSurveyAnalysis({
   ];
 
   const filteredQuestions = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase("hi");
+    const term = questionSearch.trim().toLocaleLowerCase("hi");
 
     return allQuestions.filter(({ section, question }) => {
       const matchesSection =
@@ -325,7 +327,7 @@ export default function VillageSurveyAnalysis({
 
       return matchesSection && matchesSearch;
     });
-  }, [allQuestions, search, selectedSectionId]);
+  }, [allQuestions, questionSearch, selectedSectionId]);
 
   const visibleSections = sections
     .filter((section) =>
@@ -452,8 +454,11 @@ export default function VillageSurveyAnalysis({
     ),
   });
 
+  const blocks = Array.from(
+    new Set(surveys.map((record) => normalizeBlock(record.blockName)).filter(Boolean)),
+  );
   const blockRows = selectedQuestion
-    ? BLOCKS.map((block) => {
+    ? blocks.map((block) => {
         const records = surveys.filter(
           (record) => normalizeBlock(record.blockName) === block
         );
@@ -503,6 +508,7 @@ export default function VillageSurveyAnalysis({
       : [];
 
   const hasAnyFilteredQuestions = filteredQuestions.length > 0;
+  const stats = analysis.result?.stats;
 
   return (
     <div className="space-y-5 text-slate-900">
@@ -536,31 +542,116 @@ export default function VillageSurveyAnalysis({
         </div>
       </header>
 
+      <SurveyAnalysisControls
+        kind="villages"
+        {...analysis}
+        onRefresh={analysis.retry}
+      />
+
+      {(analysis.error || analysis.hierarchyError) && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+        >
+          <span>{analysis.error || analysis.hierarchyError}</span>
+          <button
+            type="button"
+            onClick={analysis.retry}
+            className="rounded-md border border-rose-300 px-3 py-1.5 font-semibold hover:bg-white"
+          >
+            फिर कोशिश करें
+          </button>
+        </div>
+      )}
+      {analysis.loading && (
+        <p role="status" className="text-sm text-slate-500">
+          ग्राम सर्वे रिकॉर्ड लोड हो रहे हैं...
+        </p>
+      )}
+
       {!selectedQuestion ? (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border bg-white p-4">
-              <Layers3 className="mb-3 h-5 w-5 text-blue-600" />
-              <p className="text-sm text-slate-500">सर्वे अनुभाग</p>
+              <MapPinned className="mb-3 h-5 w-5 text-blue-600" />
+              <p className="text-sm text-slate-500">कुल गाँव</p>
               <p className="mt-1 text-2xl font-bold">
-                {sections.length}
+                {stats?.total ?? 0}
               </p>
             </div>
 
             <div className="rounded-xl border bg-white p-4">
               <FileQuestion className="mb-3 h-5 w-5 text-violet-600" />
-              <p className="text-sm text-slate-500">प्रश्न सूची</p>
+              <p className="text-sm text-slate-500">पूर्ण ग्राम सर्वे</p>
               <p className="mt-1 text-2xl font-bold">
-                {allQuestions.length}
+                {stats?.completed ?? 0}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-white p-4">
+              <FileQuestion className="mb-3 h-5 w-5 text-amber-600" />
+              <p className="text-sm text-slate-500">अपूर्ण ग्राम सर्वे</p>
+              <p className="mt-1 text-2xl font-bold">
+                {stats?.incomplete ?? 0}
               </p>
             </div>
 
             <div className="rounded-xl border bg-white p-4">
               <MapPinned className="mb-3 h-5 w-5 text-emerald-600" />
-              <p className="text-sm text-slate-500">विश्लेषण स्तर</p>
-              <p className="mt-1 text-2xl font-bold">2</p>
+              <p className="text-sm text-slate-500">लंबित / शुरू नहीं हुए</p>
+              <p className="mt-1 text-2xl font-bold">
+                {stats?.pending ?? 0}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                पूर्णता {stats?.completionPercent ?? 0}%
+              </p>
             </div>
           </div>
+
+          <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="border-b px-4 py-3">गाँव</th>
+                  <th className="border-b px-4 py-3">ब्लॉक / ग्राम पंचायत</th>
+                  <th className="border-b px-4 py-3">प्रभावित स्थिति</th>
+                  <th className="border-b px-4 py-3">सर्वे स्थिति</th>
+                  <th className="border-b px-4 py-3">प्रगति</th>
+                </tr>
+              </thead>
+              <tbody>
+                {surveys.map((record, index) => (
+                  <tr key={record.id ?? `${record.villageName}-${index}`}>
+                    <td className="border-b px-4 py-3 font-medium">
+                      {textValue(record.villageName) || "—"}
+                    </td>
+                    <td className="border-b px-4 py-3">
+                      {textValue(record.blockName)} / {textValue(record.panchayatName)}
+                    </td>
+                    <td className="border-b px-4 py-3">
+                      {textValue(record.affectedStatus) || "—"}
+                    </td>
+                    <td className="border-b px-4 py-3">
+                      {record.surveyStatus === "completed"
+                        ? "पूर्ण"
+                        : record.surveyStatus === "incomplete"
+                          ? "अपूर्ण"
+                          : "लंबित"}
+                    </td>
+                    <td className="border-b px-4 py-3">
+                      {Number(record.progress ?? 0)}%
+                    </td>
+                  </tr>
+                ))}
+                {!analysis.loading && surveys.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                      चुने गए फ़िल्टर में कोई ग्राम रिकॉर्ड नहीं मिला।
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_260px]">
@@ -568,9 +659,9 @@ export default function VillageSurveyAnalysis({
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
                 <input
-                  value={search}
+                  value={questionSearch}
                   onChange={(event) => {
-                    setSearch(event.target.value);
+                    setQuestionSearch(event.target.value);
                     setCurrentPage(1);
                   }}
                   placeholder="प्रश्न खोजें..."
@@ -817,11 +908,37 @@ export default function VillageSurveyAnalysis({
           </div>
 
           <p className="text-xs text-slate-500">
-            परिणाम उपलब्ध frontend survey data से calculate होंगे।
-            डेटा उपलब्ध न होने पर अनुमानित संख्या नहीं दिखाई जाएगी।
+            प्रश्न के उत्तर इस समय प्रदर्शित सर्वर-पेज के रिकॉर्ड से calculate होते हैं।
           </p>
         </section>
       )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+        <p className="text-sm text-slate-500">
+          कुल {analysis.result?.total ?? 0} रिकॉर्ड · पेज {analysis.page} /{" "}
+          {Math.max(analysis.result?.totalPages ?? 0, 1)}
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={analysis.page <= 1 || analysis.loading}
+            onClick={() => analysis.setPage(analysis.page - 1)}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+          >
+            पिछला
+          </button>
+          <button
+            type="button"
+            disabled={
+              analysis.page >= (analysis.result?.totalPages ?? 0) ||
+              analysis.loading
+            }
+            onClick={() => analysis.setPage(analysis.page + 1)}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
+          >
+            अगला
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
