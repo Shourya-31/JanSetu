@@ -609,7 +609,8 @@ function QuestionDetailPage({
               ) : (
                 <tr>
                   <th className="px-5 py-3 font-semibold">ब्लॉक</th>
-                  <th className="px-5 py-3 font-semibold">उत्तर / कमी की संख्या</th>
+                  <th className="px-5 py-3 font-semibold">Direct Affected</th>
+                  <th className="px-5 py-3 font-semibold">Indirect Affected</th>
                   <th className="px-5 py-3 text-right font-semibold">विवरण</th>
                 </tr>
               )}
@@ -654,13 +655,14 @@ function QuestionDetailPage({
               ) : blockRows.length ? blockRows.map((row) => (
                 <tr key={row.name} className="transition hover:bg-blue-50/60">
                   <td className="px-5 py-4 font-semibold text-slate-800">{row.name}</td>
-                  <td className="px-5 py-4 font-semibold">{totalCount(row)}</td>
+                  <td className="px-5 py-4 font-semibold">{row.direct}</td>
+                  <td className="px-5 py-4 font-semibold">{row.indirect}</td>
                   <td className="px-5 py-4 text-right">
                     <button type="button" onClick={() => setSelectedBlock(row.name)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-gray-500">इस प्रश्न के लिए कोई कमी वाला रिकॉर्ड उपलब्ध नहीं है।</td></tr>
+                <tr><td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-500">इस प्रश्न के लिए कोई कमी वाला रिकॉर्ड उपलब्ध नहीं है।</td></tr>
               )}
             </tbody>
           </table>
