@@ -1,5 +1,6 @@
 ﻿import {
   Component,
+  useEffect,
   useState,
   type ErrorInfo,
   type ReactNode,
@@ -19,9 +20,7 @@ import {
 
 import { AdminSurveyWorkspace } from "./AdminSurveyWorkspace";
 
-import HouseholdSurveyAnalysis, {
-  type HouseholdAnalysisRecord,
-} from "./HouseholdSurveyAnalysis";
+import HouseholdSurveyAnalysis from "./HouseholdSurveyAnalysis";
 
 import { StatisticalAnalysisPage } from "./StatisticalAnalysisPage";
 
@@ -31,6 +30,12 @@ import {
   liveAdminReportService,
   type AdminReportService,
 } from "../../services/adminReportService";
+import {
+  fetchHouseholdSurveyAnalysis,
+  fetchVillageSurveyAnalysis,
+  type HouseholdSurveyAnalysisRecord,
+  type VillageSurveyAnalysisRecord,
+} from "../../services/surveyAnalysisApi";
 
 type DashboardPage =
   | "analytics"
@@ -40,28 +45,57 @@ type DashboardPage =
 
 type SurveyType = "household" | "village";
 
-function HouseholdAnalysisConnection({
+function SurveyAnalysisConnection({
+  surveyType,
   onBack,
 }: {
-  service: AdminReportService;
+  surveyType: SurveyType;
   onBack: () => void;
 }) {
-  // Dashboard navigation/render integration.
-  // Records are intentionally not mocked; connect the existing all-records
-  // data source here when it is available.
-  const households: HouseholdAnalysisRecord[] = [];
+  const [households, setHouseholds] = useState<HouseholdSurveyAnalysisRecord[]>([]);
+  const [villages, setVillages] = useState<VillageSurveyAnalysisRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  return (
+  useEffect(() => {
+    const controller = new AbortController();
+    const request = surveyType === "household"
+      ? fetchHouseholdSurveyAnalysis(controller.signal).then(setHouseholds)
+      : fetchVillageSurveyAnalysis(controller.signal).then(setVillages);
+
+    void request.then(
+      () => undefined,
+      (reason: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(reason instanceof Error ? reason : new Error(String(reason)));
+        }
+      },
+    ).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+
+    return () => controller.abort();
+  }, [surveyType]);
+
+  return surveyType === "household" ? (
     <HouseholdSurveyAnalysis
       households={households}
+      loading={loading}
+      error={error}
       onBack={onBack}
+    />
+  ) : (
+    <VillageSurveyAnalysis
+      villages={villages}
+      loading={loading}
+      error={error}
     />
   );
 }
 
 /** Dashboard page में render error आने पर recovery UI दिखाता है। */
 class DashboardErrorBoundary extends Component<
-  { children: ReactNode },
+  { children: ReactNode; onRetry?: () => void },
   { hasError: boolean }
 > {
   state = { hasError: false };
@@ -104,7 +138,10 @@ class DashboardErrorBoundary extends Component<
 
               <button
                 type="button"
-                onClick={() => this.setState({ hasError: false })}
+                onClick={() => {
+                  this.props.onRetry?.();
+                  this.setState({ hasError: false });
+                }}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
               >
                 <RotateCcw size={16} aria-hidden="true" />
@@ -128,8 +165,9 @@ export function AdminDashboard({
   onLogout: () => void;
   service?: AdminReportService;
 }) {
-  const [page, setPage] = useState<DashboardPage>("analytics");
+  const [page, setPage] = useState<DashboardPage>("statistical-analysis");
   const [surveyType, setSurveyType] = useState<SurveyType | null>(null);
+  const [analysisRetry, setAnalysisRetry] = useState(0);
 
   const tabs: {
     id: DashboardPage;
@@ -137,9 +175,9 @@ export function AdminDashboard({
     Icon: typeof BarChart3;
   }[] = [
     {
-      id: "analytics",
-      label: "Analytics",
-      Icon: BarChart3,
+      id: "statistical-analysis",
+      label: "Statistical Analysis",
+      Icon: TableProperties,
     },
     {
       id: "survey-analysis",
@@ -147,9 +185,9 @@ export function AdminDashboard({
       Icon: House,
     },
     {
-      id: "statistical-analysis",
-      label: "Statistical Analysis",
-      Icon: TableProperties,
+      id: "analytics",
+      label: "Analytics",
+      Icon: BarChart3,
     },
     {
       id: "reports",
@@ -224,9 +262,10 @@ export function AdminDashboard({
         <DashboardErrorBoundary
           key={
             page === "survey-analysis"
-              ? `survey-analysis-${surveyType ?? "choose"}`
+              ? `survey-analysis-${surveyType ?? "choose"}-${analysisRetry}`
               : page
           }
+          onRetry={() => setAnalysisRetry((attempt) => attempt + 1)}
         >
           {page === "statistical-analysis" ? (
             <StatisticalAnalysisPage />
@@ -267,8 +306,8 @@ export function AdminDashboard({
               )}
 
               {surveyType === "household" ? (
-                <HouseholdAnalysisConnection
-                  service={service}
+                <SurveyAnalysisConnection
+                  surveyType="household"
                   onBack={() => setSurveyType(null)}
                 />
               ) : surveyType === "village" ? (
@@ -282,7 +321,10 @@ export function AdminDashboard({
                     सर्वे प्रकार चुनें
                   </button>
 
-                  <VillageSurveyAnalysis />
+                  <SurveyAnalysisConnection
+                    surveyType="village"
+                    onBack={() => setSurveyType(null)}
+                  />
                 </section>
               ) : (
                 <>

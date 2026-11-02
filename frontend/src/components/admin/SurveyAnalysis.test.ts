@@ -2,94 +2,55 @@ import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { offlineAdminReportService } from "../../services/adminReportService";
 import HouseholdSurveyAnalysis from "./HouseholdSurveyAnalysis";
 import VillageSurveyAnalysis from "./VillageSurveyAnalysis";
 import { AdminDashboard } from "./AdminDashboard";
 
-const hierarchy = [
+const villageRecords = [
   {
-    id: "3",
+    id: 21,
+    blockId: 3,
+    panchayatId: 7,
+    villageId: 21,
     blockName: "नारायणपुर",
-    blockNameEnglish: "Narayanpur",
-    panchayats: [
-      {
-        id: "7",
-        name: "परीक्षण पंचायत",
-        nameEnglish: "Test Panchayat",
-        villages: [
-          {
-            id: "21",
-            nameHindi: "परीक्षण गाँव",
-            nameEnglish: "Test Village",
-            action: "Direct Affected",
-            population: 100,
-            surveyStatus: "completed" as const,
-          },
-        ],
-      },
-    ],
+    panchayatName: "परीक्षण पंचायत",
+    villageName: "परीक्षण गाँव",
+    affectedStatus: "Direct Affected",
+    isCompleted: true,
+    data: { fairPriceShop: "नहीं", surveyData: { fairPriceShop: "नहीं" } },
+  },
+  {
+    id: 22,
+    blockId: 3,
+    panchayatId: 7,
+    villageId: 22,
+    blockName: "नारायणपुर",
+    panchayatName: "परीक्षण पंचायत",
+    villageName: "दूसरा गाँव",
+    affectedStatus: "Indirect Affected",
+    isCompleted: true,
+    data: { fairPriceShop: "हाँ", surveyData: { fairPriceShop: "हाँ" } },
   },
 ];
 
-const villageResponse = {
-  records: [
-    {
-      id: 21,
-      blockId: 3,
-      panchayatId: 7,
-      villageId: 21,
-      blockName: "नारायणपुर",
-      panchayatName: "परीक्षण पंचायत",
-      villageName: "परीक्षण गाँव",
-      affectedStatus: "Direct Affected",
-      surveyStatus: "completed",
-      isCompleted: true,
-      progress: 100,
-      totalPopulation: 100,
-      data: { totalPopulation: 100 },
-    },
-  ],
-  page: 1,
-  pageSize: 25,
-  total: 1,
-  totalPages: 2,
-  stats: {
-    total: 1,
-    completed: 1,
-    incomplete: 0,
-    pending: 0,
-    completionPercent: 100,
+const householdRecords = [
+  {
+    id: "house-8",
+    houseNumber: 8,
+    headName: "परीक्षण परिवार",
+    mobile: "9000000000",
+    totalMembers: null,
+    rationCard: "नहीं",
+    blockId: 3,
+    panchayatId: 7,
+    villageId: 21,
+    blockName: "नारायणपुर",
+    panchayatName: "परीक्षण पंचायत",
+    villageName: "परीक्षण गाँव",
+    affectedStatus: "Indirect Affected",
   },
-};
-
-const householdResponse = {
-  records: [
-    {
-      id: "house-8",
-      houseNumber: 8,
-      headName: "परीक्षण परिवार",
-      mobile: "9000000000",
-      mobileNumber: "9000000000",
-      totalMembers: null,
-      isCompleted: true,
-      completed: true,
-      blockName: "नारायणपुर",
-      panchayatName: "परीक्षण पंचायत",
-      villageName: "परीक्षण गाँव",
-    },
-  ],
-  page: 1,
-  pageSize: 25,
-  total: 2,
-  totalPages: 1,
-  stats: {
-    total: 2,
-    completed: 1,
-    incomplete: 1,
-    pending: 1,
-    completionPercent: 50,
-  },
-};
+];
 
 describe("admin survey analysis", () => {
   let dom: JSDOM;
@@ -107,24 +68,12 @@ describe("admin survey analysis", () => {
     document.body.appendChild(container);
     root = createRoot(container);
     requestedUrls = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        requestedUrls.push(url);
-        const payload = url.includes("/api/admin/hierarchy")
-          ? hierarchy
-          : url.includes("/villages")
-            ? villageResponse
-            : householdResponse;
-        return new Response(JSON.stringify(payload), { status: 200 });
-      }),
-    );
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
     dom.window.close();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -135,108 +84,98 @@ describe("admin survey analysis", () => {
     });
   }
 
-  it("opens on Survey Analysis and keeps Analytics as the secondary navigation option", async () => {
-    await render(
-      createElement(AdminDashboard, {
-        adminId: "admin-1",
-        onLogout: vi.fn(),
-      }),
-    );
+  async function click(element: Element | undefined | null) {
+    expect(element).not.toBeNull();
+    await act(async () => {
+      element?.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
 
-    const navigation = container.querySelector('[aria-label="Admin sections"]');
-    const buttons = [...(navigation?.querySelectorAll("button") ?? [])];
-    expect(buttons.map((button) => button.textContent?.trim())).toEqual([
-      "Survey Analysis",
-      "Analytics",
-      "Statistical Analysis",
-      "Reports",
-    ]);
-    expect(buttons[0]?.getAttribute("aria-current")).toBe("page");
-    expect(container.textContent).toContain("विश्लेषण शुरू करने के लिए सर्वे का प्रकार चुनें।");
+  it("opens Statistical Analysis first and places it first in admin navigation", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      officialSource: {
+        sourceFile: "source.pdf",
+        totalEntries: 0,
+        affectedEntries: 0,
+        counts: { directOnly: 0, both: 0, indirectOnly: 0, unaffected: 0 },
+      },
+      blocks: [],
+    }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await render(createElement(AdminDashboard, {
+      adminId: "admin-1",
+      onLogout: vi.fn(),
+      service: offlineAdminReportService,
+    }));
+
+    const tabs = [...container.querySelectorAll("nav button")];
+    expect(tabs[0].textContent).toContain("Statistical Analysis");
+    expect(tabs[1].textContent).toContain("Survey Analysis");
+    expect(tabs[0].getAttribute("aria-current")).toBe("page");
+    expect(container.querySelector("h1#statistical-analysis-title")?.textContent)
+      .toBe("Statistical Analysis");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/admin/statistical-analysis",
+      expect.objectContaining({ credentials: "include" }),
+    );
   });
 
-  it("renders village statuses and sends pagination and location filters to the API", async () => {
-    await render(createElement(VillageSurveyAnalysis));
+  it("uses persisted village answers and keeps the block-to-village hierarchy", async () => {
+    await render(createElement(VillageSurveyAnalysis, { villages: villageRecords }));
 
-    expect(container.textContent).toContain("कुल गाँव");
-    expect(container.textContent).toContain("पूर्ण ग्राम सर्वे");
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("शासकीय उचित मूल्य की दुकान"),
+    ));
+    expect(container.textContent).toContain("1 ब्लॉक");
+    expect(container.textContent).toContain("1");
+
+    await click([...container.querySelectorAll("tbody tr")][0]);
+    expect(container.textContent).toContain("परीक्षण पंचायत");
+    await click([...container.querySelectorAll("tbody tr")][0]);
     expect(container.textContent).toContain("परीक्षण गाँव");
-    expect(container.textContent).toContain("पूर्ण");
-
-    const nextButtons = [...container.querySelectorAll("button")].filter(
-      (button) => button.textContent?.trim() === "अगला",
-    );
-    const recordNextButton = nextButtons[nextButtons.length - 1];
-    expect(recordNextButton).toBeDefined();
-    await act(async () => {
-      recordNextButton?.dispatchEvent(
-        new dom.window.MouseEvent("click", { bubbles: true }),
-      );
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-    expect(requestedUrls.some((url) => url.includes("page=2"))).toBe(true);
-
-    const blockSelect = container.querySelector("select");
-    expect(blockSelect).not.toBeNull();
-    await act(async () => {
-      Object.defineProperty(blockSelect, "value", { value: "3", configurable: true });
-      blockSelect?.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-    expect(requestedUrls.some((url) => url.includes("blockId=3") && url.includes("page=1"))).toBe(true);
+    expect(container.textContent).toContain("नहीं");
+    expect(container.textContent).toContain("प्रत्यक्ष प्रभावित");
   });
 
-  it("renders household data and uses backend completion totals without sample records", async () => {
-    await render(createElement(HouseholdSurveyAnalysis));
+  it("does not invent household records when the database result is empty", async () => {
+    await render(createElement(HouseholdSurveyAnalysis, { households: [] }));
 
-    expect(container.textContent).toContain("कुल परिवार रिकॉर्ड");
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("राशन कार्ड नहीं है"),
+    ));
+    expect(container.textContent).toContain("कोई कमी वाला रिकॉर्ड उपलब्ध नहीं है");
+    expect(container.textContent).not.toContain("अभनपुर");
+    expect(container.textContent).not.toContain("रामलाल");
+  });
+
+  it("maps household answer aliases and drills down using stable location IDs", async () => {
+    await render(createElement(HouseholdSurveyAnalysis, { households: householdRecords }));
+
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("राशन कार्ड नहीं है"),
+    ));
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("खोलें"),
+    ));
+    expect(container.textContent).toContain("परीक्षण गाँव");
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("खोलें"),
+    ));
+    expect(container.textContent).toContain("8");
     expect(container.textContent).toContain("परीक्षण परिवार");
     expect(container.textContent).toContain("9000000000");
-    expect(container.textContent).toContain("पूर्ण");
-    expect(container.textContent).toContain("50%");
-    expect(requestedUrls.some((url) => url.includes("/households?page=1&pageSize=25"))).toBe(true);
+    expect(container.textContent).toContain("नहीं");
+    expect(householdRecords[0].totalMembers).toBeNull();
   });
 
-  it("shows a real empty result without fallback records", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        requestedUrls.push(url);
-        const payload = url.includes("/api/admin/hierarchy")
-          ? hierarchy
-          : {
-              records: [],
-              page: 1,
-              pageSize: 25,
-              total: 0,
-              totalPages: 0,
-              stats: {
-                total: 0,
-                completed: 0,
-                incomplete: 0,
-                pending: 0,
-                completionPercent: 0,
-              },
-            };
-        return new Response(JSON.stringify(payload), { status: 200 });
-      }),
-    );
-    await render(createElement(VillageSurveyAnalysis));
-    expect(container.textContent).toContain("चुने गए फ़िल्टर में कोई ग्राम रिकॉर्ड नहीं मिला।");
-    expect(container.textContent).not.toContain("मंगू राम");
-  });
-
-  it("shows API failures and retries the failed request", async () => {
+  it("loads authenticated API records on dashboard entry and retries failed requests", async () => {
     let villageCalls = 0;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        requestedUrls.push(url);
-        if (url.includes("/api/admin/hierarchy")) {
-          return new Response(JSON.stringify(hierarchy), { status: 200 });
-        }
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      if (url.includes("/villages")) {
         villageCalls += 1;
         if (villageCalls === 1) {
           return new Response(
@@ -244,22 +183,46 @@ describe("admin survey analysis", () => {
             { status: 503 },
           );
         }
-        return new Response(JSON.stringify(villageResponse), { status: 200 });
-      }),
-    );
-    await render(createElement(VillageSurveyAnalysis));
+        return new Response(JSON.stringify({
+          records: villageRecords,
+          page: 1,
+          pageSize: 100,
+          total: villageRecords.length,
+          totalPages: 1,
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
+        records: householdRecords,
+        page: 1,
+        pageSize: 100,
+        total: householdRecords.length,
+        totalPages: 1,
+      }), { status: 200 });
+    }));
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await render(createElement(AdminDashboard, {
+      adminId: "admin-1",
+      onLogout: vi.fn(),
+      service: offlineAdminReportService,
+    }));
+    await click([...container.querySelectorAll("nav button")].find((button) =>
+      button.textContent?.includes("Survey Analysis"),
+    ));
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("ग्राम सर्वे विश्लेषण"),
+    ));
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
-      "Survey API unavailable",
+      "पेज में unexpected error आया है",
     );
-    const retry = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("फिर कोशिश करें"),
-    );
-    expect(retry).toBeDefined();
-    await act(async () => {
-      retry?.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
+    await click([...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("फिर कोशिश करें"),
+    ));
+
     expect(villageCalls).toBe(2);
-    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(requestedUrls.some((url) =>
+      url.includes("/api/admin/survey-analysis/villages?page=1&pageSize=100"),
+    )).toBe(true);
+    expect(container.textContent).toContain("ग्राम सर्वेक्षण विश्लेषण");
   });
 });

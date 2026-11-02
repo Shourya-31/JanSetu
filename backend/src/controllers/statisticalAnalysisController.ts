@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import prisma from '../config/prisma';
 import officialVillageSourceData from '../data/officialVillageAffectedAreas2026.json';
+import { calculateStatisticalBlockMetrics } from '../utils/statisticalAnalysis';
 import { withErrorContext } from '../utils/errors';
 
 const officialSource = officialVillageSourceData as {
@@ -30,32 +31,40 @@ export async function getStatisticalAnalysis(_req: FastifyRequest, reply: Fastif
       orderBy: { id: 'asc' },
       select: {
         id: true,
-        nameHindi: true,
         nameEnglish: true,
-        statisticalAnalysisSummary: true,
-        statisticalAnalysisRefreshQueue: {
-          select: { attempts: true, lastError: true }
+        gramPanchayats: {
+          select: {
+            villages: {
+              select: {
+                id: true,
+                affectedStatus: true,
+                villageSurvey: { select: { isCompleted: true } },
+                households: { select: { isCompleted: true } }
+              }
+            }
+          }
         }
       }
     });
+    const refreshedAt = new Date().toISOString();
 
     return reply.send({
       officialSource: getOfficialSourceSummary(),
       blocks: blocks.map((block) => {
-        const summary = block.statisticalAnalysisSummary;
-        const refreshQueue = block.statisticalAnalysisRefreshQueue;
+        const villages = block.gramPanchayats.flatMap((panchayat) => panchayat.villages);
+        const summary = calculateStatisticalBlockMetrics(villages);
         const isOrcha = /^orch(?:a|ha)\b/i.test(block.nameEnglish.trim());
         const isNarayanpur = /^narayanpur\b/i.test(block.nameEnglish.trim());
 
         return {
           blockId: block.id,
           blockName: isOrcha ? 'Orcha' : isNarayanpur ? 'Narayanpur' : block.nameEnglish,
-          isStale: !summary || summary.isStale || Boolean(refreshQueue),
-          refreshAttempts: refreshQueue?.attempts ?? 0,
-          refreshFailed: Boolean(refreshQueue?.lastError),
-          refreshedAt: summary?.refreshedAt?.toISOString() ?? null,
-          sourceUpdatedAt: summary?.sourceUpdatedAt?.toISOString() ?? null,
-          summary: summary ? {
+          isStale: false,
+          refreshAttempts: 0,
+          refreshFailed: false,
+          refreshedAt,
+          sourceUpdatedAt: null,
+          summary: {
             totalVillages: summary.totalVillages,
             unclassifiedVillages: summary.unclassifiedVillages,
             directVillageCount: summary.directVillageCount,
@@ -74,7 +83,7 @@ export async function getStatisticalAnalysis(_req: FastifyRequest, reply: Fastif
             indirectHouseholdCompleted: summary.indirectHouseholdCompleted,
             indirectVillageHouseholdCompletionPercentSum: summary.indirectVillageHouseholdCompletionPercentSum,
             indirectVillageHouseholdCompletionPercentCount: summary.indirectVillageHouseholdCompletionPercentCount
-          } : null
+          }
         };
       })
     });

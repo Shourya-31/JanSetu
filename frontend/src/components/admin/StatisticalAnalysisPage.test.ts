@@ -119,7 +119,7 @@ describe('StatisticalAnalysisPage', () => {
     expect(container.querySelectorAll('table')).toHaveLength(0);
   });
 
-  it.skipIf(!process.env.JANSETU_LIVE_ANALYSIS_TOKEN)('renders persisted summaries from the live PostgreSQL-backed API', async () => {
+  it.skipIf(!process.env.JANSETU_LIVE_ANALYSIS_TOKEN)('renders calculated metrics from the live PostgreSQL-backed API', async () => {
     const token = process.env.JANSETU_LIVE_ANALYSIS_TOKEN!;
     const nativeFetch = globalThis.fetch;
     const liveResponse = await nativeFetch('http://127.0.0.1:8080/api/admin/statistical-analysis', {

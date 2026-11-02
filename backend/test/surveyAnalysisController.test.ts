@@ -137,6 +137,7 @@ test('household analysis searches house numbers and counts completion from isCom
         village: {
           id: 21,
           nameHindi: 'परीक्षण गाँव',
+          affectedStatus: 'Direct Affected',
           gramPanchayat: {
             id: 7,
             nameHindi: 'परीक्षण पंचायत',
@@ -237,6 +238,7 @@ test('household analysis searches house numbers and counts completion from isCom
     village: {
       id: 21,
       nameHindi: 'परीक्षण गाँव',
+      affectedStatus: 'Direct Affected',
       gramPanchayat: {
         id: 7,
         nameHindi: 'परीक्षण पंचायत',
@@ -244,7 +246,11 @@ test('household analysis searches house numbers and counts completion from isCom
       }
     },
     mobileNumber: '9000000000',
+    blockId: 3,
     villageName: 'परीक्षण गाँव',
+    villageId: 21,
+    affectedStatus: 'Direct Affected',
+    panchayatId: 7,
     panchayatName: 'परीक्षण पंचायत',
     blockName: 'परीक्षण ब्लॉक',
     completed: true,

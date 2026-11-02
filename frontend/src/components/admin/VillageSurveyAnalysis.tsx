@@ -260,14 +260,116 @@ const questionIcons: Record<string, React.ElementType> = {
 
 type Level = "block" | "panchayat" | "village";
 
-export default function VillageSurveyAnalysis() {
+type VillageAnalysisRecord = Record<string, unknown> & {
+  id: number;
+  villageId: number;
+  blockId: number;
+  panchayatId: number;
+  blockName: string;
+  panchayatName: string;
+  villageName: string;
+  affectedStatus: string;
+  data?: Record<string, unknown>;
+};
+
+type AnalysisVillage = {
+  id: number;
+  name: string;
+  affectedStatus: string;
+  record: VillageAnalysisRecord;
+};
+
+type AnalysisPanchayat = {
+  id: number;
+  name: string;
+  villages: AnalysisVillage[];
+};
+
+type AnalysisBlock = {
+  id: number;
+  name: string;
+  panchayats: AnalysisPanchayat[];
+};
+
+const sectionAnswerFields: Record<string, string> = {
+  anganwadi: "anganbadiData",
+  children: "schoolData",
+  school: "schoolData",
+  hostel: "hostelData",
+  health: "healthData",
+  water: "waterData",
+  livelihood: "employmentData",
+  ladies: "ladiesData",
+  cleanliness: "cleanlinessData",
+  pension: "pensionData",
+  development: "developmentData",
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function valuesForQuestion(
+  village: AnalysisVillage,
+  section: Section,
+  question: Question,
+): unknown[] {
+  const record = village.record;
+  const data = isRecord(record.data) ? record.data : {};
+  const surveyData = isRecord(data.surveyData)
+    ? data.surveyData
+    : isRecord(record.surveyData) ? record.surveyData : {};
+  const field = sectionAnswerFields[section.id];
+  if (field) {
+    const sectionData = surveyData[field] ?? data[field];
+    if (Array.isArray(sectionData)) {
+      return sectionData
+        .filter(isRecord)
+        .map((item) => item[question.key])
+        .filter((answer) => answer !== null && answer !== undefined && answer !== "");
+    }
+    if (isRecord(sectionData)) {
+      const answer = sectionData[question.key];
+      return answer === null || answer === undefined || answer === "" ? [] : [answer];
+    }
+    return [];
+  }
+  const answer = record[question.key] ?? data[question.key];
+  return answer === null || answer === undefined || answer === "" ? [] : [answer];
+}
+
+function numericAnswer(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) && value >= 0 ? value : null;
+  if (typeof value !== "string" || !/^\d+(?:\.\d+)?$/.test(value.trim())) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function displayAnswer(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.map(displayAnswer).join(", ");
+  if (isRecord(value)) return JSON.stringify(value);
+  return String(value);
+}
+
+export default function VillageSurveyAnalysis({
+  villages: records = [],
+  loading = false,
+  error = null,
+}: {
+  villages?: VillageAnalysisRecord[];
+  loading?: boolean;
+  error?: Error | null;
+}) {
   const [selectedQuestion, setSelectedQuestion] = useState<{
     section: Section;
     question: Question;
   } | null>(null);
-  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
-  const [selectedPanchayat, setSelectedPanchayat] = useState<string | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
+  const [selectedPanchayat, setSelectedPanchayat] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  if (error) throw error;
 
   const allQuestions = useMemo(
     () =>
@@ -310,67 +412,61 @@ export default function VillageSurveyAnalysis() {
     else setSelectedQuestion(null);
   };
 
-  // Frontend-only sample hierarchy. Replace this with API data later.
-  const hierarchy = [
-    { block: "अभनपुर", panchayats: [
-      { name: "पंचायत - कुर्रा", villages: [{ name: "कुर्रा", affectedStatus: "Direct Affected" }, { name: "खोरपा", affectedStatus: "Indirect Affected" }] },
-      { name: "पंचायत - नवागांव", villages: [{ name: "नवागांव", affectedStatus: "Direct Affected" }, { name: "पचेड़ा", affectedStatus: "Indirect Affected" }] },
-    ]},
-    { block: "आरंग", panchayats: [
-      { name: "पंचायत - भिलाई", villages: [{ name: "भिलाई", affectedStatus: "Direct Affected" }, { name: "गुल्लू", affectedStatus: "Indirect Affected" }] },
-      { name: "पंचायत - चंदखुरी", villages: [{ name: "चंदखुरी", affectedStatus: "Direct Affected" }, { name: "समोदा", affectedStatus: "Indirect Affected" }] },
-    ]},
-    { block: "तिल्दा", panchayats: [
-      { name: "पंचायत - सिलयारी", villages: [{ name: "सिलयारी", affectedStatus: "Direct Affected" }, { name: "मोहदा", affectedStatus: "Indirect Affected" }] },
-      { name: "पंचायत - खरोरा", villages: [{ name: "खरोरा", affectedStatus: "Direct Affected" }, { name: "माठ", affectedStatus: "Indirect Affected" }] },
-    ]},
-  ];
-
-  const sampleAnswer = (villageIndex: number) => {
-    const keySeed = selectedQuestion?.question.key
-      .split("")
-      .reduce((sum, char) => sum + char.charCodeAt(0), 0) ?? 0;
-    const value = (keySeed + villageIndex * 7) % 18;
-    return selectedQuestion?.question.type === "count" ? value + 1 : value % 2 === 0 ? "हाँ" : "नहीं";
-  };
-
-  // Count answers separately for Direct Affected and Indirect Affected villages.
-  // For count-type questions, add the numeric answers. For yes/no/choice questions,
-  // count villages that have a recorded answer (the actual answer remains visible at village level).
-  const allVillageNames = hierarchy.flatMap((block) =>
-    block.panchayats.flatMap((panchayat) => panchayat.villages.map((village) => village.name))
-  );
+  const hierarchy = useMemo(() => {
+    const blocks = new Map<number, AnalysisBlock>();
+    for (const record of records) {
+      let block = blocks.get(record.blockId);
+      if (!block) {
+        block = { id: record.blockId, name: record.blockName, panchayats: [] };
+        blocks.set(record.blockId, block);
+      }
+      let panchayat = block.panchayats.find((item) => item.id === record.panchayatId);
+      if (!panchayat) {
+        panchayat = { id: record.panchayatId, name: record.panchayatName, villages: [] };
+        block.panchayats.push(panchayat);
+      }
+      if (!panchayat.villages.some((item) => item.id === record.villageId)) {
+        panchayat.villages.push({
+          id: record.villageId,
+          name: record.villageName,
+          affectedStatus: record.affectedStatus,
+          record,
+        });
+      }
+    }
+    return Array.from(blocks.values());
+  }, [records]);
 
   const getAnswerCount = (
-    villages: { name: string; affectedStatus: string }[],
+    villages: AnalysisVillage[],
     status: string
   ) => {
     const matchingVillages = villages.filter((village) => village.affectedStatus === status);
-
-    if (selectedQuestion?.question.type === "count") {
-      return matchingVillages.reduce((total, village) => {
-        const answerIndex = allVillageNames.indexOf(village.name);
-        const answer = sampleAnswer(answerIndex);
-        return total + (typeof answer === "number" ? answer : 0);
-      }, 0);
-    }
-
-    // Yes/No and choice questions: count only negative ("नहीं") answers.
+    if (!selectedQuestion) return 0;
     return matchingVillages.reduce((total, village) => {
-      const answerIndex = allVillageNames.indexOf(village.name);
-      return total + (sampleAnswer(answerIndex) === "नहीं" ? 1 : 0);
+      const answers = valuesForQuestion(village, selectedQuestion.section, selectedQuestion.question);
+      if (selectedQuestion.question.type === "count") {
+        return total + answers.reduce<number>((sum, answer) => sum + (numericAnswer(answer) ?? 0), 0);
+      }
+      if (selectedQuestion.question.type === "text") {
+        return total + answers.filter((answer) => displayAnswer(answer).trim() !== "").length;
+      }
+      return total + answers.filter((answer) => {
+        const normalized = displayAnswer(answer).trim().toLowerCase();
+        return ["नहीं", "no", "not odf"].includes(normalized);
+      }).length;
     }, 0);
   };
 
-  const selectedBlockData = hierarchy.find((item) => item.block === selectedBlock);
+  const selectedBlockData = hierarchy.find((item) => item.id === selectedBlock);
   const selectedPanchayatData = selectedBlockData?.panchayats.find(
-    (item) => item.name === selectedPanchayat
+    (item) => item.id === selectedPanchayat
   );
   const currentLevel: Level = selectedPanchayat ? "village" : selectedBlock ? "panchayat" : "block";
   const levelTitle = currentLevel === "block" ? "ब्लॉक-वार विवरण" : currentLevel === "panchayat" ? "ग्राम पंचायत-वार विवरण" : "ग्राम-वार विवरण";
 
   return (
-    <div className="space-y-5 text-slate-900">
+    <div className="space-y-5 text-slate-900" aria-busy={loading}>
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -490,13 +586,13 @@ export default function VillageSurveyAnalysis() {
               {selectedQuestion.section.title}
             </p>
             <h2 className="mt-2 text-lg font-bold leading-7">{selectedQuestion.question.label}</h2>
-            <p className="mt-2 text-xs text-amber-700">डेमो डेटा · यह केवल frontend navigation दिखाने के लिए है।</p>
+            <p className="mt-2 text-xs text-amber-700">केवल सहेजे गए उत्तर प्रदर्शित हैं।</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             <button onClick={() => { setSelectedBlock(null); setSelectedPanchayat(null); }} className={`font-semibold ${!selectedBlock ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>सभी ब्लॉक</button>
-            {selectedBlock && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => setSelectedPanchayat(null)} className={`font-semibold ${!selectedPanchayat ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedBlock}</button></>}
-            {selectedPanchayat && <><ChevronRight className="h-4 w-4 text-slate-400" /><span className="font-semibold text-blue-700">{selectedPanchayat}</span></>}
+            {selectedBlock && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => setSelectedPanchayat(null)} className={`font-semibold ${!selectedPanchayat ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedBlockData?.name}</button></>}
+            {selectedPanchayat && <><ChevronRight className="h-4 w-4 text-slate-400" /><span className="font-semibold text-blue-700">{selectedPanchayatData?.name}</span></>}
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -505,7 +601,7 @@ export default function VillageSurveyAnalysis() {
                 <h3 className="font-bold text-slate-900">{levelTitle}</h3>
                 <p className="mt-1 text-xs text-slate-500">{currentLevel === "block" ? "किस ब्लॉक में कितने गाँव प्रभावित हैं" : currentLevel === "panchayat" ? "चुने गए ब्लॉक की ग्राम पंचायतों का विवरण" : "चुनी गई ग्राम पंचायत के गाँवों के उत्तर"}</p>
               </div>
-              <span className="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{currentLevel === "block" ? "3 ब्लॉक" : currentLevel === "panchayat" ? "2 ग्राम पंचायत" : "2 गाँव"}</span>
+              <span className="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{currentLevel === "block" ? `${hierarchy.length} ब्लॉक` : currentLevel === "panchayat" ? `${selectedBlockData?.panchayats.length ?? 0} ग्राम पंचायत` : `${selectedPanchayatData?.villages.length ?? 0} गाँव`}</span>
             </div>
 
             <div className="overflow-x-auto">
@@ -523,8 +619,8 @@ export default function VillageSurveyAnalysis() {
                   {currentLevel === "block" && hierarchy.map((item) => {
                     const villages = item.panchayats.flatMap((panchayat) => panchayat.villages);
                     return (
-                      <tr key={item.block} onClick={() => setSelectedBlock(item.block)} className="cursor-pointer transition hover:bg-blue-50/60">
-                        <td className="px-5 py-4 font-semibold text-slate-800">{item.block}</td>
+                      <tr key={item.id} onClick={() => setSelectedBlock(item.id)} className="cursor-pointer transition hover:bg-blue-50/60">
+                        <td className="px-5 py-4 font-semibold text-slate-800">{item.name}</td>
                         <td className="px-5 py-4 font-bold text-rose-600">{getAnswerCount(villages, "Direct Affected")}</td>
                         <td className="px-5 py-4 font-bold text-amber-600">{getAnswerCount(villages, "Indirect Affected")}</td>
                         <td className="px-5 py-4 text-right"><span className="inline-flex items-center gap-1 font-semibold text-blue-700">खोलें <ChevronRight className="h-4 w-4" /></span></td>
@@ -532,7 +628,7 @@ export default function VillageSurveyAnalysis() {
                     );
                   })}
                   {currentLevel === "panchayat" && selectedBlockData?.panchayats.map((item) => (
-                    <tr key={item.name} onClick={() => setSelectedPanchayat(item.name)} className="cursor-pointer transition hover:bg-blue-50/60">
+                    <tr key={item.id} onClick={() => setSelectedPanchayat(item.id)} className="cursor-pointer transition hover:bg-blue-50/60">
                       <td className="px-5 py-4 font-semibold text-slate-800">{item.name}</td>
                       <td className="px-5 py-4 font-bold text-rose-600">{getAnswerCount(item.villages, "Direct Affected")}</td>
                       <td className="px-5 py-4 font-bold text-amber-600">{getAnswerCount(item.villages, "Indirect Affected")}</td>
@@ -541,28 +637,30 @@ export default function VillageSurveyAnalysis() {
                   ))}
                   {currentLevel === "village" && selectedPanchayatData?.villages
                     .filter((village) => {
-                      const answerIndex =
-                        hierarchy.findIndex((item) => item.block === selectedBlock) * 4 +
-                        (selectedBlockData?.panchayats.indexOf(selectedPanchayatData) ?? 0) * 2 +
-                        selectedPanchayatData.villages.indexOf(village);
-                      const answer = sampleAnswer(answerIndex);
-                      return selectedQuestion.question.type === "count" || answer === "नहीं";
+                      const answers = valuesForQuestion(village, selectedQuestion.section, selectedQuestion.question);
+                      if (selectedQuestion.question.type === "count") {
+                        return answers.some((answer) => numericAnswer(answer) !== null);
+                      }
+                      if (selectedQuestion.question.type === "text") {
+                        return answers.some((answer) => displayAnswer(answer).trim() !== "");
+                      }
+                      return answers.some((answer) => {
+                        const normalized = displayAnswer(answer).trim().toLowerCase();
+                        return ["नहीं", "no", "not odf"].includes(normalized);
+                      });
                     })
-                    .map((village, index) => {
-                    const globalIndex =
-                      hierarchy.findIndex((item) => item.block === selectedBlock) * 4 +
-                      (selectedBlockData?.panchayats.indexOf(selectedPanchayatData) ?? 0) * 2 +
-                      index;
+                    .map((village) => {
+                    const answers = valuesForQuestion(village, selectedQuestion.section, selectedQuestion.question);
                     return (
-                      <tr key={village.name} className="hover:bg-slate-50">
+                      <tr key={village.id} className="hover:bg-slate-50">
                         <td className="px-5 py-4 font-semibold text-slate-800">{village.name}</td>
                         <td className="px-5 py-4">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${village.affectedStatus === "Direct Affected" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}>
-                            प्रत्यक्ष प्रभावित
+                            {village.affectedStatus === "Direct Affected" ? "प्रत्यक्ष प्रभावित" : village.affectedStatus === "Indirect Affected" ? "अप्रत्यक्ष प्रभावित" : village.affectedStatus}
                           </span>
                         </td>
                         <td className="px-5 py-4 font-bold text-slate-800">
-                          {sampleAnswer(globalIndex)}{selectedQuestion.question.type === "count" ? " व्यक्ति / कार्य" : ""}
+                          {answers.map(displayAnswer).join(", ")}{selectedQuestion.question.type === "count" ? " व्यक्ति / कार्य" : ""}
                         </td>
                       </tr>
                     );

@@ -8,6 +8,7 @@ import { apiRoutes } from '../src/routes/api';
 import { getAnalyticsSummary } from '../src/controllers/adminController';
 import { getAdminGramStats, getAdminSurveys } from '../src/controllers/adminReportController';
 import { getAdminHierarchy } from '../src/controllers/hierarchyController';
+import { VILLAGE_AFFECTED_STATUS } from '../src/utils/villageAffectedStatus';
 
 function replaceMethod(target: object, key: string, value: (...args: never[]) => unknown): () => void {
   const previous = Object.getOwnPropertyDescriptor(target, key);
@@ -314,34 +315,45 @@ test('statistical analysis endpoint is restricted to authenticated administrator
   });
 });
 
-test('statistical analysis reports exclusive category counts and unaffected villages from persisted summaries', async (t) => {
+test('statistical analysis calculates category and household metrics from survey records', async (t) => {
   const restoreBlocks = replaceMethod(
     prisma.block,
     'findMany',
     (async () => [{
       id: 2,
-      nameHindi: 'ओरछा',
       nameEnglish: 'Orchha (Abhujmad)',
-      statisticalAnalysisSummary: {
-        totalVillages: 10,
-        unclassifiedVillages: 1,
-        directVillageCount: 6,
-        directVillageSurveysCompleted: 3,
-        indirectVillageCount: 2,
-        indirectVillageSurveysCompleted: 2,
-        directHouseholdInput: 4,
-        directHouseholdCompleted: 2,
-        directVillageHouseholdCompletionPercentSum: 50,
-        directVillageHouseholdCompletionPercentCount: 2,
-        indirectHouseholdInput: 2,
-        indirectHouseholdCompleted: 1,
-        indirectVillageHouseholdCompletionPercentSum: 50,
-        indirectVillageHouseholdCompletionPercentCount: 1,
-        isStale: false,
-        refreshedAt: null,
-        sourceUpdatedAt: null
-      },
-      statisticalAnalysisRefreshQueue: null
+      gramPanchayats: [{
+        villages: [
+          ...Array.from({ length: 6 }, (_, index) => ({
+            id: index + 1,
+            affectedStatus: VILLAGE_AFFECTED_STATUS.DIRECT,
+            villageSurvey: { isCompleted: index < 3 },
+            households: index < 2
+              ? [{ isCompleted: true }, { isCompleted: false }]
+              : []
+          })),
+          ...Array.from({ length: 2 }, (_, index) => ({
+            id: index + 7,
+            affectedStatus: VILLAGE_AFFECTED_STATUS.INDIRECT,
+            villageSurvey: { isCompleted: true },
+            households: index === 0
+              ? [{ isCompleted: true }, { isCompleted: false }]
+              : []
+          })),
+          {
+            id: 9,
+            affectedStatus: VILLAGE_AFFECTED_STATUS.UNAFFECTED,
+            villageSurvey: null,
+            households: []
+          },
+          {
+            id: 10,
+            affectedStatus: 'Unknown',
+            villageSurvey: null,
+            households: []
+          }
+        ]
+      }]
     }]) as (...args: never[]) => unknown
   );
   const app = Fastify();
@@ -367,6 +379,21 @@ test('statistical analysis reports exclusive category counts and unaffected vill
   assert.equal(body.blocks[0].summary.directVillageCount, 6);
   assert.equal(body.blocks[0].summary.indirectVillageCount, 2);
   assert.equal(body.blocks[0].summary.unaffectedVillageCount, 1);
+  assert.equal(body.blocks[0].summary.directVillageSurveysCompleted, 3);
+  assert.equal(body.blocks[0].summary.indirectVillageSurveysCompleted, 2);
+  assert.equal(body.blocks[0].summary.directHouseholdInput, 4);
+  assert.equal(body.blocks[0].summary.directHouseholdCompleted, 2);
+  assert.equal(body.blocks[0].summary.directVillageHouseholdCompletionPercentSum, 100);
+  assert.equal(body.blocks[0].summary.directVillageHouseholdCompletionPercentCount, 2);
+  assert.equal(body.blocks[0].summary.indirectHouseholdInput, 2);
+  assert.equal(body.blocks[0].summary.indirectHouseholdCompleted, 1);
+  assert.equal(body.blocks[0].summary.indirectVillageHouseholdCompletionPercentSum, 50);
+  assert.equal(body.blocks[0].summary.indirectVillageHouseholdCompletionPercentCount, 1);
+  assert.equal(body.blocks[0].isStale, false);
+  assert.equal(body.blocks[0].refreshAttempts, 0);
+  assert.equal(body.blocks[0].refreshFailed, false);
+  assert.ok(body.blocks[0].refreshedAt);
+  assert.equal(body.blocks[0].sourceUpdatedAt, null);
   assert.equal(
     body.blocks[0].summary.totalVillages
       - body.blocks[0].summary.directVillageCount

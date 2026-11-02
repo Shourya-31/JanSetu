@@ -587,7 +587,7 @@ export function StatisticalAnalysisPage() {
       </header>
 
       {state.status === 'loading' && (
-        <p role="status" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Loading saved statistical summaries…</p>
+        <p role="status" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Loading statistical analysis…</p>
       )}
       {state.status === 'error' && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
@@ -614,7 +614,7 @@ export function StatisticalAnalysisPage() {
       )}
       {state.status === 'success' && (state.data?.blocks.length ?? 0) > 0 && !rows.length && (
         <p className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-          Saved summaries are not available yet. The backend refresh worker will rebuild them; if this message persists, run <code>npm run db:rebuild-statistical-analysis</code>.
+          Statistical analysis data is unavailable for the selected blocks.
         </p>
       )}
       {state.status === 'success' && rows.length > 0 && (

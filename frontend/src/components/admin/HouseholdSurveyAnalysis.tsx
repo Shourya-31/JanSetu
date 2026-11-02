@@ -23,7 +23,6 @@ import {
   Toilet,
   Droplets,
   Lightbulb,
-  Sun,
   Stethoscope,
   Pill,
   Users,
@@ -35,7 +34,10 @@ import {
 } from "lucide-react";
 
 type HouseholdRecord = Record<string, unknown> & {
-  id?: string;
+  id?: string | number;
+  blockId?: string | number;
+  panchayatId?: string | number;
+  villageId?: string | number;
   houseNumber?: number | string;
   headName?: string;
   mobile?: string;
@@ -43,7 +45,7 @@ type HouseholdRecord = Record<string, unknown> & {
   villageName?: string;
   blockName?: string;
   panchayatName?: string;
-  totalMembers?: number | string;
+  totalMembers?: number | string | null;
   direct?: number | string;
   indirect?: number | string;
   affectedStatus?: string;
@@ -60,6 +62,8 @@ type HouseholdRecord = Record<string, unknown> & {
 type Props = {
   households: HouseholdRecord[];
   onBack?: () => void;
+  loading?: boolean;
+  error?: Error | null;
 };
 
 type Metric = {
@@ -308,16 +312,21 @@ const getLocation = (household: HouseholdRecord) => {
   const affectedStatus = asText(
     household.affectedStatus || household.village?.affectedStatus
   ).toLowerCase();
+  const affectedGroup: "direct" | "indirect" | null =
+    affectedStatus.includes("indirect") || affectedStatus.includes("अप्रत्यक्ष")
+      ? "indirect"
+      : affectedStatus.includes("direct") || affectedStatus.includes("प्रत्यक्ष")
+        ? "direct"
+        : null;
 
   return {
+    blockId: asText(household.blockId) || block,
+    panchayatId: asText(household.panchayatId) || panchayat,
+    villageId: asText(household.villageId) || village,
     block: block || "ब्लॉक उपलब्ध नहीं",
     panchayat: panchayat || "ग्राम पंचायत उपलब्ध नहीं",
     village: village || "गाँव उपलब्ध नहीं",
-    affectedStatus: (
-      affectedStatus.includes("indirect") || affectedStatus.includes("अप्रत्यक्ष")
-        ? "indirect"
-        : "direct"
-    ) as "direct" | "indirect",
+    affectedStatus: affectedGroup,
   };
 };
 
@@ -331,6 +340,12 @@ const isDeficiencyAnswer = (metric: Metric, value: unknown) => {
   const answer = asText(value).toLowerCase();
 
   if (metric.kind === "choice") {
+    if (metric.key === "houseType") {
+      return ["कच्चा", "अर्ध-पक्का"].includes(answer);
+    }
+    if (metric.key === "needsAssistiveDevice" || metric.key === "familyDisease" || metric.key === "deathInLastYear") {
+      return ["हाँ", "yes"].includes(answer);
+    }
     if (["नहीं", "no"].includes(answer)) return true;
     // These options indicate a partial or missing service in this survey.
     if (
@@ -363,66 +378,14 @@ const getDeficiencyContribution = (metric: Metric, value: unknown) => {
   return metric.kind === "count" ? Math.max(0, Number(value) || 0) : 1;
 };
 
-// Demo-only household records are used only when the API sends an empty list.
-const buildSampleHouseholds = (): HouseholdRecord[] => {
-  const locations = [
-    ["अभनपुर", "पंचायत - कुर्रा", "कुर्रा", "Direct Affected"],
-    ["अभनपुर", "पंचायत - कुर्रा", "खोरपा", "Indirect Affected"],
-    ["अभनपुर", "पंचायत - नवागांव", "नवागांव", "Direct Affected"],
-    ["अभनपुर", "पंचायत - नवागांव", "पचेड़ा", "Indirect Affected"],
-    ["आरंग", "पंचायत - भिलाई", "भिलाई", "Direct Affected"],
-    ["आरंग", "पंचायत - भिलाई", "गुल्लू", "Indirect Affected"],
-    ["आरंग", "पंचायत - चंदखुरी", "चंदखुरी", "Direct Affected"],
-    ["आरंग", "पंचायत - चंदखुरी", "समोदा", "Indirect Affected"],
-    ["तिल्दा", "पंचायत - सिलयारी", "सिलयारी", "Direct Affected"],
-    ["तिल्दा", "पंचायत - सिलयारी", "मोहदा", "Indirect Affected"],
-    ["तिल्दा", "पंचायत - खरोरा", "खरोरा", "Direct Affected"],
-    ["तिल्दा", "पंचायत - खरोरा", "माठ", "Indirect Affected"],
-  ];
-
-  const metrics = pages.flatMap((page) =>
-    page.groups.flatMap((group) => group.metrics)
-  );
-
-  return locations.map(([blockName, panchayatName, villageName, affectedStatus], index) => {
-    const record: HouseholdRecord = {
-      id: `demo-household-${index + 1}`,
-      houseNumber: `${index + 1}0${index + 1}`,
-      headName: ["रामलाल नेताम", "सीता बाई", "मोहन मरकाम", "कमला कश्यप"][index % 4],
-      mobile: `9${String(876543210 + index).slice(0, 9)}`,
-      totalMembers: 4 + (index % 3),
-      blockName,
-      panchayatName,
-      villageName,
-      affectedStatus,
-    };
-
-    metrics.forEach((metric, metricIndex) => {
-      if (metric.kind === "count") {
-        record[metric.key] = (index + metricIndex) % 5 === 0 ? 0 : ((index + metricIndex) % 4) + 1;
-      } else if (metric.kind === "choice") {
-        if (metric.key === "freeMedicines") {
-          record[metric.key] = index % 3 === 0 ? "कभी-कभी" : index % 2 === 0 ? "नहीं" : "हाँ";
-        } else {
-          record[metric.key] = (index + metricIndex) % 3 === 0 ? "हाँ" : "नहीं";
-        }
-      }
-    });
-
-    return record;
-  });
-};
-
 function QuestionDetailPage({
   metric,
   households,
   onBack,
-  isDemo,
 }: {
   metric: Metric;
   households: HouseholdRecord[];
   onBack: () => void;
-  isDemo: boolean;
 }) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [selectedPanchayat, setSelectedPanchayat] = useState<string | null>(null);
@@ -436,29 +399,35 @@ function QuestionDetailPage({
   );
 
   const blockRows = useMemo(() => {
-    const grouped = new Map<string, { direct: number; indirect: number }>();
+    const grouped = new Map<string, {
+      id: string; name: string; direct: number; indirect: number;
+    }>();
     deficiencyHouseholds.forEach((household) => {
       const location = getLocation(household);
-      const row = grouped.get(location.block) ?? { direct: 0, indirect: 0 };
+      if (!location.affectedStatus) return;
+      const row = grouped.get(location.blockId) ?? {
+        id: location.blockId, name: location.block, direct: 0, indirect: 0,
+      };
       row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
-      grouped.set(location.block, row);
+      grouped.set(location.blockId, row);
     });
-    return Array.from(grouped, ([name, counts]) => ({ name, ...counts }))
+    return Array.from(grouped.values())
       .sort((a, b) => a.name.localeCompare(b.name, "hi"));
   }, [deficiencyHouseholds, metric]);
 
   const panchayatRows = useMemo(() => {
     if (!selectedBlock) return [];
     const grouped = new Map<string, {
-      name: string; direct: number; indirect: number;
+      id: string; name: string; direct: number; indirect: number;
     }>();
     deficiencyHouseholds.forEach((household) => {
       const location = getLocation(household);
-      if (location.block !== selectedBlock) return;
-      const key = location.panchayat;
-      const row = grouped.get(key) ?? { name: key, direct: 0, indirect: 0 };
+      if (location.blockId !== selectedBlock || !location.affectedStatus) return;
+      const row = grouped.get(location.panchayatId) ?? {
+        id: location.panchayatId, name: location.panchayat, direct: 0, indirect: 0,
+      };
       row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
-      grouped.set(key, row);
+      grouped.set(location.panchayatId, row);
     });
     return Array.from(grouped.values()).sort((a, b) =>
       a.name.localeCompare(b.name, "hi")
@@ -468,14 +437,17 @@ function QuestionDetailPage({
   const blockVillageRows = useMemo(() => {
     if (!selectedBlock) return [];
     const grouped = new Map<string, {
-      panchayat: string; village: string; direct: number; indirect: number;
+      panchayatId: string; villageId: string; panchayat: string; village: string;
+      direct: number; indirect: number;
     }>();
 
     deficiencyHouseholds.forEach((household) => {
       const location = getLocation(household);
-      if (location.block !== selectedBlock) return;
-      const key = `${location.panchayat}__${location.village}`;
+      if (location.blockId !== selectedBlock || !location.affectedStatus) return;
+      const key = `${location.panchayatId}:${location.villageId}`;
       const row = grouped.get(key) ?? {
+        panchayatId: location.panchayatId,
+        villageId: location.villageId,
         panchayat: location.panchayat,
         village: location.village,
         direct: 0,
@@ -494,18 +466,20 @@ function QuestionDetailPage({
   const villageRows = useMemo(() => {
     if (!selectedBlock || !selectedPanchayat) return [];
     const grouped = new Map<string, {
-      name: string; direct: number; indirect: number;
+      id: string; name: string; direct: number; indirect: number;
     }>();
     deficiencyHouseholds.forEach((household) => {
       const location = getLocation(household);
       if (
-        location.block !== selectedBlock ||
-        location.panchayat !== selectedPanchayat
+        location.blockId !== selectedBlock ||
+        location.panchayatId !== selectedPanchayat ||
+        !location.affectedStatus
       ) return;
-      const key = location.village;
-      const row = grouped.get(key) ?? { name: key, direct: 0, indirect: 0 };
+      const row = grouped.get(location.villageId) ?? {
+        id: location.villageId, name: location.village, direct: 0, indirect: 0,
+      };
       row[location.affectedStatus] += getDeficiencyContribution(metric, household[metric.key]);
-      grouped.set(key, row);
+      grouped.set(location.villageId, row);
     });
     return Array.from(grouped.values()).sort((a, b) =>
       a.name.localeCompare(b.name, "hi")
@@ -515,9 +489,9 @@ function QuestionDetailPage({
   const villageHouseholds = useMemo(
     () => deficiencyHouseholds.filter((household) => {
       const location = getLocation(household);
-      return location.block === selectedBlock &&
-        location.panchayat === selectedPanchayat &&
-        location.village === selectedVillage;
+      return location.blockId === selectedBlock &&
+        location.panchayatId === selectedPanchayat &&
+        location.villageId === selectedVillage;
     }),
     [deficiencyHouseholds, selectedBlock, selectedPanchayat, selectedVillage]
   );
@@ -529,12 +503,15 @@ function QuestionDetailPage({
     else onBack();
   };
 
+  const selectedBlockName = blockRows.find((row) => row.id === selectedBlock)?.name;
+  const selectedPanchayatName = panchayatRows.find((row) => row.id === selectedPanchayat)?.name;
+  const selectedVillageName = villageRows.find((row) => row.id === selectedVillage)?.name;
   const heading = selectedVillage
-    ? `गाँव: ${selectedVillage}`
+    ? `गाँव: ${selectedVillageName ?? selectedVillage}`
     : selectedPanchayat
-      ? `ग्राम पंचायत: ${selectedPanchayat}`
+      ? `ग्राम पंचायत: ${selectedPanchayatName ?? selectedPanchayat}`
       : selectedBlock
-        ? `ब्लॉक: ${selectedBlock}`
+        ? `ब्लॉक: ${selectedBlockName ?? selectedBlock}`
         : metric.label;
 
   const displayCount = (household: HouseholdRecord) => {
@@ -556,7 +533,7 @@ function QuestionDetailPage({
             <h2 className="text-xl font-bold text-slate-900">{heading}</h2>
             <p className="mt-1 text-sm text-slate-500">{metric.label}</p>
             <p className="mt-2 text-xs text-amber-700">
-              {isDemo ? "डेमो डेटा · वास्तविक डेटा उपलब्ध होने पर वही दिखेगा।" : "केवल कमी दर्शाने वाले उत्तर दिखाए जा रहे हैं।"}
+              केवल कमी दर्शाने वाले उत्तर दिखाए जा रहे हैं।
             </p>
           </div>
           <button type="button" onClick={goBack} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
@@ -568,9 +545,9 @@ function QuestionDetailPage({
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
         <button onClick={() => { setSelectedBlock(null); setSelectedPanchayat(null); setSelectedVillage(null); }} className={`font-semibold ${!selectedBlock ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>सभी ब्लॉक</button>
-        {selectedBlock && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => { setSelectedPanchayat(null); setSelectedVillage(null); }} className={`font-semibold ${!selectedPanchayat ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedBlock}</button></>}
-        {selectedPanchayat && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => setSelectedVillage(null)} className={`font-semibold ${!selectedVillage ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedPanchayat}</button></>}
-        {selectedVillage && <><ChevronRight className="h-4 w-4 text-slate-400" /><span className="font-semibold text-blue-700">{selectedVillage}</span></>}
+        {selectedBlock && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => { setSelectedPanchayat(null); setSelectedVillage(null); }} className={`font-semibold ${!selectedPanchayat ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedBlockName ?? selectedBlock}</button></>}
+        {selectedPanchayat && <><ChevronRight className="h-4 w-4 text-slate-400" /><button onClick={() => setSelectedVillage(null)} className={`font-semibold ${!selectedVillage ? "text-blue-700" : "text-slate-500 hover:text-blue-700"}`}>{selectedPanchayatName ?? selectedPanchayat}</button></>}
+        {selectedVillage && <><ChevronRight className="h-4 w-4 text-slate-400" /><span className="font-semibold text-blue-700">{selectedVillageName ?? selectedVillage}</span></>}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -629,11 +606,11 @@ function QuestionDetailPage({
                 )
               ) : selectedPanchayat ? (
                 villageRows.length ? villageRows.map((row) => (
-                  <tr key={row.name} className="transition hover:bg-blue-50/60">
+                  <tr key={row.id} className="transition hover:bg-blue-50/60">
                     <td className="px-5 py-4">{row.name}</td>
                     <td className="px-5 py-4 font-semibold">{totalCount(row)}</td>
                     <td className="px-5 py-4 text-right">
-                      <button type="button" onClick={() => setSelectedVillage(row.name)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => setSelectedVillage(row.id)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 )) : (
@@ -641,24 +618,24 @@ function QuestionDetailPage({
                 )
               ) : selectedBlock ? (
                 blockVillageRows.length ? blockVillageRows.map((row) => (
-                  <tr key={`${row.panchayat}-${row.village}`} className="transition hover:bg-blue-50/60">
+                  <tr key={`${row.panchayatId}:${row.villageId}`} className="transition hover:bg-blue-50/60">
                     <td className="px-5 py-4 font-medium">{row.panchayat}</td>
                     <td className="px-5 py-4">{row.village}</td>
                     <td className="px-5 py-4 font-semibold">{totalCount(row)}</td>
                     <td className="px-5 py-4 text-right">
-                      <button type="button" onClick={() => { setSelectedPanchayat(row.panchayat); setSelectedVillage(row.village); }} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => { setSelectedPanchayat(row.panchayatId); setSelectedVillage(row.villageId); }} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 )) : (
                   <tr><td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-500">इस ब्लॉक में कोई संबंधित कमी दर्ज नहीं है।</td></tr>
                 )
               ) : blockRows.length ? blockRows.map((row) => (
-                <tr key={row.name} className="transition hover:bg-blue-50/60">
+                <tr key={row.id} className="transition hover:bg-blue-50/60">
                   <td className="px-5 py-4 font-semibold text-slate-800">{row.name}</td>
                   <td className="px-5 py-4 font-semibold">{row.direct}</td>
                   <td className="px-5 py-4 font-semibold">{row.indirect}</td>
                   <td className="px-5 py-4 text-right">
-                    <button type="button" onClick={() => setSelectedBlock(row.name)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => setSelectedBlock(row.id)} className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900">खोलें <ChevronRight className="h-4 w-4" /></button>
                   </td>
                 </tr>
               )) : (
@@ -676,21 +653,21 @@ function QuestionDetailPage({
 export default function HouseholdSurveyAnalysis({
   households,
   onBack,
+  loading = false,
+  error = null,
 }: Props) {
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedMetric, setSelectedMetric] = useState<Metric | null>(null);
 
-  const isDemo = !Array.isArray(households) || households.length === 0;
-  const safeHouseholds = isDemo ? buildSampleHouseholds() : households;
+  if (error) throw error;
   const currentPage = pages[pageIndex];
 
   if (selectedMetric) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" aria-busy={loading}>
         <QuestionDetailPage
           metric={selectedMetric}
-          households={safeHouseholds}
-          isDemo={isDemo}
+          households={households}
           onBack={() => setSelectedMetric(null)}
         />
       </div>
@@ -698,7 +675,7 @@ export default function HouseholdSurveyAnalysis({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={loading}>
       {onBack && (
         <button
           type="button"

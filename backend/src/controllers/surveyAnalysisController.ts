@@ -271,6 +271,7 @@ export async function getHouseholdSurveyAnalysis(req: FastifyRequest, reply: Fas
             select: {
               id: true,
               nameHindi: true,
+              affectedStatus: true,
               gramPanchayat: {
                 select: {
                   id: true,
@@ -291,7 +292,11 @@ export async function getHouseholdSurveyAnalysis(req: FastifyRequest, reply: Fas
     const serializedRecords = records.map((household) => ({
       ...household,
       mobileNumber: household.mobile,
+      blockId: household.village.gramPanchayat.block.id,
       villageName: household.village.nameHindi,
+      villageId: household.village.id,
+      affectedStatus: household.village.affectedStatus,
+      panchayatId: household.village.gramPanchayat.id,
       panchayatName: household.village.gramPanchayat.nameHindi,
       blockName: household.village.gramPanchayat.block.nameHindi,
       completed: household.isCompleted,
